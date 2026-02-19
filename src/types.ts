@@ -14,6 +14,9 @@ export enum AppView {
   CRYPTO = 'crypto',
   REQUESTS = 'requests',
   SYSTEM = 'system',
+  AUTOMATION = 'automation',
+  PROMPTS = 'prompts',
+  ANALYTICS = 'analytics',
   SETTINGS = 'settings'
 }
 
@@ -92,4 +95,19 @@ export interface AppState {
   chatHistory: ChatMessage[];
   visualAssets: VisualAsset[];
   audioLogs: AudioRemix[];
+}
+
+export interface PromptEntry {
+  id: string;
+  title: string;
+  text: string;
+  category: 'image' | 'text' | 'code' | 'music';
+}
+
+export interface Persona {
+  id: string;
+  name: string;
+  role: string;
+  instructions: string;
+  icon: string;
 }

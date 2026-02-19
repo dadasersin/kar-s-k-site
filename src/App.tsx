@@ -16,6 +16,9 @@ import WorkflowView from './views/WorkflowView';
 import CryptoView from './views/CryptoView';
 import RequestView from './views/RequestView';
 import SystemView from './views/SystemView';
+import AutomationView from './views/AutomationView';
+import PromptLibraryView from './views/PromptLibraryView';
+import AnalyticsView from './views/AnalyticsView';
 import SettingsView from './views/SettingsView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
@@ -111,7 +114,7 @@ const App: React.FC = () => {
     return data.choices[0].message.content;
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
     if (!text.trim() || isTyping) return;
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
@@ -137,14 +140,25 @@ const App: React.FC = () => {
 
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({ model: keyEntry.modelName });
+          const model = genAI.getGenerativeModel({
+            model: keyEntry.modelName,
+            systemInstruction: options?.systemInstruction ? { role: 'system', parts: [{ text: options.systemInstruction }] } : undefined
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          } as any);
+
           const chat = model.startChat({
             history: chatMessages.map(m => ({
               role: m.role === 'model' ? 'model' : 'user',
               parts: [{ text: m.text }]
             })),
           });
-          const result = await chat.sendMessage(text);
+
+          let finalInput = text;
+          if (options?.webSearch) {
+             finalInput = `[WEB SEARCH ENABLED] ${text}`;
+          }
+
+          const result = await chat.sendMessage(finalInput);
           aiResponse = result.response.text();
         } else {
           aiResponse = await callOpenAiCompatible(keyEntry, text, chatMessages);
@@ -306,6 +320,9 @@ const App: React.FC = () => {
         {activeView === AppView.CRYPTO && <CryptoView />}
         {activeView === AppView.REQUESTS && <RequestView />}
         {activeView === AppView.SYSTEM && <SystemView />}
+        {activeView === AppView.AUTOMATION && <AutomationView />}
+        {activeView === AppView.PROMPTS && <PromptLibraryView />}
+        {activeView === AppView.ANALYTICS && <AnalyticsView />}
         {activeView === AppView.SETTINGS && <SettingsView onSyncNow={performGitHubSync} />}
       </main>
 

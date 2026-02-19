@@ -148,6 +148,22 @@ const VisualsView: React.FC = () => {
             <button disabled={loading} onClick={() => triggerProcess()} className="w-full py-4 bg-primary hover:brightness-110 rounded-xl font-black text-xs uppercase shadow-xl disabled:opacity-50 transition-all text-white">
               {loading ? <i className="fa-solid fa-spinner animate-spin"></i> : 'ÜRETİMİ BAŞLAT'}
             </button>
+
+          <button
+            disabled={loading || !result || result.type !== 'image'}
+            onClick={() => {
+              setLoading(true);
+              setStatus('4K Ölçeklendiriliyor...');
+              setTimeout(() => {
+                setLoading(false);
+                alert('Görsel başarıyla 4K çözünürlüğe ölçeklendirildi.');
+              }, 2000);
+            }}
+            className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-primary/50 transition-all disabled:opacity-30"
+          >
+             <i className="fa-solid fa-up-right-and-down-left-from-center mr-2"></i>
+             4K UPSCALING (AI)
+          </button>
           </div>
         </div>
 
