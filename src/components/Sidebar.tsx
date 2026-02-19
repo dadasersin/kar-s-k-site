@@ -11,24 +11,25 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
-    { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
+    { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
-    { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-wand-magic-sparkles' },
+    { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.AUDIO, label: 'Ses & Remix', icon: 'fa-music' },
     { id: AppView.LIVE, label: 'Canlı Etkileşim', icon: 'fa-bolt-lightning' },
+    { id: AppView.ART_STUDIO, label: 'Sanat Stüdyosu', icon: 'fa-palette' },
+    { id: AppView.GAME_DEV, label: 'Oyun Geliştirme', icon: 'fa-gamepad' },
     { id: AppView.WORKFLOW, label: 'Neural Workflow', icon: 'fa-diagram-project' },
     { id: AppView.BUILDER, label: 'Otonom İnşa', icon: 'fa-hammer' },
     { id: AppView.DOCKER_AI, label: 'Docker AI', icon: 'fa-server' },
     { id: AppView.CRYPTO, label: 'Kripto Bot', icon: 'fa-bitcoin-sign' },
     { id: AppView.AUTOMATION, label: 'Otomasyon Hub', icon: 'fa-robot' },
+    { id: AppView.SOCIAL_MEDIA, label: 'Sosyal Medya', icon: 'fa-share-nodes' },
     { id: AppView.GOOGLE_APPS, label: 'Google Ekosistemi', icon: 'fa-brands fa-google' },
+    { id: AppView.INTEGRATIONS, label: 'Entegrasyonlar', icon: 'fa-link' },
+    { id: AppView.SECURITY, label: 'Güvenlik Merkezi', icon: 'fa-shield-halved' },
     { id: AppView.PROMPTS, label: 'Prompt Kütüphanesi', icon: 'fa-book' },
     { id: AppView.ANALYTICS, label: 'Analitik & Maliyet', icon: 'fa-chart-line' },
-    { id: AppView.REQUESTS, label: 'Görev Yönetimi', icon: 'fa-list-check' },
     { id: AppView.SYSTEM, label: 'Sistem Çekirdeği', icon: 'fa-microchip' },
-    { id: AppView.GALLERY, label: 'Galeri', icon: 'fa-images' },
-    { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
-    { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
@@ -100,7 +101,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
 
       {/* MOBİL ALT MENÜ */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 z-[100] flex items-center justify-around px-1 pb-safe overflow-x-auto scrollbar-hide">
-        {menuItems.filter(i => ['home', 'chat', 'visuals', 'workflow', 'requests'].includes(i.id)).map((item) => (
+        {menuItems.filter(i => ['home', 'jules_studio', 'chat', 'visuals', 'workflow'].includes(i.id)).map((item) => (
           <button
             key={item.id}
             onClick={() => onViewChange(item.id)}

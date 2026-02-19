@@ -19,7 +19,13 @@ export enum AppView {
   ANALYTICS = 'analytics',
   GOOGLE_APPS = 'google_apps',
   DOCKER_AI = 'docker_ai',
-  SETTINGS = 'settings'
+  SETTINGS = 'settings',
+  JULES_STUDIO = 'jules_studio',
+  ART_STUDIO = 'art_studio',
+  GAME_DEV = 'game_dev',
+  SECURITY = 'security',
+  INTEGRATIONS = 'integrations',
+  SOCIAL_MEDIA = 'social_media'
 }
 
 export interface WorkflowNode {

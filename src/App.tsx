@@ -22,6 +22,12 @@ import AnalyticsView from './views/AnalyticsView';
 import GoogleAppsView from './views/GoogleAppsView';
 import DockerConfigView from './views/DockerConfigView';
 import SettingsView from './views/SettingsView';
+import JulesStudioView from './views/JulesStudioView';
+import ArtStudioView from './views/ArtStudioView';
+import GameDevView from './views/GameDevView';
+import SecurityCenterView from './views/SecurityCenterView';
+import IntegrationsHubView from './views/IntegrationsHubView';
+import SocialMediaManagerView from './views/SocialMediaManagerView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -141,7 +147,7 @@ const App: React.FC = () => {
         let aiResponse = '';
 
         if (keyEntry.provider === 'gemini') {
-          const genAI = new GoogleGenAI(keyEntry.key);
+          const genAI = new GoogleGenAI({ apiKey: keyEntry.key });
           const model = genAI.getGenerativeModel({
             model: keyEntry.modelName,
             systemInstruction: options?.systemInstruction ? { role: 'system', parts: [{ text: options.systemInstruction }] } : undefined
@@ -328,6 +334,12 @@ const App: React.FC = () => {
         {activeView === AppView.GOOGLE_APPS && <GoogleAppsView />}
         {activeView === AppView.DOCKER_AI && <DockerConfigView />}
         {activeView === AppView.SETTINGS && <SettingsView onSyncNow={performGitHubSync} />}
+        {activeView === AppView.JULES_STUDIO && <JulesStudioView />}
+        {activeView === AppView.ART_STUDIO && <ArtStudioView />}
+        {activeView === AppView.GAME_DEV && <GameDevView />}
+        {activeView === AppView.SECURITY && <SecurityCenterView />}
+        {activeView === AppView.INTEGRATIONS && <IntegrationsHubView />}
+        {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />
