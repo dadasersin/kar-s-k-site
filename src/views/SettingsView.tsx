@@ -18,7 +18,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
   const [newKey, setNewKey] = useState('');
   const [keyLabel, setKeyLabel] = useState('');
   const [provider, setProvider] = useState<ApiProvider>('gemini');
-  const [modelName, setModelName] = useState('gemini-1.5-flash');
+  const [modelName, setModelName] = useState('gemini-3-flash-preview');
   const [customUrl, setCustomUrl] = useState('');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
   const handleProviderChange = (p: ApiProvider) => {
     setProvider(p);
     if (p === 'gemini') {
-      setModelName('gemini-1.5-flash');
+      setModelName('gemini-3-flash-preview');
       setCustomUrl('');
     } else if (p === 'deepseek') {
       setModelName('deepseek-chat');

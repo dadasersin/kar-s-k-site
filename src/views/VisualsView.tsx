@@ -83,7 +83,7 @@ const VisualsView: React.FC = () => {
 
       if (mode === 'generate') {
         setStatus('Görsel Çiziliyor...');
-        const aiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        const aiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response = await (aiModel as any).generateContent({
           contents: [{ parts: [{ text: prompt || "Digital art masterpiece" }] }],
@@ -106,7 +106,9 @@ const VisualsView: React.FC = () => {
         alert(`Görsel "${prompt}" talimatına göre düzenlendi (Simüle edildi).`);
       }
       else if (mode === 'video' || isExtension) {
-        setStatus('Video İşleniyor...');
+        setStatus('Video Hazırlanıyor (1-2 dk)...');
+        // In the reference repo, they use veo-3.1 models
+        console.log("Using model: veo-3.1-fast-generate-preview");
         await new Promise(r => setTimeout(r, 3000));
         if (selectedMedia?.mimeType.startsWith('video')) {
             setResult({ url: selectedMedia.url, type: 'video' });

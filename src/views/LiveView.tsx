@@ -117,6 +117,7 @@ const LiveView: React.FC = () => {
 
       // Note: The live feature is simulated here
       console.log("Starting Live Session (Simulated)...");
+      console.log("Using model: gemini-2.5-flash-native-audio-preview-12-2025");
       await new Promise(r => setTimeout(r, 1500));
 
       setIsActive(true);

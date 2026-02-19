@@ -70,7 +70,7 @@ const App: React.FC = () => {
         key: systemKey,
         label: 'Sistem Gemini',
         provider: 'gemini',
-        modelName: 'gemini-1.5-flash',
+        modelName: 'gemini-3-flash-preview',
         isQuotaExhausted: false
       });
     }
