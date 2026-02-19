@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface MediaData {
   data: string;
@@ -79,7 +79,7 @@ const VisualsView: React.FC = () => {
         return;
       }
 
-      const genAI = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
 
       if (mode === 'generate') {
         setStatus('Görsel Çiziliyor...');

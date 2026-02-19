@@ -31,7 +31,7 @@ import SocialMediaManagerView from './views/SocialMediaManagerView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -147,12 +147,11 @@ const App: React.FC = () => {
         let aiResponse = '';
 
         if (keyEntry.provider === 'gemini') {
-          const genAI = new GoogleGenAI({ apiKey: keyEntry.key });
+          const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({
             model: keyEntry.modelName,
-            systemInstruction: options?.systemInstruction ? { role: 'system', parts: [{ text: options.systemInstruction }] } : undefined
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          } as any);
+            systemInstruction: options?.systemInstruction,
+          });
 
           const chat = model.startChat({
             history: chatMessages.map(m => ({

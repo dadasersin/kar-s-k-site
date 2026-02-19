@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import type { AnalysisResult } from "../types";
 
 const DockerConfigView: React.FC = () => {
@@ -31,7 +31,7 @@ error: failed to solve: failed to read dockerfile: open Dockerfile: no such file
 
       if (!apiKey) throw new Error("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
 
-      const genAI = new GoogleGenAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `
@@ -51,18 +51,18 @@ error: failed to solve: failed to read dockerfile: open Dockerfile: no such file
         generationConfig: {
            responseMimeType: "application/json",
            responseSchema: {
-             type: Type.OBJECT,
+             type: SchemaType.OBJECT,
              properties: {
-               explanation: { type: Type.STRING },
-               solution: { type: Type.STRING },
+               explanation: { type: SchemaType.STRING },
+               solution: { type: SchemaType.STRING },
                files: {
-                 type: Type.ARRAY,
+                 type: SchemaType.ARRAY,
                  items: {
-                   type: Type.OBJECT,
+                   type: SchemaType.OBJECT,
                    properties: {
-                     name: { type: Type.STRING },
-                     language: { type: Type.STRING },
-                     content: { type: Type.STRING }
+                     name: { type: SchemaType.STRING },
+                     language: { type: SchemaType.STRING },
+                     content: { type: SchemaType.STRING }
                    },
                    required: ["name", "language", "content"]
                  }

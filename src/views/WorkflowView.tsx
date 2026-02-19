@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { WorkflowNode, WorkflowLink } from '../types';
 
 const WorkflowView: React.FC = () => {
@@ -75,7 +75,7 @@ const WorkflowView: React.FC = () => {
 
       if (apiKey) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const genAI: any = new GoogleGenAI(apiKey);
+        const genAI: any = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const prompt = `Aşağıdaki tanıma göre bir n8n benzeri iş akışı JSON'u oluştur. JSON şu yapıda olmalı:
           { "nodes": [ { "id": "1", "name": "Node Adı", "type": "node.type", "position": [x, y], "parameters": {} } ],

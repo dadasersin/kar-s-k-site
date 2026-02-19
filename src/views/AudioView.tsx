@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const AudioView: React.FC = () => {
   const [mode, setMode] = useState<'tts' | 'remix'>('remix');
@@ -143,31 +143,22 @@ const AudioView: React.FC = () => {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ai: any = new GoogleGenAI(apiKey);
+      const ai: any = new GoogleGenerativeAI(apiKey);
 
       if (mode === 'tts' || (currentText && currentText.length > 0)) {
-        await ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).generateContent({
-          contents: [{ parts: [{ text: currentText || text }] }],
-          config: {
-            responseModalities: ["AUDIO"],
-            speechConfig: { voiceName: selectedVoice },
-          },
-        });
+        await ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).generateContent([
+          currentText || text
+        ]);
       } else {
         if (!selectedAudio) {
             alert("Lütfen önce bir ses dosyası yükleyin.");
             setIsSynthesizing(false);
             return;
         }
-        await ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }).generateContent({
-          contents: {
-            parts: [
-              { inlineData: { mimeType: selectedAudio.mimeType, data: selectedAudio.data } },
-              { text: `Bu ses dosyasını şu talimata göre remiksle ve değiştir: ${remixPrompt}` }
-            ]
-          },
-          config: { responseModalities: ["AUDIO"] }
-        });
+        await ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }).generateContent([
+          { inlineData: { mimeType: selectedAudio.mimeType, data: selectedAudio.data } },
+          { text: `Bu ses dosyasını şu talimata göre remiksle ve değiştir: ${remixPrompt}` }
+        ]);
       }
 
       console.log("Mocking audio generation success for demo");

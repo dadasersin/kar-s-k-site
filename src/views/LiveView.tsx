@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const LiveView: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
@@ -113,7 +113,7 @@ const LiveView: React.FC = () => {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const genAI = new GoogleGenAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey);
 
       // Note: The live feature is simulated here
       console.log("Starting Live Session (Simulated)...");
