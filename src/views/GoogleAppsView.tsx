@@ -1,34 +1,51 @@
 import React, { useState } from 'react';
 
+interface GoogleApp {
+  name: string;
+  category: string;
+  icon: string;
+  color: string;
+  desc: string;
+  url: string;
+}
+
 const GoogleAppsView: React.FC = () => {
   const [filter, setFilter] = useState('Hepsi');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const apps = [
-    { name: 'Google Arama', category: 'Araçlar', icon: 'fa-magnifying-glass', color: 'text-blue-500', desc: 'Dünyadaki bilgilere en hızlı erişim yolu.' },
-    { name: 'YouTube', category: 'Eğlence', icon: 'fa-youtube', color: 'text-red-500', desc: 'Milyonlarca video, müzik ve içerik dünyası.' },
-    { name: 'Google Haritalar', category: 'Navigasyon', icon: 'fa-map-location-dot', color: 'text-green-500', desc: 'Dünyayı keşfedin ve yolunuzu kolayca bulun.' },
-    { name: 'Gmail', category: 'İletişim', icon: 'fa-envelope', color: 'text-red-400', desc: 'Hızlı, güvenli ve akıllı e-posta hizmeti.' },
-    { name: 'Google Drive', category: 'Üretkenlik', icon: 'fa-hard-drive', color: 'text-blue-400', desc: 'Tüm dosyalarınız her zaman yanınızda.' },
-    { name: 'Google Fotoğraflar', category: 'Eğlence', icon: 'fa-image', color: 'text-blue-600', desc: 'Anılarınızı yedekleyin ve kolayca organize edin.' },
-    { name: 'Google Dokümanlar', category: 'Üretkenlik', icon: 'fa-file-lines', color: 'text-blue-500', desc: 'Çevrimiçi dökümanlar oluşturun ve düzenleyin.' },
-    { name: 'Google E-Tablolar', category: 'Üretkenlik', icon: 'fa-file-excel', color: 'text-green-600', desc: 'Verilerinizi akıllı tablolarla yönetin.' },
-    { name: 'Google Slaytlar', category: 'Üretkenlik', icon: 'fa-file-powerpoint', color: 'text-yellow-500', desc: 'Etkileyici sunumlar hazırlayın.' },
-    { name: 'Google Meet', category: 'İletişim', icon: 'fa-video', color: 'text-blue-500', desc: 'Güvenli görüntülü toplantılar yapın.' },
-    { name: 'Google Takvim', category: 'Üretkenlik', icon: 'fa-calendar-days', color: 'text-blue-400', desc: 'Zamanınızı verimli bir şekilde planlayın.' },
-    { name: 'Google Keep', category: 'Üretkenlik', icon: 'fa-note-sticky', color: 'text-yellow-600', desc: 'Hızlı notlar alın ve hatırlatıcılar kurun.' },
-    { name: 'Google Çeviri', category: 'Araçlar', icon: 'fa-language', color: 'text-blue-500', desc: 'Diller arası engelleri anında kaldırın.' },
-    { name: 'Google Lens', category: 'Araçlar', icon: 'fa-camera-retro', color: 'text-blue-400', desc: 'Gördüğünüz her şeyi yapay zeka ile arayın.' },
-    { name: 'Google Earth', category: 'Eğlence', icon: 'fa-earth-americas', color: 'text-blue-500', desc: 'Dünyayı 3D olarak uydudan keşfedin.' },
-    { name: 'Google Chrome', category: 'Araçlar', icon: 'fa-chrome', color: 'text-blue-500', desc: 'Hızlı ve güvenli web tarayıcısı.' },
-    { name: 'Google Play', category: 'Eğlence', icon: 'fa-play', color: 'text-blue-400', desc: 'Milyonlarca uygulama, oyun ve içerik.' },
-    { name: 'Google News', category: 'Eğlence', icon: 'fa-newspaper', color: 'text-blue-500', desc: 'Size özel seçilmiş güncel haberler.' },
-    { name: 'Google Chat', category: 'İletişim', icon: 'fa-comments', color: 'text-green-500', desc: 'Ekibinizle anlık olarak mesajlaşın.' },
-    { name: 'Google Tasks', category: 'Üretkenlik', icon: 'fa-list-check', color: 'text-blue-500', desc: 'Yapılacak işlerinizi takip edin.' },
-    { name: 'Gemini (AI)', category: 'Yapay Zeka', icon: 'fa-wand-magic-sparkles', color: 'text-purple-500', desc: 'Google\'ın en gelişmiş yapay zekası.' },
-    { name: 'Google Cloud', category: 'İş', icon: 'fa-cloud', color: 'text-blue-400', desc: 'Bulut bilişim ve uygulama geliştirme.' },
-    { name: 'Google Ads', category: 'İş', icon: 'fa-rectangle-ad', color: 'text-blue-500', desc: 'İşletmenizi Google üzerinden büyütün.' },
-    { name: 'Google Analytics', category: 'İş', icon: 'fa-chart-simple', color: 'text-yellow-600', desc: 'Web sitesi ve uygulama verilerinizi analiz edin.' },
+  const apps: GoogleApp[] = [
+    { name: 'Google Arama', category: 'Araçlar', icon: 'fa-magnifying-glass', color: 'text-blue-500', desc: 'Dünyadaki bilgilere en hızlı erişim yolu.', url: 'https://www.google.com' },
+    { name: 'YouTube', category: 'Eğlence', icon: 'fa-youtube', color: 'text-red-500', desc: 'Milyonlarca video, müzik ve içerik dünyası.', url: 'https://www.youtube.com' },
+    { name: 'Google Haritalar', category: 'Navigasyon', icon: 'fa-map-location-dot', color: 'text-green-500', desc: 'Dünyayı keşfedin ve yolunuzu kolayca bulun.', url: 'https://maps.google.com' },
+    { name: 'Gmail', category: 'İletişim', icon: 'fa-envelope', color: 'text-red-400', desc: 'Hızlı, güvenli ve akıllı e-posta hizmeti.', url: 'https://mail.google.com' },
+    { name: 'Google Drive', category: 'Üretkenlik', icon: 'fa-hard-drive', color: 'text-blue-400', desc: 'Tüm dosyalarınız her zaman yanınızda.', url: 'https://drive.google.com' },
+    { name: 'Google Fotoğraflar', category: 'Eğlence', icon: 'fa-image', color: 'text-blue-600', desc: 'Anılarınızı yedekleyin ve kolayca organize edin.', url: 'https://photos.google.com' },
+    { name: 'Google Dokümanlar', category: 'Üretkenlik', icon: 'fa-file-lines', color: 'text-blue-500', desc: 'Çevrimiçi dökümanlar oluşturun ve düzenleyin.', url: 'https://docs.google.com' },
+    { name: 'Google E-Tablolar', category: 'Üretkenlik', icon: 'fa-file-excel', color: 'text-green-600', desc: 'Verilerinizi akıllı tablolarla yönetin.', url: 'https://sheets.google.com' },
+    { name: 'Google Slaytlar', category: 'Üretkenlik', icon: 'fa-file-powerpoint', color: 'text-yellow-500', desc: 'Etkileyici sunumlar hazırlayın.', url: 'https://slides.google.com' },
+    { name: 'Google Meet', category: 'İletişim', icon: 'fa-video', color: 'text-blue-500', desc: 'Güvenli görüntülü toplantılar yapın.', url: 'https://meet.google.com' },
+    { name: 'Google Takvim', category: 'Üretkenlik', icon: 'fa-calendar-days', color: 'text-blue-400', desc: 'Zamanınızı verimli bir şekilde planlayın.', url: 'https://calendar.google.com' },
+    { name: 'Google Keep', category: 'Üretkenlik', icon: 'fa-note-sticky', color: 'text-yellow-600', desc: 'Hızlı notlar alın ve hatırlatıcılar kurun.', url: 'https://keep.google.com' },
+    { name: 'Google Çeviri', category: 'Araçlar', icon: 'fa-language', color: 'text-blue-500', desc: 'Diller arası engelleri anında kaldırın.', url: 'https://translate.google.com' },
+    { name: 'Google Lens', category: 'Araçlar', icon: 'fa-camera-retro', color: 'text-blue-400', desc: 'Gördüğünüz her şeyi yapay zeka ile arayın.', url: 'https://lens.google.com' },
+    { name: 'Google Earth', category: 'Eğlence', icon: 'fa-earth-americas', color: 'text-blue-500', desc: 'Dünyayı 3D olarak uydudan keşfedin.', url: 'https://earth.google.com' },
+    { name: 'Google Chrome', category: 'Araçlar', icon: 'fa-chrome', color: 'text-blue-500', desc: 'Hızlı ve güvenli web tarayıcısı.', url: 'https://www.google.com/chrome/' },
+    { name: 'Google Play', category: 'Eğlence', icon: 'fa-play', color: 'text-blue-400', desc: 'Milyonlarca uygulama, oyun ve içerik.', url: 'https://play.google.com' },
+    { name: 'Google News', category: 'Eğlence', icon: 'fa-newspaper', color: 'text-blue-500', desc: 'Size özel seçilmiş güncel haberler.', url: 'https://news.google.com' },
+    { name: 'Google Chat', category: 'İletişim', icon: 'fa-comments', color: 'text-green-500', desc: 'Ekibinizle anlık olarak mesajlaşın.', url: 'https://chat.google.com' },
+    { name: 'Google Tasks', category: 'Üretkenlik', icon: 'fa-list-check', color: 'text-blue-500', desc: 'Yapılacak işlerinizi takip edin.', url: 'https://tasks.google.com' },
+    { name: 'Gemini (AI)', category: 'Yapay Zeka', icon: 'fa-wand-magic-sparkles', color: 'text-purple-500', desc: 'Google\'ın en gelişmiş yapay zekası.', url: 'https://gemini.google.com' },
+    { name: 'Google Cloud', category: 'İş', icon: 'fa-cloud', color: 'text-blue-400', desc: 'Bulut bilişim ve uygulama geliştirme.', url: 'https://console.cloud.google.com' },
+    { name: 'Google Ads', category: 'İş', icon: 'fa-rectangle-ad', color: 'text-blue-500', desc: 'İşletmenizi Google üzerinden büyütün.', url: 'https://ads.google.com' },
+    { name: 'Google Analytics', category: 'İş', icon: 'fa-chart-simple', color: 'text-yellow-600', desc: 'Web sitesi ve uygulama verilerinizi analiz edin.', url: 'https://analytics.google.com' },
   ];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+    }
+  };
 
   const categories = ['Hepsi', ...Array.from(new Set(apps.map(a => a.category)))];
   const filteredApps = filter === 'Hepsi' ? apps : apps.filter(a => a.category === filter);
@@ -45,7 +62,7 @@ const GoogleAppsView: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-green-500"></span>
             </div>
             <h1 className="text-4xl font-black text-white italic tracking-tighter uppercase">Google Ekosistemi</h1>
-            <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Google'ın tüm araçları tek bir noktada</p>
+            <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Google'ın tüm araçları aktif kullanımda</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -60,6 +77,25 @@ const GoogleAppsView: React.FC = () => {
             ))}
           </div>
         </header>
+
+        {/* Global Google Search Bar */}
+        <section className="glass-panel p-6 rounded-[2.5rem] bg-white/5 border border-white/10 shadow-2xl">
+           <form onSubmit={handleSearch} className="flex gap-4">
+              <div className="flex-1 relative">
+                 <i className="fa-solid fa-magnifying-glass absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                 <input
+                   type="text"
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   placeholder="Google'da aktif arama yapın..."
+                   className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm text-white outline-none focus:border-primary transition-all"
+                 />
+              </div>
+              <button type="submit" className="px-8 bg-primary hover:brightness-110 text-white font-black uppercase tracking-widest rounded-2xl transition-all text-[10px]">
+                ARA
+              </button>
+           </form>
+        </section>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredApps.map((app, i) => (
@@ -76,10 +112,15 @@ const GoogleAppsView: React.FC = () => {
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">{app.name}</h3>
                 <p className="text-slate-500 text-xs leading-relaxed">{app.desc}</p>
               </div>
-              <button className="mt-auto pt-4 flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0">
-                 <span className="text-[10px] font-black uppercase tracking-widest">Uygulamaya Git</span>
-                 <i className="fa-solid fa-arrow-right-to-bracket text-[8px]"></i>
-              </button>
+              <a
+                href={app.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-auto pt-4 flex items-center gap-2 text-primary opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0"
+              >
+                 <span className="text-[10px] font-black uppercase tracking-widest">Uygulamayı Aç</span>
+                 <i className="fa-solid fa-arrow-up-right-from-square text-[8px]"></i>
+              </a>
             </div>
           ))}
         </div>
@@ -91,7 +132,10 @@ const GoogleAppsView: React.FC = () => {
             <div className="relative z-10 max-w-2xl">
                <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Google Cloud Platform</h2>
                <p className="text-slate-400 leading-relaxed">Geliştiriciler ve işletmeler için dünyanın en gelişmiş bulut altyapısı. Yapay zeka modelleri, veritabanları ve sunucusuz mimarilerle uygulamalarınızı ölçeklendirin.</p>
-               <button className="mt-8 px-10 py-4 bg-primary hover:brightness-110 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all text-xs">
+               <button
+                onClick={() => window.open('https://console.cloud.google.com', '_blank')}
+                className="mt-8 px-10 py-4 bg-primary hover:brightness-110 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all text-xs"
+               >
                  KONSOLU AÇ
                </button>
             </div>

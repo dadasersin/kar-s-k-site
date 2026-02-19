@@ -105,17 +105,33 @@ const WorkflowView: React.FC = () => {
       } else {
         // Simulation Mode
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const mockWorkflow = {
-          nodes: [
-            { id: "1", name: "Başlat", type: "trigger", position: [100, 100] },
-            { id: "2", name: "İşlem", type: "action", position: [300, 150] },
-            { id: "3", name: "Sonuç", type: "output", position: [500, 100] }
-          ],
-          links: [
-            { fromNode: "1", toNode: "2" },
-            { fromNode: "2", toNode: "3" }
-          ]
-        };
+        let mockWorkflow;
+        if (aiPrompt.toLowerCase().includes('google') || aiPrompt.toLowerCase().includes('gmail') || aiPrompt.toLowerCase().includes('sheets')) {
+          mockWorkflow = {
+            nodes: [
+              { id: "1", name: "Gmail: Yeni Mesaj", type: "google.gmail_trigger", position: [100, 100] },
+              { id: "2", name: "AI: Analiz Et", type: "ai.analysis", position: [300, 150] },
+              { id: "3", name: "Sheets: Satır Ekle", type: "google.sheets_action", position: [500, 100] }
+            ],
+            links: [
+              { fromNode: "1", toNode: "2" },
+              { fromNode: "2", toNode: "3" }
+            ]
+          };
+          addLog("ℹ️ Google Ekosistemi şablonu yüklendi.");
+        } else {
+          mockWorkflow = {
+            nodes: [
+              { id: "1", name: "Başlat", type: "trigger", position: [100, 100] },
+              { id: "2", name: "İşlem", type: "action", position: [300, 150] },
+              { id: "3", name: "Sonuç", type: "output", position: [500, 100] }
+            ],
+            links: [
+              { fromNode: "1", toNode: "2" },
+              { fromNode: "2", toNode: "3" }
+            ]
+          };
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setNodes(mockWorkflow.nodes as any);
         setLinks(mockWorkflow.links);
