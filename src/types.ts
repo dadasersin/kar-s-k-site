@@ -1,10 +1,43 @@
 export enum AppView {
+  HOME = 'home',
+  TOOLS = 'tools',
+  CREATIVE = 'creative',
   DASHBOARD = 'dashboard',
   CHAT = 'chat',
   VISUALS = 'visuals',
   AUDIO = 'audio',
   LIVE = 'live',
+  MUSIC = 'music',
+  GALLERY = 'gallery',
+  BUILDER = 'builder',
+  WORKFLOW = 'workflow',
+  CRYPTO = 'crypto',
+  REQUESTS = 'requests',
+  SYSTEM = 'system',
   SETTINGS = 'settings'
+}
+
+export interface WorkflowNode {
+  id: string;
+  name: string;
+  type: string;
+  position: [number, number];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parameters?: any;
+}
+
+export interface WorkflowLink {
+  fromNode: string;
+  toNode: string;
+}
+
+export interface SystemRequest {
+  id: string;
+  topic: string;
+  date: string;
+  status: 'warning' | 'success' | 'danger';
+  statusText: string;
+  priority: 'high' | 'medium' | 'low';
 }
 
 export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';

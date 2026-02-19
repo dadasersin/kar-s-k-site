@@ -100,7 +100,7 @@ const LiveView: React.FC = () => {
 
       const settingsStr = localStorage.getItem('sync_settings');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+      let apiKey: string = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
       if (settingsStr) {
         const settings = JSON.parse(settingsStr);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,9 +113,9 @@ const LiveView: React.FC = () => {
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const ai = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenAI(apiKey);
 
-      // Note: The live feature is simulated here as it depends on a specific internal version of the lib
+      // Note: The live feature is simulated here
       console.log("Starting Live Session (Simulated)...");
       await new Promise(r => setTimeout(r, 1500));
 
@@ -132,8 +132,8 @@ const LiveView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 p-8">
-      <div className="relative w-64 h-64 flex items-center justify-center">
+    <div className="flex-1 flex flex-col items-center justify-center bg-brandDark p-8 overflow-y-auto pb-32">
+      <div className="relative w-64 h-64 flex items-center justify-center animate-in zoom-in duration-700">
         {isActive && (
           <div className="absolute inset-0 bg-amber-500/20 rounded-full animate-ping"></div>
         )}
@@ -150,8 +150,8 @@ const LiveView: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-12 text-center max-w-md">
-        <h2 className="text-2xl font-bold mb-2">
+      <div className="mt-12 text-center max-w-md animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h2 className="text-2xl font-bold mb-2 text-white">
           {isActive ? 'Oturum Aktif' : isConnecting ? 'Bağlanıyor...' : 'Canlı Etkileşim'}
         </h2>
 
@@ -168,7 +168,7 @@ const LiveView: React.FC = () => {
                 : 'Gemini ile düşük gecikmeli, çok modlu etkileşimi deneyimleyin.'}
             </p>
             {!isActive && (
-              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest flex items-center justify-center gap-1">
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest flex items-center justify-center gap-1">
                 <i className="fa-solid fa-microphone"></i> "Canlıyı başlat" diyerek de başlayabilirsiniz.
               </p>
             )}
@@ -179,19 +179,19 @@ const LiveView: React.FC = () => {
           <button
             onClick={startSession}
             disabled={isConnecting}
-            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 rounded-full font-bold transition-all shadow-lg flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-4 bg-amber-600 hover:bg-amber-500 rounded-full font-bold transition-all shadow-lg flex items-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed text-white uppercase text-xs tracking-widest"
           >
             {isConnecting ? (
               <i className="fa-solid fa-circle-notch animate-spin"></i>
             ) : (
-              <i className="fa-solid fa-bolt"></i>
+              <i className="fa-solid fa-bolt-lightning"></i>
             )}
             {isConnecting ? 'Başlatılıyor...' : 'Canlıya Geç'}
           </button>
         ) : (
           <button
             onClick={stopSession}
-            className="px-8 py-4 bg-red-600 hover:bg-red-500 rounded-full font-bold transition-all shadow-lg flex items-center gap-3 mx-auto"
+            className="px-8 py-4 bg-red-600 hover:bg-red-500 rounded-full font-bold transition-all shadow-lg flex items-center gap-3 mx-auto text-white uppercase text-xs tracking-widest"
           >
             <i className="fa-solid fa-stop"></i>
             Oturumu Bitir
@@ -199,9 +199,9 @@ const LiveView: React.FC = () => {
         )}
       </div>
 
-      <div className="mt-12 w-full max-w-2xl glass-panel rounded-2xl p-6 h-48 overflow-y-auto">
-         <p className="text-xs font-semibold text-slate-500 uppercase mb-4">Sistem Konsolu</p>
-         <div className="space-y-2 font-mono text-xs">
+      <div className="mt-12 w-full max-w-2xl glass-panel rounded-2xl p-6 h-48 overflow-y-auto bg-slate-900/20 border border-white/5">
+         <p className="text-[10px] font-bold text-slate-500 uppercase mb-4 tracking-widest">Sistem Konsolu</p>
+         <div className="space-y-2 font-mono text-[10px] text-slate-400">
             {error ? (
               <p className="text-red-400">&gt; HATA: {error}</p>
             ) : isActive ? (
@@ -209,8 +209,8 @@ const LiveView: React.FC = () => {
             ) : (
               <p className="text-slate-500">&gt; Sistem hazır. Kullanıcı girişi bekleniyor...</p>
             )}
-            <p className="text-slate-500">&gt; Donanım: {navigator.mediaDevices ? 'Medya Desteği Algılandı' : 'Medya Desteği Yok'}</p>
-            <p className="text-slate-500">&gt; Sesli Komut Kontrolü: AKTİF</p>
+            <p className="text-slate-500">&gt; Donanım: {navigator.mediaDevices ? 'Desteği Var' : 'Destek Yok'}</p>
+            <p className="text-slate-500">&gt; Protokol: WebRTC / WebSocket</p>
          </div>
       </div>
     </div>

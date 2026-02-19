@@ -1,19 +1,174 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navigation from './components/Sidebar';
+import HomeView from './views/HomeView';
+import ToolsView from './views/ToolsView';
+import CreativeView from './views/CreativeView';
 import Dashboard from './views/Dashboard';
 import ChatView from './views/ChatView';
 import VisualsView from './views/VisualsView';
 import AudioView from './views/AudioView';
 import LiveView from './views/LiveView';
+import MusicView from './views/MusicView';
+import GalleryView from './views/GalleryView';
+import BuilderView from './views/BuilderView';
+import WorkflowView from './views/WorkflowView';
+import CryptoView from './views/CryptoView';
+import RequestView from './views/RequestView';
+import SystemView from './views/SystemView';
 import SettingsView from './views/SettingsView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
-import type { SyncSettings } from './types';
+import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
+import { GoogleGenAI } from '@google/genai';
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<AppView>(AppView.DASHBOARD);
+  const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+
+  // Global Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [activeModelInfo, setActiveModelInfo] = useState<string>('');
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Load chat history
+  useEffect(() => {
+    const saved = localStorage.getItem('chat_history');
+    if (saved) setChatMessages(JSON.parse(saved));
+  }, []);
+
+  // Save chat history and scroll
+  useEffect(() => {
+    localStorage.setItem('chat_history', JSON.stringify(chatMessages));
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, isChatOpen]);
+
+  const getAvailableKeys = useCallback((): ApiKeyEntry[] => {
+    const allKeys: ApiKeyEntry[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const systemKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+    if (systemKey && systemKey.length > 5) {
+      allKeys.push({
+        id: 'env-default',
+        key: systemKey,
+        label: 'Sistem Gemini',
+        provider: 'gemini',
+        modelName: 'gemini-1.5-flash',
+        isQuotaExhausted: false
+      });
+    }
+    const settingsStr = localStorage.getItem('sync_settings');
+    if (settingsStr) {
+      const settings: SyncSettings = JSON.parse(settingsStr);
+      allKeys.push(...settings.customApiKeys.filter(k => !k.isQuotaExhausted));
+    }
+    return allKeys;
+  }, []);
+
+  const markKeyAsExhausted = (id: string) => {
+    if (id === 'env-default') return;
+    const settingsStr = localStorage.getItem('sync_settings');
+    if (!settingsStr) return;
+    const settings: SyncSettings = JSON.parse(settingsStr);
+    const updatedKeys = settings.customApiKeys.map(k =>
+      k.id === id ? { ...k, isQuotaExhausted: true } : k
+    );
+    localStorage.setItem('sync_settings', JSON.stringify({ ...settings, customApiKeys: updatedKeys }));
+  };
+
+  const callOpenAiCompatible = async (keyEntry: ApiKeyEntry, text: string, history: ChatMessage[]) => {
+    const url = keyEntry.baseUrl || 'https://api.openai.com/v1';
+    const formattedHistory = history.map(m => ({
+      role: m.role === 'model' ? 'assistant' : 'user',
+      content: m.text
+    }));
+
+    const response = await fetch(`${url}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${keyEntry.key}`
+      },
+      body: JSON.stringify({
+        model: keyEntry.modelName,
+        messages: [...formattedHistory, { role: 'user', content: text }],
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || `HTTP ${response.status} hatası`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  };
+
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim() || isTyping) return;
+
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
+    setChatMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+
+    const availableKeys = getAvailableKeys();
+
+    if (availableKeys.length === 0) {
+      setChatMessages(prev => [...prev, {
+        id: Date.now().toString(), role: 'model',
+        text: 'Hata: Kullanılabilir API anahtarı kalmadı. Lütfen Ayarlar sayfasından anahtar ekleyin.',
+        timestamp: Date.now()
+      }]);
+      setIsTyping(false);
+      return;
+    }
+
+    for (const keyEntry of availableKeys) {
+      try {
+        setActiveModelInfo(`${keyEntry.provider.toUpperCase()} (${keyEntry.modelName})`);
+        let aiResponse = '';
+
+        if (keyEntry.provider === 'gemini') {
+          const genAI = new GoogleGenAI(keyEntry.key);
+          const model = genAI.getGenerativeModel({ model: keyEntry.modelName });
+          const chat = model.startChat({
+            history: chatMessages.map(m => ({
+              role: m.role === 'model' ? 'model' : 'user',
+              parts: [{ text: m.text }]
+            })),
+          });
+          const result = await chat.sendMessage(text);
+          aiResponse = result.response.text();
+        } else {
+          aiResponse = await callOpenAiCompatible(keyEntry, text, chatMessages);
+        }
+
+        const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: aiResponse, timestamp: Date.now() };
+        setChatMessages(prev => [...prev, aiMsg]);
+        break;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error(`API hatası [${keyEntry.label}]:`, error);
+        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
+          markKeyAsExhausted(keyEntry.id);
+          continue;
+        } else {
+          setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Bağlantı Hatası: ${error.message}`, timestamp: Date.now() }]);
+          break;
+        }
+      }
+    }
+
+    setIsTyping(false);
+    setActiveModelInfo('');
+  };
 
   const performGitHubSync = useCallback(async () => {
     const settingsStr = localStorage.getItem('sync_settings');
@@ -32,7 +187,6 @@ const App: React.FC = () => {
         lastAction: activeView
       };
 
-      // Robust base64 encoding for Unicode strings
       const jsonString = JSON.stringify(dataToSync, null, 2);
       const uint8Array = new TextEncoder().encode(jsonString);
       let binaryString = "";
@@ -40,11 +194,9 @@ const App: React.FC = () => {
         binaryString += String.fromCharCode(uint8Array[i]);
       }
       const content = btoa(binaryString);
-      const apiUrl = `https://api.github.com/repos/${settings.repo}/contents/${settings.path || 'backup.json'}`;
 
-      const getFile = await fetch(apiUrl, {
-        headers: { 'Authorization': `token ${settings.token}` }
-      });
+      const apiUrl = `https://api.github.com/repos/${settings.repo}/contents/${settings.path || 'backup.json'}`;
+      const getFile = await fetch(apiUrl, { headers: { 'Authorization': `token ${settings.token}` } });
 
       let sha = '';
       if (getFile.ok) {
@@ -54,23 +206,12 @@ const App: React.FC = () => {
 
       const response = await fetch(apiUrl, {
         method: 'PUT',
-        headers: {
-          'Authorization': `token ${settings.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: `Auto-sync: ${new Date().toLocaleString()}`,
-          content: content,
-          sha: sha || undefined
-        })
+        headers: { 'Authorization': `token ${settings.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `Auto-sync: ${new Date().toLocaleString()}`, content, sha: sha || undefined })
       });
 
       if (!response.ok) throw new Error('GitHub API Hatası');
-
       setSyncStatus('success');
-      settings.lastSync = Date.now();
-      localStorage.setItem('sync_settings', JSON.stringify(settings));
-
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err) {
       console.error('Sync failed:', err);
@@ -80,9 +221,7 @@ const App: React.FC = () => {
   }, [activeView]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      performGitHubSync();
-    }, 120000);
+    const interval = setInterval(() => { performGitHubSync(); }, 120000);
     return () => clearInterval(interval);
   }, [performGitHubSync]);
 
@@ -97,12 +236,10 @@ const App: React.FC = () => {
         setTimeout(() => window.dispatchEvent(new CustomEvent('voice-visuals', { detail: { prompt: payload, mode: command.startsWith('video') ? 'video' : 'image' } })), 100);
         break;
       case 'audio-tts':
-        setActiveView(AppView.AUDIO);
-        setTimeout(() => window.dispatchEvent(new CustomEvent('voice-audio', { detail: { prompt: payload, mode: 'tts' } })), 100);
-        break;
       case 'audio-remix':
+      case 'audio':
         setActiveView(AppView.AUDIO);
-        setTimeout(() => window.dispatchEvent(new CustomEvent('voice-audio', { detail: { prompt: payload, mode: 'remix' } })), 100);
+        setTimeout(() => window.dispatchEvent(new CustomEvent('voice-audio', { detail: { prompt: payload, mode: action === 'audio-remix' ? 'remix' : 'tts' } })), 100);
         break;
       case 'live-start':
         setActiveView(AppView.LIVE);
@@ -120,20 +257,33 @@ const App: React.FC = () => {
     }
   };
 
-  const renderView = () => {
-    switch (activeView) {
-      case AppView.DASHBOARD: return <Dashboard onViewChange={setActiveView} />;
-      case AppView.CHAT: return <ChatView />;
-      case AppView.VISUALS: return <VisualsView />;
-      case AppView.AUDIO: return <AudioView />;
-      case AppView.LIVE: return <LiveView />;
-      case AppView.SETTINGS: return <SettingsView onSyncNow={performGitHubSync} />;
-      default: return <Dashboard onViewChange={setActiveView} />;
+  const startVoiceRecognition = () => {
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'tr-TR';
+      recognition.onstart = () => setIsListening(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        handleSendMessage(transcript);
+        setIsListening(false);
+      };
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognition.start();
+    } else {
+      alert("Tarayıcınız ses tanımayı desteklemiyor.");
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-full bg-slate-950 overflow-hidden text-slate-100 font-sans selection:bg-indigo-500/30">
+    <div className="flex flex-col lg:flex-row h-[100dvh] w-full bg-brandDark overflow-hidden text-gray-100 font-sans selection:bg-primary/30">
       <Navigation
         activeView={activeView}
         onViewChange={setActiveView}
@@ -141,9 +291,110 @@ const App: React.FC = () => {
         onManualSync={performGitHubSync}
       />
       <main className="flex-1 flex flex-col relative overflow-hidden h-full">
-        {renderView()}
+        {activeView === AppView.HOME && <HomeView onViewChange={setActiveView} />}
+        {activeView === AppView.TOOLS && <ToolsView onViewChange={setActiveView} />}
+        {activeView === AppView.CREATIVE && <CreativeView />}
+        {activeView === AppView.DASHBOARD && <Dashboard onViewChange={setActiveView} />}
+        {activeView === AppView.CHAT && <ChatView messages={chatMessages} setMessages={setChatMessages} onSendMessage={handleSendMessage} isTyping={isTyping} activeModelInfo={activeModelInfo} />}
+        {activeView === AppView.VISUALS && <VisualsView />}
+        {activeView === AppView.AUDIO && <AudioView />}
+        {activeView === AppView.LIVE && <LiveView />}
+        {activeView === AppView.MUSIC && <MusicView />}
+        {activeView === AppView.GALLERY && <GalleryView />}
+        {activeView === AppView.BUILDER && <BuilderView />}
+        {activeView === AppView.WORKFLOW && <WorkflowView />}
+        {activeView === AppView.CRYPTO && <CryptoView />}
+        {activeView === AppView.REQUESTS && <RequestView />}
+        {activeView === AppView.SYSTEM && <SystemView />}
+        {activeView === AppView.SETTINGS && <SettingsView onSyncNow={performGitHubSync} />}
       </main>
+
       <VoiceAssistant onCommand={handleVoiceCommand} />
+
+      {/* Global Quick Chat Widget */}
+      <div className="fixed bottom-20 right-6 lg:bottom-6 lg:right-6 w-80 z-[60]" id="quick-chat">
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className={`ml-auto flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
+            isChatOpen ? 'bg-surface text-primary rotate-90 border border-white/10' : 'bg-primary text-white hover:scale-110'
+          }`}
+        >
+          {isChatOpen ? <i className="fa-solid fa-xmark text-xl"></i> : <i className="fa-solid fa-comment-dots text-xl"></i>}
+        </button>
+
+        {isChatOpen && (
+          <div className="absolute bottom-20 right-0 w-80 bg-surface border border-white/10 rounded-custom shadow-2xl flex flex-col overflow-hidden max-h-[500px] animate-in slide-in-from-bottom-8 fade-in duration-300">
+            <div className="p-4 bg-primary/10 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-bold text-xs uppercase tracking-wider">Hızlı Sohbet</span>
+              </div>
+              <button onClick={() => setIsChatOpen(false)} className="text-gray-500 hover:text-white transition-colors">
+                <i className="fa-solid fa-xmark text-sm"></i>
+              </button>
+            </div>
+
+            <div className="flex-1 p-4 space-y-4 overflow-y-auto min-h-[300px] scrollbar-hide bg-brandDark/30">
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className={`flex flex-col gap-1 ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2`}>
+                   <span className={`text-[9px] font-bold uppercase ${msg.role === 'user' ? 'text-gray-500 mr-1' : 'text-primary ml-1'}`}>
+                    {msg.role === 'user' ? 'Sen' : 'Asistan'}
+                  </span>
+                  <div className={`p-3 rounded-xl text-xs max-w-[90%] shadow-sm ${
+                    msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white/5 text-gray-200 border border-white/5 rounded-tl-none'
+                  }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-white/5 rounded-full px-3 py-1 border border-white/5 flex gap-1 items-center">
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                  </div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {isListening && (
+              <div className="px-4 py-2 flex items-center justify-center gap-1 bg-primary/5 border-t border-white/5">
+                <span className="text-[9px] text-primary font-bold uppercase mr-2 animate-pulse font-mono">Dinleniyor...</span>
+                <div className="flex items-center gap-0.5 h-3">
+                  <div className="w-0.5 bg-primary animate-music-bar-1"></div>
+                  <div className="w-0.5 bg-primary animate-music-bar-2"></div>
+                  <div className="w-0.5 bg-primary animate-music-bar-3"></div>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={(e) => {
+                e.preventDefault();
+                const input = (e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement);
+                handleSendMessage(input.value);
+                input.value = '';
+              }} className="p-4 border-t border-white/5 bg-surface">
+              <div className="flex gap-2">
+                <input
+                  name="chatInput"
+                  autoComplete="off"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs focus:border-primary outline-none transition-all placeholder:text-gray-600 text-white"
+                  placeholder="Komut yazın..."
+                  type="text"
+                />
+                <button type="button" onClick={startVoiceRecognition} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isListening ? 'bg-primary/20 text-primary' : 'bg-white/5 text-gray-500 hover:text-primary'}`}>
+                   <i className="fa-solid fa-microphone text-xs"></i>
+                </button>
+                <button type="submit" className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl transition-all active:scale-90">
+                   <i className="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

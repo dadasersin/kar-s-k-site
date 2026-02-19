@@ -1,29 +1,20 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
-import type { ChatMessage, SyncSettings, ApiKeyEntry } from '../types';
+import React, { useRef, useEffect, useState } from 'react';
+import type { ChatMessage } from '../types';
 
-const ChatView: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+interface ChatViewProps {
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  onSendMessage: (text: string) => Promise<void>;
+  isTyping: boolean;
+  activeModelInfo: string;
+}
+
+const ChatView: React.FC<ChatViewProps> = ({ messages, setMessages, onSendMessage, isTyping, activeModelInfo }) => {
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [activeModelInfo, setActiveModelInfo] = useState<string>('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('chat_history');
-    if (saved) setMessages(JSON.parse(saved));
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleVoice = (e: any) => {
-      if (e.detail) triggerSend(e.detail);
-    };
-    window.addEventListener('voice-chat', handleVoice);
-    return () => window.removeEventListener('voice-chat', handleVoice);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('chat_history', JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
@@ -32,143 +23,14 @@ const ChatView: React.FC = () => {
     }
   }, [messages, isTyping]);
 
-  const getAvailableKeys = (): ApiKeyEntry[] => {
-    const allKeys: ApiKeyEntry[] = [];
-
-    // 1. In browser, we might use import.meta.env
-    // For now we assume a system key might exist
+  useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const systemKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (systemKey && systemKey.length > 5) {
-      allKeys.push({
-        id: 'env-default',
-        key: systemKey,
-        label: 'Sistem Gemini',
-        provider: 'gemini',
-        modelName: 'gemini-1.5-flash',
-        isQuotaExhausted: false
-      });
-    }
-
-    // 2. From settings
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (settingsStr) {
-      const settings: SyncSettings = JSON.parse(settingsStr);
-      allKeys.push(...settings.customApiKeys.filter(k => !k.isQuotaExhausted));
-    }
-
-    return allKeys;
-  };
-
-  const markKeyAsExhausted = (id: string) => {
-    if (id === 'env-default') return;
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (!settingsStr) return;
-    const settings: SyncSettings = JSON.parse(settingsStr);
-    const updatedKeys = settings.customApiKeys.map(k =>
-      k.id === id ? { ...k, isQuotaExhausted: true } : k
-    );
-    localStorage.setItem('sync_settings', JSON.stringify({ ...settings, customApiKeys: updatedKeys }));
-  };
-
-  const callOpenAiCompatible = async (keyEntry: ApiKeyEntry, text: string) => {
-    const url = keyEntry.baseUrl || 'https://api.openai.com/v1';
-    const history = messages.map(m => ({
-      role: m.role === 'model' ? 'assistant' : 'user',
-      content: m.text
-    }));
-
-    const response = await fetch(`${url}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${keyEntry.key}`
-      },
-      body: JSON.stringify({
-        model: keyEntry.modelName,
-        messages: [...history, { role: 'user', content: text }],
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || `HTTP ${response.status} hatası`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  };
-
-  const triggerSend = async (text: string) => {
-    if (!text.trim() || isTyping) return;
-
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text: text, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsTyping(true);
-
-    const availableKeys = getAvailableKeys();
-
-    if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(), role: 'model',
-        text: 'Hata: Kullanılabilir API anahtarı kalmadı. Lütfen Ayarlar sayfasından anahtar ekleyin veya kotaları sıfırlayın.',
-        timestamp: Date.now()
-      }]);
-      setIsTyping(false);
-      return;
-    }
-
-    let success = false;
-    for (const keyEntry of availableKeys) {
-      try {
-        setActiveModelInfo(`${keyEntry.provider.toUpperCase()} (${keyEntry.modelName})`);
-        let aiResponse = '';
-
-        if (keyEntry.provider === 'gemini') {
-          const ai = new GoogleGenAI({ apiKey: keyEntry.key });
-          // Note: using the newer generation API pattern
-          const model = ai.getGenerativeModel({ model: keyEntry.modelName });
-          const chat = model.startChat({
-            history: messages.map(m => ({
-              role: m.role === 'model' ? 'model' : 'user',
-              parts: [{ text: m.text }]
-            })),
-            generationConfig: {
-              maxOutputTokens: 2000,
-            },
-          });
-          const result = await chat.sendMessage(text);
-          aiResponse = result.response.text();
-        } else {
-          aiResponse = await callOpenAiCompatible(keyEntry, text);
-        }
-
-        const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: aiResponse, timestamp: Date.now() };
-        setMessages(prev => [...prev, aiMsg]);
-        success = true;
-        break;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        console.error(`Havuz hatası [${keyEntry.label}]:`, error);
-        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota') || error.message?.toLowerCase().includes('rate limit')) {
-          markKeyAsExhausted(keyEntry.id);
-          continue;
-        } else {
-          setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Bağlantı Hatası (${keyEntry.label}): ${error.message}`, timestamp: Date.now() }]);
-          break;
-        }
-      }
-    }
-
-    if (!success) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: 'Tüm sağlayıcılar denendi ancak cevap alınamadı. Lütfen anahtarlarınızı kontrol edin.', timestamp: Date.now() }]);
-    }
-
-    setIsTyping(false);
-    setActiveModelInfo('');
-  };
+    const handleVoice = (e: any) => {
+      if (e.detail) onSendMessage(e.detail);
+    };
+    window.addEventListener('voice-chat', handleVoice);
+    return () => window.removeEventListener('voice-chat', handleVoice);
+  }, [onSendMessage]);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-950 h-full overflow-hidden relative">
@@ -228,13 +90,13 @@ const ChatView: React.FC = () => {
 
       {/* Giriş Kutusu */}
       <div className="absolute bottom-0 left-0 right-0 p-4 pb-28 md:pb-8 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent z-20">
-        <form onSubmit={(e) => { e.preventDefault(); triggerSend(input); }} className="max-w-4xl mx-auto relative group">
+        <form onSubmit={(e) => { e.preventDefault(); onSendMessage(input); setInput(''); }} className="max-w-4xl mx-auto relative group">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Dilediğinizi sorun..."
-            className="w-full bg-slate-900/80 backdrop-blur-2xl border border-slate-800/50 rounded-2xl pl-5 pr-14 py-4 text-sm focus:border-indigo-500/50 outline-none transition-all shadow-2xl placeholder:text-slate-600"
+            className="w-full bg-slate-900/80 backdrop-blur-2xl border border-slate-800/50 rounded-2xl pl-5 pr-14 py-4 text-sm focus:border-indigo-500/50 outline-none transition-all shadow-2xl placeholder:text-slate-600 text-white"
           />
           <button
             type="submit"

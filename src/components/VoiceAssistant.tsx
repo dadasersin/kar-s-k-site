@@ -71,7 +71,22 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ onCommand }) => {
     else if (text.includes('canlı') && (text.includes('durdur') || text.includes('kapat') || text.includes('bitir'))) {
       onCommand('live', 'live-stop', '');
     }
-    // Gezinme Komutu
+    // Gezinme Komutları
+    else if (text.includes('ana sayfa')) onCommand('nav', 'nav', 'home');
+    else if (text.includes('araçlar')) onCommand('nav', 'nav', 'tools');
+    else if (text.includes('sahne')) onCommand('nav', 'nav', 'creative');
+    else if (text.includes('panel')) onCommand('nav', 'nav', 'dashboard');
+    else if (text.includes('sohbet')) onCommand('nav', 'nav', 'chat');
+    else if (text.includes('stüdyo')) onCommand('nav', 'nav', 'visuals');
+    else if (text.includes('müzik')) onCommand('nav', 'nav', 'music');
+    else if (text.includes('galeri')) onCommand('nav', 'nav', 'gallery');
+    else if (text.includes('workflow') || text.includes('akışı')) onCommand('nav', 'nav', 'workflow');
+    else if (text.includes('inşa')) onCommand('nav', 'nav', 'builder');
+    else if (text.includes('kripto')) onCommand('nav', 'nav', 'crypto');
+    else if (text.includes('görev')) onCommand('nav', 'nav', 'requests');
+    else if (text.includes('sistem')) onCommand('nav', 'nav', 'system');
+    else if (text.includes('ayar')) onCommand('nav', 'nav', 'settings');
+    // Genel Gezinme
     else if (text.includes('aç') || text.includes('git')) {
       onCommand('nav', 'nav', text);
     }
@@ -90,22 +105,22 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ onCommand }) => {
   if (!recognitionRef.current) return null;
 
   return (
-    <div className="fixed bottom-20 right-6 md:bottom-8 md:right-8 z-[100] flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 right-24 lg:bottom-8 lg:right-24 z-[100] flex flex-col items-end gap-3">
       {transcript && (
-        <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-2xl text-xs text-indigo-400 font-medium animate-in slide-in-from-bottom-2 fade-in">
+        <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800 px-4 py-2 rounded-2xl text-xs text-primary font-medium animate-in slide-in-from-bottom-2 fade-in">
           "{transcript}"
         </div>
       )}
       <button
         onClick={toggleListening}
-        className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
           isListening
             ? 'bg-red-500 scale-110 shadow-red-500/40'
-            : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/40'
+            : 'bg-primary hover:brightness-110 shadow-primary/40'
         }`}
       >
         <div className={`absolute inset-0 rounded-full bg-current opacity-20 ${isListening ? 'animate-ping' : ''}`}></div>
-        <i className={`fa-solid ${isListening ? 'fa-stop' : 'fa-microphone'} text-xl text-white`}></i>
+        <i className={`fa-solid ${isListening ? 'fa-stop' : 'fa-microphone'} text-lg text-white`}></i>
       </button>
     </div>
   );

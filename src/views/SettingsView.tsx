@@ -87,36 +87,36 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-slate-950 pb-32">
+    <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-brandDark pb-32">
       <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header>
-          <h1 className="text-3xl font-black mb-2 flex items-center gap-3">
-             <i className="fa-solid fa-microchip text-indigo-500"></i>
-             Akıllı Yapay Zeka Havuzu
+          <h1 className="text-3xl font-black mb-2 flex items-center gap-3 text-white">
+             <i className="fa-solid fa-sliders text-primary"></i>
+             Sistem Yapılandırması
           </h1>
-          <p className="text-slate-400 text-sm">DeepSeek, Grok, Gemini veya OpenAI anahtarlarınızı ekleyin, sistem otomatik yönetsin.</p>
+          <p className="text-slate-400 text-sm">API havuzunu yönetin ve verilerinizi GitHub ile senkronize edin.</p>
         </header>
 
         <section className="glass-panel p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+            <h3 className="text-lg font-bold flex items-center gap-2 text-white">
               <i className="fa-solid fa-key text-amber-500"></i>
               Aktif Anahtarlar
             </h3>
-            <button onClick={resetQuotas} className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300">Kotaları Yenile</button>
+            <button onClick={resetQuotas} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-blue-400 transition-colors">Kotaları Yenile</button>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
             {settings.customApiKeys.length === 0 ? (
               <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-3xl opacity-30">
-                <i className="fa-solid fa-vault text-3xl mb-3"></i>
-                <p className="text-xs uppercase font-bold tracking-widest">Henüz bir anahtar eklemediniz</p>
+                <i className="fa-solid fa-vault text-3xl mb-3 text-white"></i>
+                <p className="text-xs uppercase font-bold tracking-widest text-white">Henüz bir anahtar eklemediniz</p>
               </div>
             ) : (
               settings.customApiKeys.map(k => (
                 <div key={k.id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${k.isQuotaExhausted ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-900 border-slate-800'}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.isQuotaExhausted ? 'bg-slate-800' : 'bg-indigo-600/20 text-indigo-400'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.isQuotaExhausted ? 'bg-slate-800' : 'bg-primary/20 text-primary'}`}>
                       <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-sm`}></i>
                     </div>
                     <div>
@@ -143,7 +143,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                   <select
                     value={provider}
                     onChange={(e) => handleProviderChange(e.target.value as ApiProvider)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                   >
                     <option value="gemini">Google Gemini</option>
                     <option value="deepseek">DeepSeek AI</option>
@@ -159,7 +159,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                     value={modelName}
                     onChange={(e) => setModelName(e.target.value)}
                     placeholder="örn: deepseek-chat"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                   />
                 </div>
              </div>
@@ -172,7 +172,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                    value={customUrl}
                    onChange={(e) => setCustomUrl(e.target.value)}
                    placeholder="https://api.deepseek.com/v1"
-                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500"
+                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                  />
                </div>
              )}
@@ -182,19 +182,19 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                   type="text"
                   value={keyLabel}
                   onChange={(e) => setKeyLabel(e.target.value)}
-                  placeholder="Etiket (örn: DeepSeek Anahtarı)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500"
+                  placeholder="Etiket (örn: Gemini Anahtarı)"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                 />
                 <input
                   type="password"
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                   placeholder="API Key"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                 />
              </div>
 
-             <button onClick={addApiKey} className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">
+             <button onClick={addApiKey} className="w-full py-4 bg-primary hover:brightness-110 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">
                HAVUZA EKLE
              </button>
           </div>
@@ -202,8 +202,8 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
 
         <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
            <div className="flex items-center gap-4">
-              <i className="fa-brands fa-github text-3xl"></i>
-              <h3 className="text-lg font-bold">Bulut Senkronizasyonu</h3>
+              <i className="fa-brands fa-github text-3xl text-white"></i>
+              <h3 className="text-lg font-bold text-white">Bulut Senkronizasyonu</h3>
            </div>
            <p className="text-xs text-slate-400">Tüm anahtar ve sohbet geçmişinizi kendi GitHub deponuzda yedekleyin.</p>
 
@@ -213,7 +213,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                   type="checkbox"
                   checked={settings.enabled}
                   onChange={(e) => setSettings({...settings, enabled: e.target.checked})}
-                  className="w-5 h-5 accent-indigo-500"
+                  className="w-5 h-5 accent-primary"
                 />
                 <label className="text-sm font-bold text-slate-300">GitHub Senkronizasyonunu Etkinleştir</label>
               </div>
@@ -226,7 +226,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                     value={settings.token}
                     onChange={(e) => setSettings({...settings, token: e.target.value})}
                     placeholder="ghp_..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
                   />
                 </div>
                 <div className="space-y-2">
@@ -236,7 +236,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                     value={settings.repo}
                     onChange={(e) => setSettings({...settings, repo: e.target.value})}
                     placeholder="dadasersin/backup-repo"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                 AYARLARI KAYDET
               </button>
 
-              <button type="button" onClick={onSyncNow} className="w-full py-3 border border-indigo-500/30 text-indigo-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-500/10 transition-all">
+              <button type="button" onClick={onSyncNow} className="w-full py-3 border border-primary/30 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-all">
                 ŞİMDİ SENKRONİZE ET
               </button>
            </form>
