@@ -19,6 +19,8 @@ import SystemView from './views/SystemView';
 import AutomationView from './views/AutomationView';
 import PromptLibraryView from './views/PromptLibraryView';
 import AnalyticsView from './views/AnalyticsView';
+import GoogleAppsView from './views/GoogleAppsView';
+import DockerConfigView from './views/DockerConfigView';
 import SettingsView from './views/SettingsView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
@@ -323,6 +325,8 @@ const App: React.FC = () => {
         {activeView === AppView.AUTOMATION && <AutomationView />}
         {activeView === AppView.PROMPTS && <PromptLibraryView />}
         {activeView === AppView.ANALYTICS && <AnalyticsView />}
+        {activeView === AppView.GOOGLE_APPS && <GoogleAppsView />}
+        {activeView === AppView.DOCKER_AI && <DockerConfigView />}
         {activeView === AppView.SETTINGS && <SettingsView onSyncNow={performGitHubSync} />}
       </main>
 

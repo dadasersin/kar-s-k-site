@@ -17,6 +17,8 @@ export enum AppView {
   AUTOMATION = 'automation',
   PROMPTS = 'prompts',
   ANALYTICS = 'analytics',
+  GOOGLE_APPS = 'google_apps',
+  DOCKER_AI = 'docker_ai',
   SETTINGS = 'settings'
 }
 
@@ -41,6 +43,18 @@ export interface SystemRequest {
   status: 'warning' | 'success' | 'danger';
   statusText: string;
   priority: 'high' | 'medium' | 'low';
+}
+
+export interface AnalysisResult {
+  explanation: string;
+  solution: string;
+  files: GeneratedFile[];
+}
+
+export interface GeneratedFile {
+  name: string;
+  language: string;
+  content: string;
 }
 
 export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
