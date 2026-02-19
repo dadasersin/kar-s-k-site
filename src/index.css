@@ -55,6 +55,22 @@
       to { transform: rotate(360deg); }
     }
 
+    .glass-panel {
+      @apply bg-slate-900/40 backdrop-blur-2xl border border-slate-800/50 shadow-2xl;
+    }
+
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
 .hidden-section {
   display: none;
 }
