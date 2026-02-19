@@ -32,6 +32,7 @@ import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -59,39 +60,6 @@ const App: React.FC = () => {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isChatOpen]);
-
-  const getAvailableKeys = useCallback((): ApiKeyEntry[] => {
-    const allKeys: ApiKeyEntry[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const systemKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (systemKey && systemKey.length > 5) {
-      allKeys.push({
-        id: 'env-default',
-        key: systemKey,
-        label: 'Sistem Gemini',
-        provider: 'gemini',
-        modelName: 'gemini-3-flash-preview',
-        isQuotaExhausted: false
-      });
-    }
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (settingsStr) {
-      const settings: SyncSettings = JSON.parse(settingsStr);
-      allKeys.push(...settings.customApiKeys.filter(k => !k.isQuotaExhausted));
-    }
-    return allKeys;
-  }, []);
-
-  const markKeyAsExhausted = (id: string) => {
-    if (id === 'env-default') return;
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (!settingsStr) return;
-    const settings: SyncSettings = JSON.parse(settingsStr);
-    const updatedKeys = settings.customApiKeys.map(k =>
-      k.id === id ? { ...k, isQuotaExhausted: true } : k
-    );
-    localStorage.setItem('sync_settings', JSON.stringify({ ...settings, customApiKeys: updatedKeys }));
-  };
 
   const callOpenAiCompatible = async (keyEntry: ApiKeyEntry, text: string, history: ChatMessage[]) => {
     const url = keyEntry.baseUrl || 'https://api.openai.com/v1';

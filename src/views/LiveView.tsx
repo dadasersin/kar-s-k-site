@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
 
 const LiveView: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
@@ -86,6 +87,12 @@ const LiveView: React.FC = () => {
         throw new Error('Tarayıcınız ses kaydını desteklemiyor.');
       }
 
+      const availableKeys = getAvailableKeys('gemini');
+
+      if (availableKeys.length === 0) {
+        throw new Error("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(err => {
         if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           throw new Error('Mikrofon bulunamadı. Lütfen bir mikrofon bağlayıp tekrar deneyin.');
@@ -98,30 +105,35 @@ const LiveView: React.FC = () => {
 
       mediaStreamRef.current = stream;
 
-      const settingsStr = localStorage.getItem('sync_settings');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiKey: string = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geminiKey = settings.customApiKeys.find((k: any) => k.provider === 'gemini')?.key;
-        if (geminiKey) apiKey = geminiKey;
+      let success = false;
+      for (const keyEntry of availableKeys) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const genAI = new GoogleGenerativeAI(keyEntry.key);
+
+          // Note: The live feature is simulated here
+          console.log(`Starting Live Session with ${keyEntry.label} (Simulated)...`);
+          console.log("Using model: gemini-1.5-flash-live");
+          await new Promise(r => setTimeout(r, 1500));
+
+          setIsActive(true);
+          setIsConnecting(false);
+          success = true;
+          break;
+        } catch (err: any) {
+          console.error(`Live session key error [${keyEntry.label}]:`, err);
+          if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
+            markKeyAsExhausted(keyEntry.id);
+            continue;
+          } else {
+            throw err;
+          }
+        }
       }
 
-      if (!apiKey) {
-        throw new Error("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
+      if (!success) {
+        throw new Error("Tüm API anahtarlarının kotası dolmuş veya bağlantı hatası oluştu.");
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const genAI = new GoogleGenerativeAI(apiKey);
-
-      // Note: The live feature is simulated here
-      console.log("Starting Live Session (Simulated)...");
-      console.log("Using model: gemini-2.5-flash-native-audio-preview-12-2025");
-      await new Promise(r => setTimeout(r, 1500));
-
-      setIsActive(true);
-      setIsConnecting(false);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

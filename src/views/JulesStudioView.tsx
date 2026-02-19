@@ -20,7 +20,7 @@ const JulesStudioView: React.FC = () => {
       type,
       content: type === 'text' ? 'AI Üretimi Metin...' :
                type === 'code' ? '// AI Tarafından Optimize Edilen Kod' :
-               type === 'image' ? 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=400' :
+               type === 'image' ? `https://picsum.photos/seed/${Math.random()}/400/300` :
                'Audio stream data...',
       provider: 'Jules Omni-Core',
       timestamp: Date.now()

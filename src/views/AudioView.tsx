@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
 
 const AudioView: React.FC = () => {
   const [mode, setMode] = useState<'tts' | 'remix'>('remix');
@@ -125,54 +126,59 @@ const AudioView: React.FC = () => {
   const triggerProcess = async (currentText: string) => {
     setIsSynthesizing(true);
     setAudioResult(null);
-    try {
-      const settingsStr = localStorage.getItem('sync_settings');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiKey: any = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geminiKey = settings.customApiKeys?.find((k: any) => k.provider === 'gemini')?.key;
-        if (geminiKey) apiKey = geminiKey;
-      }
 
-      if (!apiKey) {
-        alert("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
-        setIsSynthesizing(false);
-        return;
-      }
+    const availableKeys = getAvailableKeys('gemini');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ai: any = new GoogleGenerativeAI(apiKey);
+    if (availableKeys.length === 0) {
+      alert("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
+      setIsSynthesizing(false);
+      return;
+    }
 
-      if (mode === 'tts' || (currentText && currentText.length > 0)) {
-        await ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).generateContent([
-          currentText || text
-        ]);
-      } else {
-        if (!selectedAudio) {
+    let success = false;
+    for (const keyEntry of availableKeys) {
+      try {
+        const ai = new GoogleGenerativeAI(keyEntry.key);
+
+        if (mode === 'tts' || (currentText && currentText.length > 0)) {
+          await ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).generateContent([
+            currentText || text
+          ]);
+        } else {
+          if (!selectedAudio) {
             alert("Lütfen önce bir ses dosyası yükleyin.");
             setIsSynthesizing(false);
             return;
+          }
+          await ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }).generateContent([
+            { inlineData: { mimeType: selectedAudio.mimeType, data: selectedAudio.data } },
+            { text: `Bu ses dosyasını şu talimata göre remiksle ve değiştir: ${remixPrompt}` }
+          ]);
         }
-        await ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }).generateContent([
-          { inlineData: { mimeType: selectedAudio.mimeType, data: selectedAudio.data } },
-          { text: `Bu ses dosyasını şu talimata göre remiksle ve değiştir: ${remixPrompt}` }
-        ]);
+
+        console.log("Mocking audio generation success for demo");
+        await new Promise(r => setTimeout(r, 2000));
+        alert("Ses işleme başarıyla tamamlandı (Demo modu).");
+        setAudioResult("https://www.w3schools.com/html/horse.mp3");
+        success = true;
+        break;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error(`Ses Hatası [${keyEntry.label}]:`, error);
+        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
+          markKeyAsExhausted(keyEntry.id);
+          continue;
+        } else {
+          alert(`Hata: ${error.message}`);
+          break;
+        }
       }
-
-      console.log("Mocking audio generation success for demo");
-      await new Promise(r => setTimeout(r, 2000));
-      alert("Ses işleme başarıyla tamamlandı (Demo modu).");
-      setAudioResult("https://www.w3schools.com/html/horse.mp3");
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error('Ses Hatası:', error);
-      alert(`Hata: ${error.message}`);
-    } finally {
-      setIsSynthesizing(false);
     }
+
+    if (!success && availableKeys.length > 0) {
+      alert("Tüm API anahtarlarının kotası dolmuş veya bağlantı hatası oluştu.");
+    }
+    setIsSynthesizing(false);
   };
 
   const processAudio = () => {

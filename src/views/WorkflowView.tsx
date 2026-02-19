@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
 import type { WorkflowNode, WorkflowLink } from '../types';
 
 const WorkflowView: React.FC = () => {
@@ -63,34 +64,43 @@ const WorkflowView: React.FC = () => {
     addLog("İş akışı tasarlanıyor...");
 
     try {
-      const settingsStr = localStorage.getItem('sync_settings');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiKey: string = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geminiKey = settings.customApiKeys?.find((k: any) => k.provider === 'gemini')?.key;
-        if (geminiKey) apiKey = geminiKey;
-      }
+      const availableKeys = getAvailableKeys('gemini');
 
-      if (apiKey) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const genAI: any = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-        const prompt = `Aşağıdaki tanıma göre bir n8n benzeri iş akışı JSON'u oluştur. JSON şu yapıda olmalı:
-          { "nodes": [ { "id": "1", "name": "Node Adı", "type": "node.type", "position": [x, y], "parameters": {} } ],
-            "links": [ { "fromNode": "1", "toNode": "2" } ] }
+      if (availableKeys.length > 0) {
+        let success = false;
+        for (const keyEntry of availableKeys) {
+          try {
+            const genAI = new GoogleGenerativeAI(keyEntry.key);
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const prompt = `Aşağıdaki tanıma göre bir n8n benzeri iş akışı JSON'u oluştur. JSON şu yapıda olmalı:
+              { "nodes": [ { "id": "1", "name": "Node Adı", "type": "node.type", "position": [x, y], "parameters": {} } ],
+                "links": [ { "fromNode": "1", "toNode": "2" } ] }
 
-          Kullanıcı Tanımı: ${aiPrompt}`;
+              Kullanıcı Tanımı: ${aiPrompt}`;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          processJson(jsonMatch[0]);
-          addLog("✅ AI ile iş akışı başarıyla oluşturuldu.");
-        } else {
-           throw new Error("AI geçerli bir JSON döndürmedi.");
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              processJson(jsonMatch[0]);
+              addLog("✅ AI ile iş akışı başarıyla oluşturuldu.");
+            } else {
+              throw new Error("AI geçerli bir JSON döndürmedi.");
+            }
+            success = true;
+            break;
+          } catch (error: any) {
+            console.error(`Workflow AI error [${keyEntry.label}]:`, error);
+            if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
+              markKeyAsExhausted(keyEntry.id);
+              continue;
+            } else {
+              throw error;
+            }
+          }
+        }
+        if (!success && availableKeys.length > 0) {
+          addLog("❌ HATA: Tüm API anahtarlarının kotası dolmuş.");
         }
       } else {
         // Simulation Mode

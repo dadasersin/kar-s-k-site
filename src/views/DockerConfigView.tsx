@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
 import type { AnalysisResult } from "../types";
 
 const DockerConfigView: React.FC = () => {
@@ -18,23 +19,22 @@ error: failed to solve: failed to read dockerfile: open Dockerfile: no such file
     setLoading(true);
     setResult(null);
     setErrorMessage(null);
-    try {
-      const settingsStr = localStorage.getItem('sync_settings');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiKey: string = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const geminiKey = settings.customApiKeys?.find((k: any) => k.provider === 'gemini')?.key;
-        if (geminiKey) apiKey = geminiKey;
-      }
 
-      if (!apiKey) throw new Error("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
+    const availableKeys = getAvailableKeys('gemini');
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    if (availableKeys.length === 0) {
+      setErrorMessage("Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.");
+      setLoading(false);
+      return;
+    }
 
-      const prompt = `
+    let success = false;
+    for (const keyEntry of availableKeys) {
+      try {
+        const genAI = new GoogleGenerativeAI(keyEntry.key);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const prompt = `
         Analyze the following Docker build error and provide a detailed explanation, a solution, and the necessary configuration files (Dockerfile, docker-compose.yml, etc.).
         User Context: ${contextInput}
         Error Message: ${errorInput}
@@ -73,15 +73,27 @@ error: failed to solve: failed to read dockerfile: open Dockerfile: no such file
         }
       });
 
-      const data = JSON.parse(response.response.text());
-      setResult(data);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error(err);
-      setErrorMessage(err.message || 'Analiz başarısız oldu.');
-    } finally {
-      setLoading(false);
+        const data = JSON.parse(response.response.text());
+        setResult(data);
+        success = true;
+        break;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error(`Analysis error [${keyEntry.label}]:`, err);
+        if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
+          markKeyAsExhausted(keyEntry.id);
+          continue;
+        } else {
+          setErrorMessage(err.message || 'Analiz başarısız oldu.');
+          break;
+        }
+      }
     }
+
+    if (!success && availableKeys.length > 0 && !errorMessage) {
+      setErrorMessage("Tüm API anahtarlarının kotası dolmuş veya bağlantı hatası oluştu.");
+    }
+    setLoading(false);
   };
 
   return (

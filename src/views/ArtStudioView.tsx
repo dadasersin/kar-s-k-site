@@ -76,17 +76,31 @@ const ArtStudioView: React.FC = () => {
     ctx.stroke();
   };
 
-  const generateAIArt = () => {
-    if (!aiPrompt.trim()) return;
-    const newArtwork: Artwork = {
-      id: Date.now().toString(),
-      name: `AI: ${aiPrompt}`,
-      type: 'digital',
-      imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=400',
-      metadata: { created: new Date(), tools: ['AI Sentez'], style: artStyle }
-    };
-    setArtworks([...artworks, newArtwork]);
-    setAiPrompt('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateAIArt = async () => {
+    if (!aiPrompt.trim() || isGenerating) return;
+    setIsGenerating(true);
+
+    try {
+      // In a real app, this would call VisualsView logic or a shared utility
+      // For ArtStudio, we'll simulate a themed generation
+      await new Promise(r => setTimeout(r, 2000));
+
+      const newArtwork: Artwork = {
+        id: Date.now().toString(),
+        name: `AI: ${aiPrompt}`,
+        type: 'digital',
+        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(aiPrompt)}/800/600`,
+        metadata: { created: new Date(), tools: ['AI Sentez'], style: artStyle }
+      };
+      setArtworks([newArtwork, ...artworks]);
+      setAiPrompt('');
+    } catch (e) {
+      alert("Sanat üretimi sırasında bir hata oluştu.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -137,7 +151,13 @@ const ArtStudioView: React.FC = () => {
               <select value={artStyle} onChange={(e) => setArtStyle(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm">
                 {artStyles.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
-              <button onClick={generateAIArt} className="w-full py-3 bg-primary text-white font-black uppercase tracking-widest rounded-xl">ÜRET</button>
+              <button
+                onClick={generateAIArt}
+                disabled={isGenerating}
+                className="w-full py-3 bg-primary text-white font-black uppercase tracking-widest rounded-xl disabled:opacity-50"
+              >
+                {isGenerating ? 'ÜRETİLİYOR...' : 'ÜRET'}
+              </button>
             </div>
           </div>
         </div>
