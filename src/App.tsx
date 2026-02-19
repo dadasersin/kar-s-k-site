@@ -312,7 +312,7 @@ const App: React.FC = () => {
         syncStatus={syncStatus}
         onManualSync={performGitHubSync}
       />
-      <main className="flex-1 flex flex-col relative overflow-hidden h-full">
+      <main className="flex-1 flex flex-col relative overflow-hidden h-full ml-20 lg:ml-64 transition-all duration-300">
         {activeView === AppView.HOME && <HomeView onViewChange={setActiveView} />}
         {activeView === AppView.TOOLS && <ToolsView onViewChange={setActiveView} />}
         {activeView === AppView.CREATIVE && <CreativeView />}
