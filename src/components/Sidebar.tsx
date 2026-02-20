@@ -11,6 +11,7 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
+    { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
     { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
@@ -22,6 +23,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.WORKFLOW, label: 'Neural Workflow', icon: 'fa-diagram-project' },
     { id: AppView.BUILDER, label: 'Otonom İnşa', icon: 'fa-hammer' },
     { id: AppView.DOCKER_AI, label: 'Docker AI', icon: 'fa-server' },
+    { id: AppView.BORSA, label: 'İstanbul Borsa', icon: 'fa-arrow-trend-up' },
     { id: AppView.CRYPTO, label: 'Kripto Bot', icon: 'fa-bitcoin-sign' },
     { id: AppView.AUTOMATION, label: 'Otomasyon Hub', icon: 'fa-robot' },
     { id: AppView.SOCIAL_MEDIA, label: 'Sosyal Medya', icon: 'fa-share-nodes' },

@@ -28,6 +28,7 @@ import GameDevView from './views/GameDevView';
 import SecurityCenterView from './views/SecurityCenterView';
 import IntegrationsHubView from './views/IntegrationsHubView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
+import BorsaView from './views/BorsaView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -239,8 +240,38 @@ const App: React.FC = () => {
         setTimeout(() => window.dispatchEvent(new CustomEvent('voice-live-stop')), 100);
         break;
       case 'nav': {
-        const targetView = Object.values(AppView).find(v => payload.toLowerCase().includes(v.toLowerCase()));
-        if (targetView) setActiveView(targetView as AppView);
+        const p = payload.toLowerCase();
+        // Turkish keyword mapping
+        if (p.includes('ana sayfa')) setActiveView(AppView.HOME);
+        else if (p.includes('araçlar')) setActiveView(AppView.TOOLS);
+        else if (p.includes('kontrol') || p.includes('panel')) setActiveView(AppView.DASHBOARD);
+        else if (p.includes('sohbet')) setActiveView(AppView.CHAT);
+        else if (p.includes('görsel') || p.includes('resim')) setActiveView(AppView.VISUALS);
+        else if (p.includes('ses') || p.includes('müzik')) setActiveView(AppView.AUDIO);
+        else if (p.includes('canlı')) setActiveView(AppView.LIVE);
+        else if (p.includes('sanat')) setActiveView(AppView.ART_STUDIO);
+        else if (p.includes('oyun')) setActiveView(AppView.GAME_DEV);
+        else if (p.includes('workflow') || p.includes('akış')) setActiveView(AppView.WORKFLOW);
+        else if (p.includes('inşa')) setActiveView(AppView.BUILDER);
+        else if (p.includes('docker')) setActiveView(AppView.DOCKER_AI);
+        else if (p.includes('borsa')) setActiveView(AppView.BORSA);
+        else if (p.includes('kripto')) setActiveView(AppView.CRYPTO);
+        else if (p.includes('otomasyon')) setActiveView(AppView.AUTOMATION);
+        else if (p.includes('sosyal')) setActiveView(AppView.SOCIAL_MEDIA);
+        else if (p.includes('google')) setActiveView(AppView.GOOGLE_APPS);
+        else if (p.includes('entegrasyon')) setActiveView(AppView.INTEGRATIONS);
+        else if (p.includes('güvenlik')) setActiveView(AppView.SECURITY);
+        else if (p.includes('prompt')) setActiveView(AppView.PROMPTS);
+        else if (p.includes('analitik')) setActiveView(AppView.ANALYTICS);
+        else if (p.includes('görev')) setActiveView(AppView.REQUESTS);
+        else if (p.includes('galeri')) setActiveView(AppView.GALLERY);
+        else if (p.includes('sahne') || p.includes('3d')) setActiveView(AppView.CREATIVE);
+        else if (p.includes('sistem')) setActiveView(AppView.SYSTEM);
+        else if (p.includes('ayarlar')) setActiveView(AppView.SETTINGS);
+        else {
+          const targetView = Object.values(AppView).find(v => p.includes(v.toLowerCase()));
+          if (targetView) setActiveView(targetView as AppView);
+        }
         break;
       }
     }
@@ -307,6 +338,7 @@ const App: React.FC = () => {
         {activeView === AppView.SECURITY && <SecurityCenterView />}
         {activeView === AppView.INTEGRATIONS && <IntegrationsHubView />}
         {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
+        {activeView === AppView.BORSA && <BorsaView />}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />
