@@ -105,7 +105,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
             </div>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Render.com üzerinden VITE_SUPABASE_URL ve VITE_SUPABASE_ANON_KEY ortam değişkenlerini tanımlayarak merkezi veritabanını aktif edebilirsiniz.
+            Render dashboard üzerinden **Environment** sekmesine giderek **VITE_SUPABASE_URL** ve **VITE_SUPABASE_ANON_KEY** değişkenlerini ekleyin. [Detaylı Rehber için Tıklayın](https://render.com/docs/environment-variables)
           </p>
         </section>
 
