@@ -107,6 +107,11 @@ const INITIAL_MARKET_STATS = [
 ];
 
 const StockDetailModal: React.FC<{ stock: Stock; onClose: () => void }> = ({ stock, onClose }) => {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
   const [timeframe, setTimeframe] = useState<'1M' | '1Y'>('1M');
   const data = timeframe === '1M' ? stock.history1M : stock.history1Y;
 
@@ -122,7 +127,7 @@ const StockDetailModal: React.FC<{ stock: Stock; onClose: () => void }> = ({ sto
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-brandDark border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-brandDark border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90dvh] overflow-y-auto max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -254,7 +259,7 @@ const BorsaView: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-12 max-w-7xl mx-auto">
       <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold mb-2">İstanbul Borsa Paneli</h2>

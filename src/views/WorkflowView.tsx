@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
+import { getAvailableKeys, incrementUsage, markKeyAsExhausted } from '../utils/apiPool';
 import type { WorkflowNode, WorkflowLink } from '../types';
 
 const WorkflowView: React.FC = () => {
@@ -82,6 +82,7 @@ const WorkflowView: React.FC = () => {
             const text = result.response.text();
             const jsonMatch = text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
+            incrementUsage(keyEntry.id);
               processJson(jsonMatch[0]);
               addLog("✅ AI ile iş akışı başarıyla oluşturuldu.");
             } else {

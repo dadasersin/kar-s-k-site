@@ -12,6 +12,15 @@ interface NavigationProps {
 const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
+    { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
+    { id: AppView.BORSA, label: 'Borsa', icon: 'fa-arrow-trend-up' },
+    { id: AppView.CRYPTO, label: 'Kripto', icon: 'fa-bitcoin-sign' },
+    { id: AppView.ANALYTICS, label: 'Analitik', icon: 'fa-chart-line' },
+    { id: AppView.SETTINGS, label: 'Ayarlar', icon: 'fa-sliders' },
+  ];
+
+  const allMenuItems = [
+    { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
     { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
@@ -41,11 +50,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
-  // Helper to check if API key is provided via settings or env
   const isApiActive = (() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (envKey && envKey.length > 5) return true;
+    const env = (import.meta as any).env;
+    const hasEnv = env.VITE_GEMINI_API_KEY || env.VITE_OPENAI_API_KEY || env.VITE_DEEPSEEK_API_KEY;
+    if (hasEnv) return true;
 
     const settingsStr = localStorage.getItem('sync_settings');
     if (settingsStr) {
@@ -60,45 +69,57 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
 
   return (
     <>
-      {/* RESPONSIVE SIDEBAR (Icon Rail on Mobile, Full on Desktop) */}
-      <aside className="fixed left-0 top-0 h-full w-20 lg:w-64 flex flex-col glass-panel border-r border-slate-800 z-50 transition-all duration-300">
-        <div className="p-4 lg:p-6">
+      {/* MOBILE BOTTOM NAV */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-lg border-t border-white/5 z-[100] flex items-center justify-around px-2">
+         {menuItems.map(item => (
+           <button
+             key={item.id}
+             onClick={() => onViewChange(item.id)}
+             className={`flex flex-col items-center justify-center gap-1 transition-all ${activeView === item.id ? 'text-primary' : 'text-slate-500'}`}
+           >
+              <i className={`fa-solid ${item.icon} text-lg`}></i>
+              <span className="text-[8px] font-bold uppercase tracking-tighter">{item.label}</span>
+           </button>
+         ))}
+      </nav>
+
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 flex-col glass-panel border-r border-slate-800 z-50 transition-all duration-300">
+        <div className="p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 shrink-0 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(13,89,242,0.4)]">
+            <div className="w-12 h-12 shrink-0 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(13,89,242,0.4)]">
               <span className="font-bold text-xl text-white font-sans">EG</span>
             </div>
-            <div className="hidden lg:block overflow-hidden">
+            <div>
               <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">Ersin Güleş</h1>
               <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">AI Manager</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 px-3 lg:px-4 space-y-1 mt-2 overflow-y-auto custom-scrollbar-hidden pb-20">
-          {menuItems.map((item) => (
+        <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto custom-scrollbar-hidden pb-20">
+          {allMenuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-4 px-3 lg:px-4 py-3 lg:py-2.5 rounded-xl transition-all duration-300 group ${
+              className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${
                 activeView === item.id
                   ? 'bg-primary/10 text-primary shadow-inner border border-primary/20'
                   : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
               }`}
-              title={item.label}
             >
-              <i className={`fa-solid ${item.icon} w-6 lg:w-5 text-center text-lg lg:text-base transition-transform group-hover:scale-110 ${activeView === item.id ? 'text-primary' : ''}`}></i>
-              <span className="hidden lg:block font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
+              <i className={`fa-solid ${item.icon} w-5 text-center text-base transition-transform group-hover:scale-110 ${activeView === item.id ? 'text-primary' : ''}`}></i>
+              <span className="font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">
-          {/* AI Status */}
-          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onClick={onManualSync}>
-            <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
+        <div className="p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">
+          <div className="flex items-center gap-3 bg-brandDark/50 p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onClick={onManualSync}>
+            <div className={`w-10 h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
               <i className={`fa-solid fa-plug-circle-bolt text-primary ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}></i>
             </div>
-            <div className="hidden lg:block overflow-hidden">
+            <div>
               <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter text-left">AI Durumu</p>
               <div className="flex items-center gap-2">
                  <div className={`w-1.5 h-1.5 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
@@ -109,12 +130,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             </div>
           </div>
 
-          {/* Supabase Status */}
-          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5">
-            <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
+          <div className="flex items-center gap-3 bg-brandDark/50 p-3 rounded-xl border border-white/5">
+            <div className={`w-10 h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
               <i className={`fa-solid fa-database text-blue-400`}></i>
             </div>
-            <div className="hidden lg:block overflow-hidden text-left">
+            <div className="text-left">
               <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter">DB Bağlantısı</p>
               <div className="flex items-center gap-2">
                  <div className={`w-1.5 h-1.5 rounded-full ${isSupabaseActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-red-500'}`}></div>

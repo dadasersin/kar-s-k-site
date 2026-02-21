@@ -85,6 +85,7 @@ export interface ApiKeyEntry {
   baseUrl?: string;
   isQuotaExhausted: boolean;
   lastUsed?: number;
+  usageCount?: number;
 }
 
 export interface SyncSettings {

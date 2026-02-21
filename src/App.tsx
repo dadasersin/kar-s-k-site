@@ -140,6 +140,7 @@ const App: React.FC = () => {
           aiResponse = await callOpenAiCompatible(keyEntry, text, chatMessages);
         }
 
+        incrementUsage(keyEntry.id);
         const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: aiResponse, timestamp: Date.now() };
         setChatMessages(prev => [...prev, aiMsg]);
         break;
@@ -310,7 +311,7 @@ const App: React.FC = () => {
         syncStatus={syncStatus}
         onManualSync={performGitHubSync}
       />
-      <main className="flex-1 flex flex-col relative overflow-hidden h-full ml-20 lg:ml-64 transition-all duration-300">
+      <main className="flex-1 flex flex-col relative overflow-hidden h-full ml-0 lg:ml-64 transition-all duration-300">
         {activeView === AppView.HOME && <HomeView onViewChange={setActiveView} />}
         {activeView === AppView.TOOLS && <ToolsView onViewChange={setActiveView} />}
         {activeView === AppView.CREATIVE && <CreativeView />}
