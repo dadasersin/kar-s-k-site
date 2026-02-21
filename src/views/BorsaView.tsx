@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, DollarSign, BarChart2, Briefcase, Info, X, ArrowUpRight, ArrowDownRight, Calendar } from 'lucide-react';
+import { TrendingUp, DollarSign, BarChart2, Briefcase, Info, X, ArrowUpRight, ArrowDownRight, Calendar, Activity } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 interface StockPricePoint {
@@ -43,60 +43,67 @@ const mockHistory1Y = (basePrice: number, trend: 'up' | 'down') => {
   });
 };
 
-const topStocks: Stock[] = [
+const INITIAL_TOP_STOCKS: Stock[] = [
   {
-    ticker: 'THYAO', name: 'Türk Hava Yolları', price: '₺324.50', change: '+2.4%', trend: 'up',
+    ticker: 'THYAO', name: 'Türk Hava Yolları', price: '324.50', change: '+2.4%', trend: 'up',
     history1M: mockHistory1M(324.50, 'up'),
     history1Y: mockHistory1Y(324.50, 'up')
   },
   {
-    ticker: 'ASELS', name: 'Aselsan', price: '₺88.20', change: '+1.8%', trend: 'up',
+    ticker: 'ASELS', name: 'Aselsan', price: '88.20', change: '+1.8%', trend: 'up',
     history1M: mockHistory1M(88.20, 'up'),
     history1Y: mockHistory1Y(88.20, 'up')
   },
   {
-    ticker: 'TUPRS', name: 'Tüpraş', price: '₺182.10', change: '+3.1%', trend: 'up',
+    ticker: 'TUPRS', name: 'Tüpraş', price: '182.10', change: '+3.1%', trend: 'up',
     history1M: mockHistory1M(182.10, 'up'),
     history1Y: mockHistory1Y(182.10, 'up')
   },
   {
-    ticker: 'SISE', name: 'Şişecam', price: '₺48.15', change: '+0.9%', trend: 'up',
+    ticker: 'SISE', name: 'Şişecam', price: '48.15', change: '+0.9%', trend: 'up',
     history1M: mockHistory1M(48.15, 'up'),
     history1Y: mockHistory1Y(48.15, 'up')
   },
   {
-    ticker: 'KCHOL', name: 'Koç Holding', price: '₺215.40', change: '+1.2%', trend: 'up',
+    ticker: 'KCHOL', name: 'Koç Holding', price: '215.40', change: '+1.2%', trend: 'up',
     history1M: mockHistory1M(215.40, 'up'),
     history1Y: mockHistory1Y(215.40, 'up')
   },
 ];
 
-const losingStocks: Stock[] = [
+const INITIAL_LOSING_STOCKS: Stock[] = [
   {
-    ticker: 'ISCTR', name: 'İş Bankası C', price: '₺16.45', change: '-1.2%', trend: 'down',
+    ticker: 'ISCTR', name: 'İş Bankası C', price: '16.45', change: '-1.2%', trend: 'down',
     history1M: mockHistory1M(16.45, 'down'),
     history1Y: mockHistory1Y(16.45, 'down')
   },
   {
-    ticker: 'YKBNK', name: 'Yapı Kredi Bankası', price: '₺31.12', change: '-2.5%', trend: 'down',
+    ticker: 'YKBNK', name: 'Yapı Kredi Bankası', price: '31.12', change: '-2.5%', trend: 'down',
     history1M: mockHistory1M(31.12, 'down'),
     history1Y: mockHistory1Y(31.12, 'down')
   },
   {
-    ticker: 'AKBNK', name: 'Akbank', price: '₺42.80', change: '-0.8%', trend: 'down',
+    ticker: 'AKBNK', name: 'Akbank', price: '42.80', change: '-0.8%', trend: 'down',
     history1M: mockHistory1M(42.80, 'down'),
     history1Y: mockHistory1Y(42.80, 'down')
   },
   {
-    ticker: 'EREGL', name: 'Ereğli Demir Çelik', price: '₺45.60', change: '-3.2%', trend: 'down',
+    ticker: 'EREGL', name: 'Ereğli Demir Çelik', price: '45.60', change: '-3.2%', trend: 'down',
     history1M: mockHistory1M(45.60, 'down'),
     history1Y: mockHistory1Y(45.60, 'down')
   },
   {
-    ticker: 'GUBRF', name: 'Gübre Fabrikaları', price: '₺152.40', change: '-5.7%', trend: 'down',
+    ticker: 'GUBRF', name: 'Gübre Fabrikaları', price: '152.40', change: '-5.7%', trend: 'down',
     history1M: mockHistory1M(152.40, 'down'),
     history1Y: mockHistory1Y(152.40, 'down')
   },
+];
+
+const INITIAL_MARKET_STATS = [
+  { label: 'DOLAR', value: '43.84', change: '+0.12%', icon: <DollarSign className="w-5 h-5 text-green-400" /> },
+  { label: 'EURO', value: '51.56', change: '-0.05%', icon: <DollarSign className="w-5 h-5 text-blue-400" /> },
+  { label: 'GRAM ALTIN', value: '7087', change: '+0.45%', icon: <TrendingUp className="w-5 h-5 text-yellow-400" /> },
+  { label: 'BIST 100', value: '13804', change: '+1.20%', icon: <BarChart2 className="w-5 h-5 text-primary" /> },
 ];
 
 const StockDetailModal: React.FC<{ stock: Stock; onClose: () => void }> = ({ stock, onClose }) => {
@@ -140,7 +147,7 @@ const StockDetailModal: React.FC<{ stock: Stock; onClose: () => void }> = ({ sto
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-xs text-gray-500 font-bold uppercase mb-1">Güncel Fiyat</p>
-              <p className="text-2xl font-bold">{stock.price}</p>
+              <p className="text-2xl font-bold">₺{stock.price}</p>
             </div>
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-xs text-gray-500 font-bold uppercase mb-1">Günlük Değişim</p>
@@ -224,19 +231,40 @@ const StockDetailModal: React.FC<{ stock: Stock; onClose: () => void }> = ({ sto
 
 const BorsaView: React.FC = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [topStocks, setTopStocks] = useState<Stock[]>(INITIAL_TOP_STOCKS);
+  const [losingStocks, setLosingStocks] = useState<Stock[]>(INITIAL_LOSING_STOCKS);
+  const [marketStats, setMarketStats] = useState(INITIAL_MARKET_STATS);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
-  const marketStats = [
-    { label: 'DOLAR', value: '₺43.84', change: '+0.12%', icon: <DollarSign className="w-5 h-5 text-green-400" /> },
-    { label: 'EURO', value: '₺51.56', change: '-0.05%', icon: <DollarSign className="w-5 h-5 text-blue-400" /> },
-    { label: 'GRAM ALTIN', value: '₺7,087', change: '+0.45%', icon: <TrendingUp className="w-5 h-5 text-yellow-400" /> },
-    { label: 'BIST 100', value: '13,804', change: '+1.20%', icon: <BarChart2 className="w-5 h-5 text-primary" /> },
-  ];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fluctuate = (val: string) => {
+        const num = parseFloat(val.replace(/[₺%,]/g, ''));
+        const change = 1 + (Math.random() * 0.002 - 0.001); // ±0.1% fluctuation
+        return (num * change).toFixed(2);
+      };
+
+      setTopStocks(prev => prev.map(s => ({ ...s, price: fluctuate(s.price) })));
+      setLosingStocks(prev => prev.map(s => ({ ...s, price: fluctuate(s.price) })));
+      setMarketStats(prev => prev.map(s => ({ ...s, value: fluctuate(s.value) })));
+      setLastUpdate(new Date());
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="p-8 lg:p-12 max-w-7xl mx-auto">
-      <header className="mb-12">
-        <h2 className="text-3xl font-bold mb-2">İstanbul Borsa Paneli</h2>
-        <p className="text-gray-400">Canlı piyasa verileri ve yapay zeka destekli yatırım önerileri.</p>
+      <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold mb-2">İstanbul Borsa Paneli</h2>
+          <p className="text-gray-400">Yapay zeka destekli anlık piyasa verileri ve yatırım analizi.</p>
+        </div>
+        <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 px-4 py-2 rounded-full">
+          <Activity className="w-4 h-4 text-green-400 animate-pulse" />
+          <span className="text-xs font-bold text-green-400 uppercase tracking-widest">Canlı Veri Akışı Aktif</span>
+          <span className="text-[10px] text-green-400/60 font-mono">{lastUpdate.toLocaleTimeString()}</span>
+        </div>
       </header>
 
       {/* Market Stats Grid */}
@@ -256,7 +284,14 @@ const BorsaView: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-gray-500 uppercase font-bold mb-1">{stat.label}</p>
-            <p className="text-2xl font-bold">{stat.value}</p>
+            <motion.p
+              key={stat.value}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              className="text-2xl font-bold"
+            >
+              ₺{parseFloat(stat.value).toLocaleString('tr-TR')}
+            </motion.p>
           </motion.div>
         ))}
       </div>
@@ -284,7 +319,14 @@ const BorsaView: React.FC = () => {
                   <p className="text-xs text-gray-400">{stock.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{stock.price}</p>
+                  <motion.p
+                    key={stock.price}
+                    initial={{ color: '#4ade80' }}
+                    animate={{ color: '#fff' }}
+                    className="font-bold text-lg"
+                  >
+                    ₺{stock.price}
+                  </motion.p>
                   <p className="text-xs text-green-400 font-bold">
                     {stock.change} ▲
                   </p>
@@ -316,7 +358,14 @@ const BorsaView: React.FC = () => {
                   <p className="text-xs text-gray-400">{stock.name}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-lg">{stock.price}</p>
+                  <motion.p
+                    key={stock.price}
+                    initial={{ color: '#f87171' }}
+                    animate={{ color: '#fff' }}
+                    className="font-bold text-lg"
+                  >
+                    ₺{stock.price}
+                  </motion.p>
                   <p className="text-xs text-red-400 font-bold">
                     {stock.change} ▼
                   </p>
@@ -355,7 +404,7 @@ const BorsaView: React.FC = () => {
               Bilgilendirme
             </h4>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Veriler 15 dakika gecikmelidir. Gösterilen grafikler ve analizler yapay zeka tarafından simüle edilmiştir. Gerçek yatırım kararlarınızdan önce uzman bir danışmana başvurun.
+              Veriler anlık olarak simüle edilmektedir. Gösterilen grafikler ve analizler yapay zeka tarafından üretilmiştir. Gerçek yatırım kararlarınızdan önce uzman bir danışmana başvurun.
             </p>
           </div>
         </div>
