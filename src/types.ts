@@ -27,7 +27,8 @@ export enum AppView {
   INTEGRATIONS = 'integrations',
   SOCIAL_MEDIA = 'social_media',
   BORSA = 'borsa',
-  LIVE_EDITOR = 'live_editor'
+  LIVE_EDITOR = 'live_editor',
+  ANDROID = 'android'
 }
 
 export interface WorkflowNode {
