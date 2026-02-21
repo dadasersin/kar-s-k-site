@@ -29,6 +29,7 @@ import SecurityCenterView from './views/SecurityCenterView';
 import IntegrationsHubView from './views/IntegrationsHubView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
 import BorsaView from './views/BorsaView';
+import LiveEditorView from './views/LiveEditorView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -140,6 +141,7 @@ const App: React.FC = () => {
           aiResponse = await callOpenAiCompatible(keyEntry, text, chatMessages);
         }
 
+        incrementUsage(keyEntry.id);
         const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: aiResponse, timestamp: Date.now() };
         setChatMessages(prev => [...prev, aiMsg]);
         break;
@@ -255,6 +257,7 @@ const App: React.FC = () => {
         else if (p.includes('inşa')) setActiveView(AppView.BUILDER);
         else if (p.includes('docker')) setActiveView(AppView.DOCKER_AI);
         else if (p.includes('borsa')) setActiveView(AppView.BORSA);
+        else if (p.includes('geliştirici')) setActiveView(AppView.LIVE_EDITOR);
         else if (p.includes('kripto')) setActiveView(AppView.CRYPTO);
         else if (p.includes('otomasyon')) setActiveView(AppView.AUTOMATION);
         else if (p.includes('sosyal')) setActiveView(AppView.SOCIAL_MEDIA);
@@ -310,7 +313,7 @@ const App: React.FC = () => {
         syncStatus={syncStatus}
         onManualSync={performGitHubSync}
       />
-      <main className="flex-1 flex flex-col relative overflow-hidden h-full ml-20 lg:ml-64 transition-all duration-300">
+      <main className="flex-1 flex flex-col relative overflow-hidden h-full ml-0 lg:ml-64 transition-all duration-300">
         {activeView === AppView.HOME && <HomeView onViewChange={setActiveView} />}
         {activeView === AppView.TOOLS && <ToolsView onViewChange={setActiveView} />}
         {activeView === AppView.CREATIVE && <CreativeView />}
@@ -332,6 +335,7 @@ const App: React.FC = () => {
         {activeView === AppView.GOOGLE_APPS && <GoogleAppsView />}
         {activeView === AppView.DOCKER_AI && <DockerConfigView />}
         {activeView === AppView.SETTINGS && <SettingsView onSyncNow={performGitHubSync} />}
+        {activeView === AppView.LIVE_EDITOR && <LiveEditorView />}
         {activeView === AppView.JULES_STUDIO && <JulesStudioView />}
         {activeView === AppView.ART_STUDIO && <ArtStudioView />}
         {activeView === AppView.GAME_DEV && <GameDevView />}
