@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
+import { isSupabaseConfigured } from '../utils/supabase';
 
 interface NavigationProps {
   activeView: AppView;
@@ -55,6 +56,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     return false;
   })();
 
+  const isSupabaseActive = isSupabaseConfigured();
+
   return (
     <>
       {/* RESPONSIVE SIDEBAR (Icon Rail on Mobile, Full on Desktop) */}
@@ -89,17 +92,34 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
           ))}
         </nav>
 
-        <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20">
+        <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">
+          {/* AI Status */}
           <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onClick={onManualSync}>
             <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
               <i className={`fa-solid fa-plug-circle-bolt text-primary ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}></i>
             </div>
             <div className="hidden lg:block overflow-hidden">
-              <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter">Sistem Durumu</p>
+              <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter text-left">AI Durumu</p>
               <div className="flex items-center gap-2">
                  <div className={`w-1.5 h-1.5 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
                  <p className={`text-[8px] font-black uppercase tracking-widest ${isApiActive ? 'text-green-500' : 'text-red-500'}`}>
                    {isApiActive ? 'Aktif' : 'Pasif'}
+                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Supabase Status */}
+          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5">
+            <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
+              <i className={`fa-solid fa-database text-blue-400`}></i>
+            </div>
+            <div className="hidden lg:block overflow-hidden text-left">
+              <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter">DB Bağlantısı</p>
+              <div className="flex items-center gap-2">
+                 <div className={`w-1.5 h-1.5 rounded-full ${isSupabaseActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-red-500'}`}></div>
+                 <p className={`text-[8px] font-black uppercase tracking-widest ${isSupabaseActive ? 'text-blue-500' : 'text-red-500'}`}>
+                   {isSupabaseActive ? 'Bağlı' : 'Yok'}
                  </p>
               </div>
             </div>

@@ -1,60 +1,47 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { SyncSettings, ApiKeyEntry, ApiProvider } from '../types';
+import { isSupabaseConfigured } from '../utils/supabase';
 
-interface SettingsProps {
+interface SettingsViewProps {
   onSyncNow: () => void;
 }
 
-const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
-  const [settings, setSettings] = useState<SyncSettings>({
-    enabled: false,
-    token: '',
-    repo: '',
-    path: 'moduler-ai-backup.json',
-    customApiKeys: []
+const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
+  const [settings, setSettings] = useState<SyncSettings>(() => {
+    const saved = localStorage.getItem('sync_settings');
+    return saved ? JSON.parse(saved) : {
+      enabled: false,
+      token: '',
+      repo: '',
+      path: 'backup.json',
+      customApiKeys: []
+    };
   });
 
   const [newKey, setNewKey] = useState('');
   const [keyLabel, setKeyLabel] = useState('');
   const [provider, setProvider] = useState<ApiProvider>('gemini');
-  const [modelName, setModelName] = useState('gemini-3-flash-preview');
+  const [modelName, setModelName] = useState('gemini-1.5-pro');
   const [customUrl, setCustomUrl] = useState('');
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sync_settings');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSettings(prev => ({ ...prev, ...parsed }));
-    }
-  }, []);
 
   const handleProviderChange = (p: ApiProvider) => {
     setProvider(p);
-    if (p === 'gemini') {
-      setModelName('gemini-3-flash-preview');
-      setCustomUrl('');
-    } else if (p === 'deepseek') {
-      setModelName('deepseek-chat');
-      setCustomUrl('https://api.deepseek.com/v1');
-    } else if (p === 'grok') {
-      setModelName('grok-2-latest');
-      setCustomUrl('https://api.x.ai/v1');
-    } else if (p === 'openai') {
-      setModelName('gpt-4o-mini');
-      setCustomUrl('https://api.openai.com/v1');
-    }
+    if (p === 'gemini') setModelName('gemini-1.5-pro');
+    else if (p === 'deepseek') setModelName('deepseek-chat');
+    else if (p === 'grok') setModelName('grok-2');
+    else if (p === 'openai') setModelName('gpt-4o');
+    else setModelName('');
   };
 
   const addApiKey = () => {
-    if (!newKey.trim()) return;
+    if (!newKey || !keyLabel) return;
     const entry: ApiKeyEntry = {
       id: Date.now().toString(),
-      key: newKey.trim(),
-      label: keyLabel.trim() || `${provider.toUpperCase()} - ${modelName}`,
-      provider: provider,
-      modelName: modelName,
-      baseUrl: customUrl,
+      key: newKey,
+      label: keyLabel,
+      provider,
+      modelName,
+      baseUrl: provider === 'custom' ? customUrl : undefined,
       isQuotaExhausted: false
     };
     const updated = { ...settings, customApiKeys: [...settings.customApiKeys, entry] };
@@ -86,6 +73,8 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
     alert('Senkronizasyon ayarları kaydedildi.');
   };
 
+  const isSupabaseActive = isSupabaseConfigured();
+
   return (
     <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-brandDark pb-32">
       <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -96,6 +85,33 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
           </h1>
           <p className="text-slate-400 text-sm">API havuzunu yönetin ve verilerinizi GitHub ile senkronize edin.</p>
         </header>
+
+        {/* SUPABASE STATUS SECTION */}
+        <section className="glass-panel p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+              <i className="fa-solid fa-database text-blue-400"></i>
+              Supabase Veritabanı
+            </h3>
+            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${isSupabaseActive ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'}`}>
+              {isSupabaseActive ? 'BAĞLANDI' : 'YAPILANDIRILMAMIŞ'}
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Render.com üzerinden VITE_SUPABASE_URL ve VITE_SUPABASE_ANON_KEY ortam değişkenlerini tanımlayarak merkezi veritabanını aktif edebilirsiniz.
+          </p>
+          {!isSupabaseActive && (
+            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl">
+               <p className="text-[10px] text-amber-500 font-bold uppercase mb-1 flex items-center gap-2">
+                 <i className="fa-solid fa-circle-info"></i>
+                 Kurulum Notu
+               </p>
+               <p className="text-[10px] text-amber-500/80">
+                 Supabase şu anda sadece ortam değişkenleri üzerinden yapılandırılabilir. Kullanıcı arayüzünden anahtar girişi yakında eklenecektir.
+               </p>
+            </div>
+          )}
+        </section>
 
         <section className="glass-panel p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
           <div className="flex items-center justify-between">
