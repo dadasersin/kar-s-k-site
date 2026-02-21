@@ -16,6 +16,9 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
     customApiKeys: []
   });
 
+  const [supabaseUrl, setSupabaseUrl] = useState(localStorage.getItem('VITE_SUPABASE_URL') || '');
+  const [supabaseKey, setSupabaseKey] = useState(localStorage.getItem('VITE_SUPABASE_ANON_KEY') || '');
+
   const [newKey, setNewKey] = useState('');
   const [keyLabel, setKeyLabel] = useState('');
   const [provider, setProvider] = useState<ApiProvider>('gemini');
@@ -52,6 +55,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
     localStorage.setItem('sync_settings', JSON.stringify(updated));
     setNewKey('');
     setKeyLabel('');
+  };
+
+  const saveSupabaseConfig = () => {
+    localStorage.setItem('VITE_SUPABASE_URL', supabaseUrl);
+    localStorage.setItem('VITE_SUPABASE_ANON_KEY', supabaseKey);
+    alert('DB Ayarları kaydedildi. Değişikliklerin uygulanması için sayfa yenilenecek.');
+    window.location.reload();
   };
 
   const removeKey = (id: string) => {
@@ -104,8 +114,38 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
               {isSupabaseActive ? 'BAĞLANDI' : 'YAPILANDIRILMAMIŞ'}
             </div>
           </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Render dashboard üzerinden **Environment** sekmesine giderek **VITE_SUPABASE_URL** ve **VITE_SUPABASE_ANON_KEY** değişkenlerini ekleyin. [Detaylı Rehber için Tıklayın](https://render.com/docs/environment-variables)
+
+          <div className="grid grid-cols-1 gap-4">
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Supabase URL</label>
+                <input
+                  type="text"
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrl(e.target.value)}
+                  placeholder="https://xyz.supabase.co"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500 transition-all"
+                />
+             </div>
+             <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Anon Key</label>
+                <input
+                  type="password"
+                  value={supabaseKey}
+                  onChange={(e) => setSupabaseKey(e.target.value)}
+                  placeholder="eyJhbGci..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-blue-500 transition-all"
+                />
+             </div>
+             <button
+               onClick={saveSupabaseConfig}
+               className="py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+             >
+               VERİTABANI AYARLARINI KAYDET
+             </button>
+          </div>
+
+          <p className="text-[10px] text-slate-500 leading-relaxed pt-2 border-t border-white/5">
+            Render dashboard üzerinden **Environment** sekmesine giderek **VITE_SUPABASE_URL** ve **VITE_SUPABASE_ANON_KEY** değişkenlerini kalıcı olarak ekleyebilirsiniz. [Detaylı Rehber için Tıklayın](https://render.com/docs/environment-variables)
           </p>
         </section>
 

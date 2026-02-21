@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
 import { isSupabaseConfigured } from '../utils/supabase';
 
@@ -10,6 +10,15 @@ interface NavigationProps {
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
+  const [userIp, setUserIp] = useState<string>('Yükleniyor...');
+
+  useEffect(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => setUserIp(data.ip))
+      .catch(() => setUserIp('Bilinmiyor'));
+  }, []);
+
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
@@ -31,6 +40,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.LIVE, label: 'Canlı Etkileşim', icon: 'fa-bolt-lightning' },
     { id: AppView.ART_STUDIO, label: 'Sanat Stüdyosu', icon: 'fa-palette' },
     { id: AppView.GAME_DEV, label: 'Oyun Geliştirme', icon: 'fa-gamepad' },
+    { id: AppView.ANDROID, label: 'Android Studio', icon: 'fa-mobile-screen-button' },
     { id: AppView.WORKFLOW, label: 'Neural Workflow', icon: 'fa-diagram-project' },
     { id: AppView.BUILDER, label: 'Otonom İnşa', icon: 'fa-hammer' },
     { id: AppView.DOCKER_AI, label: 'Docker AI', icon: 'fa-server' },
@@ -91,9 +101,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             <div className="w-12 h-12 shrink-0 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(13,89,242,0.4)]">
               <span className="font-bold text-xl text-white font-sans">EG</span>
             </div>
-            <div>
+            <div className="overflow-hidden">
               <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">Ersin Güleş</h1>
               <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">AI Manager</p>
+              <p className="text-[8px] text-slate-500 font-mono mt-0.5 truncate">{userIp}</p>
             </div>
           </div>
         </div>
