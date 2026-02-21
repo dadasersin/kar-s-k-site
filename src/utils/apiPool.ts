@@ -1,12 +1,11 @@
 import type { ApiKeyEntry, SyncSettings, ApiProvider } from '../types';
+import { getConfig } from './config';
 
 // In-memory set to track exhausted env-sourced keys within the current session
 const exhaustedEnvKeys = new Set<string>();
 
 const getEnvKeys = (): ApiKeyEntry[] => {
   const envKeys: ApiKeyEntry[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const env = (import.meta as any).env;
 
   const mapping = [
     { key: 'VITE_GEMINI_API_KEY', provider: 'gemini', model: 'gemini-1.5-pro', label: 'System Gemini' },
@@ -16,7 +15,8 @@ const getEnvKeys = (): ApiKeyEntry[] => {
   ];
 
   mapping.forEach(m => {
-    const val = env[m.key];
+    // getConfig: önce Render'dan runtime'da çekilen config, sonra import.meta.env
+    const val = getConfig(m.key);
     if (val && val.length > 5) {
       const usageKey = `usage_${m.key}`;
       const usage = localStorage.getItem(usageKey) || '0';

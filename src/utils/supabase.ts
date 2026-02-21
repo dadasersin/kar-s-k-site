@@ -1,9 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { getConfig } from './config';
 
-// Priority: 1. Environment Variables, 2. Local Storage
+// Priority: 1. Runtime config (Render env → /api/config), 2. Local Storage
 const getSupabaseConfig = () => {
-  const envUrl = import.meta.env.VITE_SUPABASE_URL;
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const envUrl = getConfig('VITE_SUPABASE_URL');
+  const envKey = getConfig('VITE_SUPABASE_ANON_KEY');
 
   const localUrl = localStorage.getItem('VITE_SUPABASE_URL');
   const localKey = localStorage.getItem('VITE_SUPABASE_ANON_KEY');
