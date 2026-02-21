@@ -4,19 +4,29 @@ import { isSupabaseConfigured } from '../utils/supabase';
 
 interface NavigationProps {
   activeView: AppView;
-  onViewChange: (view: AppView) => void;
+  onViewChange: (view: AppView | string) => void;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   onManualSync: () => void;
 }
 
 const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
   const [userIp, setUserIp] = useState<string>('Yükleniyor...');
+  const [dynamicModules, setDynamicModules] = useState<Record<string, unknown>[]>([]);
+
+  const loadDynamicModules = () => {
+    const modules = JSON.parse(localStorage.getItem('dynamic_modules') || '[]');
+    setDynamicModules(modules);
+  };
 
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
       .then(data => setUserIp(data.ip))
       .catch(() => setUserIp('Bilinmiyor'));
+
+    loadDynamicModules();
+    window.addEventListener('dynamic-module-added', loadDynamicModules);
+    return () => window.removeEventListener('dynamic-module-added', loadDynamicModules);
   }, []);
 
   const menuItems = [
@@ -124,6 +134,26 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
               <span className="font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
             </button>
           ))}
+
+          {dynamicModules.length > 0 && (
+             <div className="pt-4 mt-4 border-t border-white/5">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 px-4 italic">AI ÜRETİMİ MODÜLLER</p>
+                {dynamicModules.map((mod) => (
+                  <button
+                    key={mod.id}
+                    onClick={() => onViewChange(mod.id as AppView)}
+                    className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${
+                      activeView === mod.id
+                        ? 'bg-green-500/10 text-green-500 shadow-inner border border-green-500/20'
+                        : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
+                    }`}
+                  >
+                    <i className="fa-solid fa-wand-magic-sparkles w-5 text-center text-xs"></i>
+                    <span className="font-bold text-[10px] uppercase tracking-wider truncate">{mod.name}</span>
+                  </button>
+                ))}
+             </div>
+          )}
         </nav>
 
         <div className="p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">

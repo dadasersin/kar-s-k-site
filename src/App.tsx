@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navigation from './components/Sidebar';
 import HomeView from './views/HomeView';
@@ -33,13 +32,13 @@ import AndroidStudioView from './views/AndroidStudioView';
 import LiveEditorView from './views/LiveEditorView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
-import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
+import type { SyncSettings, ChatMessage } from './types';
+import { callAI } from './utils/ai';
 
 const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
+  const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [dynamicModules, setDynamicModules] = useState<Record<string, unknown>>([]);
 
   // Global Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -50,11 +49,20 @@ const App: React.FC = () => {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history
+  const loadDynamicModules = useCallback(() => {
+    const modules = JSON.parse(localStorage.getItem('dynamic_modules') || '[]');
+    setDynamicModules(modules);
+  }, []);
+
+  // Load state on mount
   useEffect(() => {
     const saved = localStorage.getItem('chat_history');
     if (saved) setChatMessages(JSON.parse(saved));
-  }, []);
+
+    loadDynamicModules();
+    window.addEventListener('dynamic-module-added', loadDynamicModules);
+    return () => window.removeEventListener('dynamic-module-added', loadDynamicModules);
+  }, [loadDynamicModules]);
 
   // Save chat history and scroll
   useEffect(() => {
@@ -64,35 +72,6 @@ const App: React.FC = () => {
     }
   }, [chatMessages, isChatOpen]);
 
-  const callOpenAiCompatible = async (keyEntry: ApiKeyEntry, text: string, history: ChatMessage[]) => {
-    const url = keyEntry.baseUrl || 'https://api.openai.com/v1';
-    const formattedHistory = history.map(m => ({
-      role: m.role === 'model' ? 'assistant' : 'user',
-      content: m.text
-    }));
-
-    const response = await fetch(`${url}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${keyEntry.key}`
-      },
-      body: JSON.stringify({
-        model: keyEntry.modelName,
-        messages: [...formattedHistory, { role: 'user', content: text }],
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || `HTTP ${response.status} hatası`);
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  };
-
   const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
     if (!text.trim() || isTyping) return;
 
@@ -100,63 +79,17 @@ const App: React.FC = () => {
     setChatMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    const availableKeys = getAvailableKeys();
+    try {
+      const result = await callAI(text, {
+        systemInstruction: options?.systemInstruction,
+        history: chatMessages
+      });
 
-    if (availableKeys.length === 0) {
-      setChatMessages(prev => [...prev, {
-        id: Date.now().toString(), role: 'model',
-        text: 'Hata: Kullanılabilir API anahtarı kalmadı. Lütfen Ayarlar sayfasından anahtar ekleyin.',
-        timestamp: Date.now()
-      }]);
-      setIsTyping(false);
-      return;
-    }
-
-    for (const keyEntry of availableKeys) {
-      try {
-        setActiveModelInfo(`${keyEntry.provider.toUpperCase()} (${keyEntry.modelName})`);
-        let aiResponse = '';
-
-        if (keyEntry.provider === 'gemini') {
-          const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName,
-            systemInstruction: options?.systemInstruction,
-          });
-
-          const chat = model.startChat({
-            history: chatMessages.map(m => ({
-              role: m.role === 'model' ? 'model' : 'user',
-              parts: [{ text: m.text }]
-            })),
-          });
-
-          let finalInput = text;
-          if (options?.webSearch) {
-             finalInput = `[WEB SEARCH ENABLED] ${text}`;
-          }
-
-          const result = await chat.sendMessage(finalInput);
-          aiResponse = result.response.text();
-        } else {
-          aiResponse = await callOpenAiCompatible(keyEntry, text, chatMessages);
-        }
-
-        incrementUsage(keyEntry.id);
-        const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: aiResponse, timestamp: Date.now() };
-        setChatMessages(prev => [...prev, aiMsg]);
-        break;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        console.error(`API hatası [${keyEntry.label}]:`, error);
-        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
-          markKeyAsExhausted(keyEntry.id);
-          continue;
-        } else {
-          setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Bağlantı Hatası: ${error.message}`, timestamp: Date.now() }]);
-          break;
-        }
-      }
+      setActiveModelInfo(`${result.provider.toUpperCase()} (${result.model})`);
+      const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: result.text, timestamp: Date.now() };
+      setChatMessages(prev => [...prev, aiMsg]);
+    } catch (error: unknown) {
+      setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Hata: ${error.message}`, timestamp: Date.now() }]);
     }
 
     setIsTyping(false);
@@ -345,6 +278,47 @@ const App: React.FC = () => {
         {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
         {activeView === AppView.BORSA && <BorsaView />}
         {activeView === AppView.ANDROID && <AndroidStudioView />}
+
+        {dynamicModules.map((mod) => activeView === mod.id && (
+          <div key={mod.id} className="p-8 bg-brandDark h-full overflow-y-auto">
+            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+              <header className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">{mod.name}</h1>
+                  <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">AI Üretimi Modül</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const filtered = dynamicModules.filter(m => m.id !== mod.id);
+                    localStorage.setItem('dynamic_modules', JSON.stringify(filtered));
+                    loadDynamicModules();
+                    setActiveView(AppView.HOME);
+                  }}
+                  className="px-4 py-2 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all border border-red-500/20"
+                >
+                  MODÜLÜ KALDIR
+                </button>
+              </header>
+              <div className="glass-panel p-10 rounded-[40px] border border-primary/20 bg-primary/5 shadow-2xl">
+                 <p className="text-white font-bold mb-8 italic">{mod.description}</p>
+                 <div className="bg-black/40 rounded-3xl p-8 border border-white/5 font-mono text-[11px] text-primary/80 overflow-auto max-h-[500px]">
+                    <pre className="whitespace-pre-wrap">{mod.code}</pre>
+                 </div>
+                 <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-3xl">
+                    <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest text-center mb-4">
+                       Simülasyon Modu: Gerçek zamanlı çalışma için portalın ana kaynak koduna derlenmesi gerekmektedir.
+                    </p>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(mod.code)}
+                      className="w-full py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-yellow-500/20"
+                    >
+                       KODU KOPYALA VE JULES'E GÖNDER
+                    </button>
+                 </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />
