@@ -67,7 +67,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.GALLERY, label: 'Galeri', icon: 'fa-images' },
     { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
     { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
-    { id: AppView.SYSTEM, label: 'Sistem Çekirdeği', icon: 'fa-microchip' },
+    { id: AppView.SYSTEM, label: 'Sistem Çekirdeği', icon: 'fa-gear' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
@@ -92,16 +92,16 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     <>
       {/* MOBILE BOTTOM NAV */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-lg border-t border-white/5 z-[100] flex items-center justify-around px-2">
-         {menuItems.map(item => (
-           <button
-             key={item.id}
-             onClick={() => onViewChange(item.id)}
-             className={`flex flex-col items-center justify-center gap-1 transition-all ${activeView === item.id ? 'text-primary' : 'text-slate-500'}`}
-           >
-              <i className={`fa-solid ${item.icon} text-lg`}></i>
-              <span className="text-[8px] font-bold uppercase tracking-tighter">{item.label}</span>
-           </button>
-         ))}
+        {menuItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => onViewChange(item.id)}
+            className={`flex flex-col items-center justify-center gap-1 transition-all ${activeView === item.id ? 'text-primary' : 'text-slate-500'}`}
+          >
+            <i className={`fa-solid ${item.icon} text-lg`}></i>
+            <span className="text-[8px] font-bold uppercase tracking-tighter">{item.label}</span>
+          </button>
+        ))}
       </nav>
 
       {/* DESKTOP SIDEBAR */}
@@ -124,11 +124,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${
-                activeView === item.id
+              className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${activeView === item.id
                   ? 'bg-primary/10 text-primary shadow-inner border border-primary/20'
                   : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-              }`}
+                }`}
             >
               <i className={`fa-solid ${item.icon} w-5 text-center text-base transition-transform group-hover:scale-110 ${activeView === item.id ? 'text-primary' : ''}`}></i>
               <span className="font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
@@ -136,23 +135,22 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
           ))}
 
           {dynamicModules.length > 0 && (
-             <div className="pt-4 mt-4 border-t border-white/5">
-                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 px-4 italic">AI ÜRETİMİ MODÜLLER</p>
-                {dynamicModules.map((mod) => (
-                  <button
-                    key={mod.id}
-                    onClick={() => onViewChange(mod.id as AppView)}
-                    className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${
-                      activeView === mod.id
-                        ? 'bg-green-500/10 text-green-500 shadow-inner border border-green-500/20'
-                        : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
+            <div className="pt-4 mt-4 border-t border-white/5">
+              <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-2 px-4 italic">AI ÜRETİMİ MODÜLLER</p>
+              {dynamicModules.map((mod) => (
+                <button
+                  key={mod.id}
+                  onClick={() => onViewChange(mod.id as AppView)}
+                  className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-xl transition-all duration-300 group ${activeView === mod.id
+                      ? 'bg-green-500/10 text-green-500 shadow-inner border border-green-500/20'
+                      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-300'
                     }`}
-                  >
-                    <i className="fa-solid fa-wand-magic-sparkles w-5 text-center text-xs"></i>
-                    <span className="font-bold text-[10px] uppercase tracking-wider truncate">{mod.name}</span>
-                  </button>
-                ))}
-             </div>
+                >
+                  <i className="fa-solid fa-wand-magic-sparkles w-5 text-center text-xs"></i>
+                  <span className="font-bold text-[10px] uppercase tracking-wider truncate">{mod.name}</span>
+                </button>
+              ))}
+            </div>
           )}
         </nav>
 
@@ -164,10 +162,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             <div>
               <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter text-left">AI Durumu</p>
               <div className="flex items-center gap-2">
-                 <div className={`w-1.5 h-1.5 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
-                 <p className={`text-[8px] font-black uppercase tracking-widest ${isApiActive ? 'text-green-500' : 'text-red-500'}`}>
-                   {isApiActive ? 'Aktif' : 'Pasif'}
-                 </p>
+                <div className={`w-1.5 h-1.5 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                <p className={`text-[8px] font-black uppercase tracking-widest ${isApiActive ? 'text-green-500' : 'text-red-500'}`}>
+                  {isApiActive ? 'Aktif' : 'Pasif'}
+                </p>
               </div>
             </div>
           </div>
@@ -179,10 +177,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             <div className="text-left">
               <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter">DB Bağlantısı</p>
               <div className="flex items-center gap-2">
-                 <div className={`w-1.5 h-1.5 rounded-full ${isSupabaseActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-red-500'}`}></div>
-                 <p className={`text-[8px] font-black uppercase tracking-widest ${isSupabaseActive ? 'text-blue-500' : 'text-red-500'}`}>
-                   {isSupabaseActive ? 'Bağlı' : 'Yok'}
-                 </p>
+                <div className={`w-1.5 h-1.5 rounded-full ${isSupabaseActive ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]' : 'bg-red-500'}`}></div>
+                <p className={`text-[8px] font-black uppercase tracking-widest ${isSupabaseActive ? 'text-blue-500' : 'text-red-500'}`}>
+                  {isSupabaseActive ? 'Bağlı' : 'Yok'}
+                </p>
               </div>
             </div>
           </div>

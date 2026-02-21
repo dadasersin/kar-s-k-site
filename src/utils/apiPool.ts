@@ -1,5 +1,8 @@
 import type { ApiKeyEntry, SyncSettings, ApiProvider } from '../types';
 
+// In-memory set to track exhausted env-sourced keys within the current session
+const exhaustedEnvKeys = new Set<string>();
+
 const getEnvKeys = (): ApiKeyEntry[] => {
   const envKeys: ApiKeyEntry[] = [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +26,7 @@ const getEnvKeys = (): ApiKeyEntry[] => {
         label: m.label,
         provider: m.provider as ApiProvider,
         modelName: m.model,
-        isQuotaExhausted: false,
+        isQuotaExhausted: exhaustedEnvKeys.has(m.key),
         usageCount: parseInt(usage, 10)
       });
     }
@@ -103,7 +106,11 @@ export const incrementUsage = (id: string) => {
 };
 
 export const markKeyAsExhausted = (id: string) => {
-  if (id.startsWith('VITE_')) return;
+  if (id.startsWith('VITE_')) {
+    // Mark env key as exhausted in memory for this session
+    exhaustedEnvKeys.add(id);
+    return;
+  }
 
   const settingsStr = localStorage.getItem('sync_settings');
   if (!settingsStr) return;

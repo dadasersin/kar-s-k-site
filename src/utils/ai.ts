@@ -63,9 +63,10 @@ export const callAI = async (text: string, options?: { systemInstruction?: strin
 
       incrementUsage(keyEntry.id);
       return { text: aiResponse, model: keyEntry.modelName, provider: keyEntry.provider };
-    } catch (error: Error) {
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
       console.error(`API hatası [${keyEntry.label}]:`, error);
-      if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
+      if (errMsg.includes('429') || errMsg.toLowerCase().includes('quota')) {
         markKeyAsExhausted(keyEntry.id);
         continue;
       } else {

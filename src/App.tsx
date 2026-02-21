@@ -38,7 +38,7 @@ import { callAI } from './utils/ai';
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-  const [dynamicModules, setDynamicModules] = useState<Record<string, unknown>>([]);
+  const [dynamicModules, setDynamicModules] = useState<Record<string, unknown>[]>([]);
 
   // Global Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -57,7 +57,7 @@ const App: React.FC = () => {
   // Load state on mount
   useEffect(() => {
     const saved = localStorage.getItem('chat_history');
-    if (saved) setChatMessages(JSON.parse(saved));
+    if (saved) setChatMessages(JSON.parse(saved).slice(-150));
 
     loadDynamicModules();
     window.addEventListener('dynamic-module-added', loadDynamicModules);
@@ -89,7 +89,8 @@ const App: React.FC = () => {
       const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: 'model', text: result.text, timestamp: Date.now() };
       setChatMessages(prev => [...prev, aiMsg]);
     } catch (error: unknown) {
-      setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Hata: ${error.message}`, timestamp: Date.now() }]);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      setChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: `Hata: ${errMsg}`, timestamp: Date.now() }]);
     }
 
     setIsTyping(false);
@@ -300,21 +301,21 @@ const App: React.FC = () => {
                 </button>
               </header>
               <div className="glass-panel p-10 rounded-[40px] border border-primary/20 bg-primary/5 shadow-2xl">
-                 <p className="text-white font-bold mb-8 italic">{mod.description}</p>
-                 <div className="bg-black/40 rounded-3xl p-8 border border-white/5 font-mono text-[11px] text-primary/80 overflow-auto max-h-[500px]">
-                    <pre className="whitespace-pre-wrap">{mod.code}</pre>
-                 </div>
-                 <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-3xl">
-                    <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest text-center mb-4">
-                       Simülasyon Modu: Gerçek zamanlı çalışma için portalın ana kaynak koduna derlenmesi gerekmektedir.
-                    </p>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(mod.code)}
-                      className="w-full py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-yellow-500/20"
-                    >
-                       KODU KOPYALA VE JULES'E GÖNDER
-                    </button>
-                 </div>
+                <p className="text-white font-bold mb-8 italic">{mod.description}</p>
+                <div className="bg-black/40 rounded-3xl p-8 border border-white/5 font-mono text-[11px] text-primary/80 overflow-auto max-h-[500px]">
+                  <pre className="whitespace-pre-wrap">{mod.code}</pre>
+                </div>
+                <div className="mt-8 p-6 bg-yellow-500/10 border border-yellow-500/20 rounded-3xl">
+                  <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-widest text-center mb-4">
+                    Simülasyon Modu: Gerçek zamanlı çalışma için portalın ana kaynak koduna derlenmesi gerekmektedir.
+                  </p>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(mod.code)}
+                    className="w-full py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-yellow-500/20"
+                  >
+                    KODU KOPYALA VE JULES'E GÖNDER
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -327,9 +328,8 @@ const App: React.FC = () => {
       <div className="fixed bottom-20 right-6 lg:bottom-6 lg:right-6 w-80 z-[60]" id="quick-chat">
         <button
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`ml-auto flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
-            isChatOpen ? 'bg-surface text-primary rotate-90 border border-white/10' : 'bg-primary text-white hover:scale-110'
-          }`}
+          className={`ml-auto flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${isChatOpen ? 'bg-surface text-primary rotate-90 border border-white/10' : 'bg-primary text-white hover:scale-110'
+            }`}
         >
           {isChatOpen ? <i className="fa-solid fa-xmark text-xl"></i> : <i className="fa-solid fa-comment-dots text-xl"></i>}
         </button>
@@ -349,12 +349,11 @@ const App: React.FC = () => {
             <div className="flex-1 p-4 space-y-4 overflow-y-auto min-h-[300px] scrollbar-hide bg-brandDark/30">
               {chatMessages.map((msg) => (
                 <div key={msg.id} className={`flex flex-col gap-1 ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-in slide-in-from-bottom-2`}>
-                   <span className={`text-[9px] font-bold uppercase ${msg.role === 'user' ? 'text-gray-500 mr-1' : 'text-primary ml-1'}`}>
+                  <span className={`text-[9px] font-bold uppercase ${msg.role === 'user' ? 'text-gray-500 mr-1' : 'text-primary ml-1'}`}>
                     {msg.role === 'user' ? 'Sen' : 'Asistan'}
                   </span>
-                  <div className={`p-3 rounded-xl text-xs max-w-[90%] shadow-sm ${
-                    msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white/5 text-gray-200 border border-white/5 rounded-tl-none'
-                  }`}>
+                  <div className={`p-3 rounded-xl text-xs max-w-[90%] shadow-sm ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-white/5 text-gray-200 border border-white/5 rounded-tl-none'
+                    }`}>
                     {msg.text}
                   </div>
                 </div>
@@ -383,11 +382,11 @@ const App: React.FC = () => {
             )}
 
             <form onSubmit={(e) => {
-                e.preventDefault();
-                const input = (e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement);
-                handleSendMessage(input.value);
-                input.value = '';
-              }} className="p-4 border-t border-white/5 bg-surface">
+              e.preventDefault();
+              const input = (e.currentTarget.elements.namedItem('chatInput') as HTMLInputElement);
+              handleSendMessage(input.value);
+              input.value = '';
+            }} className="p-4 border-t border-white/5 bg-surface">
               <div className="flex gap-2">
                 <input
                   name="chatInput"
@@ -397,10 +396,10 @@ const App: React.FC = () => {
                   type="text"
                 />
                 <button type="button" onClick={startVoiceRecognition} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${isListening ? 'bg-primary/20 text-primary' : 'bg-white/5 text-gray-500 hover:text-primary'}`}>
-                   <i className="fa-solid fa-microphone text-xs"></i>
+                  <i className="fa-solid fa-microphone text-xs"></i>
                 </button>
                 <button type="submit" className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl transition-all active:scale-90">
-                   <i className="fa-solid fa-paper-plane text-xs"></i>
+                  <i className="fa-solid fa-paper-plane text-xs"></i>
                 </button>
               </div>
             </form>
