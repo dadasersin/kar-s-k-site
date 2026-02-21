@@ -2,7 +2,7 @@ import React from 'react';
 import { AppView } from '../types';
 
 interface HomeViewProps {
-  onViewChange: (view: AppView) => void;
+  onViewChange: (view: AppView | string) => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => (

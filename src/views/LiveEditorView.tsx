@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Code, Play, CheckCircle2, Layout, Layers, Cpu, Terminal } from 'lucide-react';
+import { Sparkles, Code, Play, CheckCircle2, Layout, Layers, Cpu, Terminal, Eye, Copy } from 'lucide-react';
+import { callAI } from '../utils/ai';
 
 interface StagedComponent {
   id: string;
@@ -17,49 +18,92 @@ const LiveEditorView: React.FC = () => {
   const [isMerging, setIsMerging] = useState(false);
   const [mergeSuccess, setMergeSuccess] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [showCode, setShowCode] = useState(false);
+
+  const logEndRef = useRef<HTMLDivElement>(null);
 
   const addLog = (msg: string) => {
     setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
   };
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [logs]);
+
+  const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsProcessing(true);
     setStagedComponent(null);
     setMergeSuccess(false);
     setLogs([]);
+    setShowCode(false);
 
     addLog("İstek analiz ediliyor...");
+    addLog("Sistem mimarisi taranıyor...");
+
+    try {
+      const systemInstruction = `Sen bir kıdemli React geliştiricisisin.
+      Kullanıcının isteğine göre modern, şık ve fonksiyonel bir React bileşeni tasarla.
+      Yanıtını SADECE aşağıdaki JSON formatında ver:
+      {
+        "name": "Bileşen Adı",
+        "description": "Bileşenin ne yaptığına dair kısa açıklama",
+        "type": "widget|view",
+        "code": "React kodu (Tailwind CSS kullan, lucide-react ikonlarını kullanabilirsin. import React from 'react' ile başla)"
+      }
+      Önemli: Kod çalışabilir ve tek bir dosya gibi olmalı. 'export default' kullanma, 'export const GeneratedView = ...' formatını kullan.`;
+
+      const result = await callAI(prompt, { systemInstruction });
+
+      addLog(`${result.provider.toUpperCase()} (${result.model}) ile bağlantı kuruldu.`);
+      addLog("Kod üretimi tamamlandı.");
+
+      // Try to parse JSON from the response (AI sometimes wraps in code blocks)
+      const cleanJson = result.text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleanJson);
+
+      setStagedComponent({
+        id: 'comp_' + Date.now(),
+        ...parsed
+      });
+
+      addLog("Önizleme hazır.");
+    } catch (error: Error) {
+      addLog(`HATA: ${error.message}`);
+      console.error(error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMerge = () => {
+    if (!stagedComponent) return;
+    setIsMerging(true);
+    addLog("Entegrasyon süreci başlatıldı...");
 
     setTimeout(() => {
-      addLog("Şema tasarımı oluşturuluyor...");
+      // Real logic: Save to localStorage for Dynamic Module System
+      const existing = JSON.parse(localStorage.getItem('dynamic_modules') || '[]');
+      localStorage.setItem('dynamic_modules', JSON.stringify([...existing, stagedComponent]));
+
+      addLog("Modül veri tabanına kaydedildi.");
+      addLog("Navigasyon şeması güncellendi.");
+
       setTimeout(() => {
-        addLog("Kod enjeksiyonu ve optimizasyon tamamlandı.");
-        setStagedComponent({
-          id: 'comp_' + Date.now(),
-          name: 'Akıllı Veri Görselleştirici v2',
-          description: 'İsteğinize uygun, gerçek zamanlı veri akışını destekleyen ve responsive tasarım ilkelerine bağlı kalarak oluşturulmuş yeni bir modül.',
-          type: 'widget',
-          code: 'export const DataWidget = () => { ... }'
-        });
-        setIsProcessing(false);
+        setIsMerging(false);
+        setMergeSuccess(true);
+        addLog("TEBRİKLER: Yeni özellik portalın bir parçası haline geldi!");
+        // Notify user to refresh or use event
+        window.dispatchEvent(new CustomEvent('dynamic-module-added'));
       }, 1500);
     }, 1000);
   };
 
-  const handleMerge = () => {
-    setIsMerging(true);
-    addLog("Site mimarisi ile senkronizasyon başlatıldı...");
-
-    setTimeout(() => {
-      addLog("Yeni modül ana navigasyona eklendi.");
-      addLog("State yönetimi güncellendi.");
-      setTimeout(() => {
-        setIsMerging(false);
-        setMergeSuccess(true);
-        addLog("TEBRİKLER: Yeni özellik başarıyla siteye entegre edildi!");
-      }, 1500);
-    }, 1000);
+  const copyCode = () => {
+    if (stagedComponent) {
+      navigator.clipboard.writeText(stagedComponent.code);
+      alert('Kod kopyalandı!');
+    }
   };
 
   return (
@@ -72,7 +116,7 @@ const LiveEditorView: React.FC = () => {
              </div>
              <div>
                 <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter">AI Geliştirici Stüdyosu</h1>
-                <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Canlı Önizleme ve Otonom Entegrasyon</p>
+                <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Canlı Önizleme ve Gerçek Zamanlı Entegrasyon</p>
              </div>
           </div>
         </header>
@@ -90,7 +134,7 @@ const LiveEditorView: React.FC = () => {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Hangi özelliği eklemek istersiniz? Örn: 'Borsa sayfasına alarm sistemi ekle' veya 'Hava durumu widgetı tasarla'..."
-                  className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-sm text-white focus:border-primary outline-none transition-all min-h-[150px] resize-none placeholder:text-gray-700"
+                  className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-sm text-white focus:border-primary outline-none transition-all min-h-[150px] resize-none placeholder:text-gray-700 font-bold"
                 />
                 <button
                   onClick={handleGenerate}
@@ -98,7 +142,7 @@ const LiveEditorView: React.FC = () => {
                   className="w-full py-4 bg-primary hover:brightness-110 disabled:bg-slate-800 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-3"
                 >
                   {isProcessing ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Play className="w-4 h-4" />}
-                  ÖZELLİĞİ TASARLA
+                  ÖZELLİĞİ OLUŞTUR
                 </button>
               </div>
             </div>
@@ -108,7 +152,7 @@ const LiveEditorView: React.FC = () => {
                 <Terminal className="w-3 h-3" />
                 Sistem Logları
               </h3>
-              <div className="flex-1 space-y-2 font-mono text-[10px] overflow-y-auto scrollbar-hide">
+              <div className="flex-1 space-y-2 font-mono text-[10px] overflow-y-auto scrollbar-hide max-h-[300px]">
                 {logs.length === 0 && <p className="text-slate-800 italic uppercase font-bold tracking-tighter">İşlem bekleniyor...</p>}
                 {logs.map((log, i) => (
                   <div key={i} className="flex gap-3 text-primary animate-in slide-in-from-left-2">
@@ -116,6 +160,7 @@ const LiveEditorView: React.FC = () => {
                     <span className="font-bold">{log}</span>
                   </div>
                 ))}
+                <div ref={logEndRef} />
               </div>
             </div>
           </div>
@@ -137,24 +182,41 @@ const LiveEditorView: React.FC = () => {
                           <Layout className="w-5 h-5 text-primary" />
                           <span className="text-xs font-black text-white uppercase italic tracking-widest">Önizleme: {stagedComponent.name}</span>
                        </div>
-                       <div className="flex gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500/50"></div>
-                          <div className="w-2 h-2 rounded-full bg-yellow-500/50"></div>
-                          <div className="w-2 h-2 rounded-full bg-green-500/50"></div>
+                       <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowCode(!showCode)}
+                            className={`p-2 rounded-lg transition-all ${showCode ? 'bg-primary text-white' : 'bg-white/5 text-slate-500 hover:text-white'}`}
+                          >
+                             {showCode ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
+                          </button>
+                          <div className="w-2 h-2 rounded-full bg-red-500/50 mt-3"></div>
+                          <div className="w-2 h-2 rounded-full bg-yellow-500/50 mt-3"></div>
+                          <div className="w-2 h-2 rounded-full bg-green-500/50 mt-3"></div>
                        </div>
                     </div>
 
-                    <div className="p-10 min-h-[300px] flex flex-col items-center justify-center bg-brandDark/50">
-                       <div className="w-full max-w-md p-8 bg-surface border border-white/10 rounded-3xl shadow-2xl animate-pulse">
-                          <div className="w-12 h-12 bg-primary/20 rounded-xl mb-6 flex items-center justify-center text-primary">
-                             <Layers className="w-6 h-6" />
-                          </div>
-                          <div className="h-4 bg-white/5 rounded-full w-3/4 mb-4"></div>
-                          <div className="h-2 bg-white/5 rounded-full w-full mb-2"></div>
-                          <div className="h-2 bg-white/5 rounded-full w-5/6 mb-8"></div>
-                          <div className="h-10 bg-primary/10 rounded-xl w-full border border-primary/20"></div>
-                       </div>
-                       <p className="mt-8 text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em] animate-pulse">Yeni Modül Render Ediliyor...</p>
+                    <div className="min-h-[400px] flex flex-col bg-brandDark/50">
+                       {showCode ? (
+                         <div className="p-6 font-mono text-[11px] overflow-auto h-full max-h-[400px] text-primary/80 relative">
+                            <button onClick={copyCode} className="absolute top-4 right-4 p-2 bg-white/5 rounded-lg hover:bg-white/10">
+                               <Copy className="w-4 h-4" />
+                            </button>
+                            <pre className="whitespace-pre-wrap">{stagedComponent.code}</pre>
+                         </div>
+                       ) : (
+                         <div className="p-10 flex flex-col items-center justify-center h-full">
+                            <div className="w-full max-w-md p-8 bg-surface border border-white/10 rounded-3xl shadow-2xl relative">
+                               <div className="w-12 h-12 bg-primary/20 rounded-xl mb-6 flex items-center justify-center text-primary">
+                                  <Layers className="w-6 h-6" />
+                               </div>
+                               <h3 className="text-lg font-black text-white italic mb-2">{stagedComponent.name}</h3>
+                               <p className="text-xs text-slate-500 mb-6">{stagedComponent.description}</p>
+                               <div className="h-20 bg-white/5 rounded-xl border border-white/5 flex items-center justify-center">
+                                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] animate-pulse">Komponent Hazır</span>
+                               </div>
+                            </div>
+                         </div>
+                       )}
                     </div>
 
                     <div className="p-6 bg-black/40 border-t border-white/5">
@@ -163,7 +225,7 @@ const LiveEditorView: React.FC = () => {
                              <CheckCircle2 className="w-5 h-5 text-primary" />
                           </div>
                           <div>
-                             <p className="text-white font-bold text-sm mb-1 italic">Nasıl Çalışır?</p>
+                             <p className="text-white font-bold text-sm mb-1 italic">Analiz Özeti</p>
                              <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-tighter opacity-80">
                                {stagedComponent.description}
                              </p>
@@ -179,7 +241,7 @@ const LiveEditorView: React.FC = () => {
                        className="flex-1 py-5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 text-white font-black uppercase tracking-widest rounded-3xl transition-all shadow-xl shadow-green-900/20 flex items-center justify-center gap-3 active:scale-95"
                      >
                         {isMerging ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <CheckCircle2 className="w-5 h-5" />}
-                        {mergeSuccess ? 'ENTEGRE EDİLDİ' : 'ONAYLA VE SİTEYE EKLE'}
+                        {mergeSuccess ? 'MODÜL PORTALA EKLENDİ' : 'ENTEGRE ET VE AKTİF ET'}
                      </button>
                      <button
                        onClick={() => setStagedComponent(null)}
@@ -194,8 +256,8 @@ const LiveEditorView: React.FC = () => {
                    <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:bg-primary/5 transition-colors">
                       <Code className="w-10 h-10 group-hover:text-primary transition-colors" />
                    </div>
-                   <h4 className="text-xl font-black uppercase tracking-tighter mb-2 italic">Önizleme Alanı</h4>
-                   <p className="text-xs font-bold uppercase tracking-widest opacity-30 max-w-xs">Sol taraftan bir istek gönderdiğinizde, yapay zeka tarafından tasarlanan özellik burada görünecektir.</p>
+                   <h4 className="text-xl font-black uppercase tracking-tighter mb-2 italic">Önizleme ve İnşa Alanı</h4>
+                   <p className="text-xs font-bold uppercase tracking-widest opacity-30 max-w-xs">Sol taraftan bir özellik talep ettiğinizde, gerçek AI motoru kodu üretecek ve burada simüle edecektir.</p>
                 </div>
               )}
             </AnimatePresence>
