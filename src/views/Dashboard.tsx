@@ -2,7 +2,7 @@ import React from 'react';
 import { AppView } from '../types';
 
 interface DashboardProps {
-  onViewChange: (view: AppView | string) => void;
+  onViewChange: (view: AppView) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {

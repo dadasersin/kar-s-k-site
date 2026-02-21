@@ -26,9 +26,7 @@ export enum AppView {
   SECURITY = 'security',
   INTEGRATIONS = 'integrations',
   SOCIAL_MEDIA = 'social_media',
-  BORSA = 'borsa',
-  LIVE_EDITOR = 'live_editor',
-  ANDROID = 'android'
+  BORSA = 'borsa'
 }
 
 export interface WorkflowNode {
@@ -87,7 +85,6 @@ export interface ApiKeyEntry {
   baseUrl?: string;
   isQuotaExhausted: boolean;
   lastUsed?: number;
-  usageCount?: number;
 }
 
 export interface SyncSettings {

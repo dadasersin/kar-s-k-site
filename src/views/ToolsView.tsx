@@ -12,7 +12,7 @@ type Tool = {
 };
 
 interface ToolsViewProps {
-  onViewChange: (view: AppView | string) => void;
+  onViewChange: (view: AppView) => void;
 }
 
 const ToolsView: React.FC<ToolsViewProps> = ({ onViewChange }) => {

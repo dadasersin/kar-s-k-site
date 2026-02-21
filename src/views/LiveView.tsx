@@ -120,7 +120,7 @@ const LiveView: React.FC = () => {
           setIsConnecting(false);
           success = true;
           break;
-        } catch (err) {
+        } catch (err: any) {
           console.error(`Live session key error [${keyEntry.label}]:`, err);
           if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
             markKeyAsExhausted(keyEntry.id);
@@ -135,7 +135,8 @@ const LiveView: React.FC = () => {
         throw new Error("Tüm API anahtarlarının kotası dolmuş veya bağlantı hatası oluştu.");
       }
 
-    } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       console.error('Oturum başlatılamadı:', err);
       setError(err.message || 'Canlı oturum başlatılamadı.');
       setIsConnecting(false);

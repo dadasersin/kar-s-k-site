@@ -1,16 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { getAllKeys } from '../utils/apiPool';
-import type { ApiKeyEntry } from '../types';
+import React from 'react';
 
 const AnalyticsView: React.FC = () => {
-  const [keys, setKeys] = useState<ApiKeyEntry[]>([]);
-
-  useEffect(() => {
-    setKeys(getAllKeys());
-  }, []);
-
-  const totalUsage = keys.reduce((acc, k) => acc + (k.usageCount || 0), 0);
-
   return (
     <div className="p-4 lg:p-8 overflow-y-auto h-full pb-32 bg-brandDark">
       <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-700">
@@ -23,41 +13,27 @@ const AnalyticsView: React.FC = () => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard label="Toplam İstek" value={totalUsage.toLocaleString()} sub="Tüm Zamanlar" trend="+100%" />
-          <StatCard label="Aktif API Sayısı" value={keys.length.toString()} sub="Yapılandırılmış" trend="Stabil" />
+          <StatCard label="Toplam İstek" value="1,284" sub="Son 30 gün" trend="+12%" />
+          <StatCard label="Tahmini Maliyet" value="$14.20" sub="Aylık toplam" trend="-3%" />
           <StatCard label="Ort. Yanıt Hızı" value="1.2s" sub="Global ortalama" trend="-150ms" />
-          <StatCard label="Sistem Sağlığı" value="A+" sub="Tüm düğümler" trend="Stabil" />
+          <StatCard label="Başarı Oranı" value="99.9%" sub="Tüm modüller" trend="Stabil" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">
-          <div className="lg:col-span-8 space-y-6">
-            <div className="glass-panel p-8 rounded-[40px] shadow-2xl">
+          <div className="lg:col-span-8 space-y-8">
+            <div className="glass-panel p-8 rounded-[40px] shadow-2xl min-h-[400px] flex flex-col">
               <h3 className="text-lg font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-3 italic">
-                <i className="fa-solid fa-key text-primary"></i>
-                API Anahtarı Kullanımı
+                <i className="fa-solid fa-chart-area text-primary"></i>
+                Kullanım Grafiği (Token)
               </h3>
-              <div className="space-y-4">
-                {keys.length > 0 ? (
-                  keys.map((key) => (
-                    <div key={key.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-primary/30 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${key.id.startsWith('VITE_') ? 'bg-primary/20 text-primary' : 'bg-purple-500/20 text-purple-500'}`}>
-                          <i className={`fa-solid ${key.id.startsWith('VITE_') ? 'fa-server' : 'fa-user-gear'}`}></i>
-                        </div>
-                        <div>
-                          <p className="text-white font-bold text-sm uppercase italic">{key.label}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{key.provider} • {key.modelName}</p>
-                        </div>
+              <div className="flex-1 border border-white/5 bg-black/20 rounded-3xl relative flex items-end justify-around p-8">
+                 {[40, 70, 45, 90, 65, 80, 55, 95, 75, 85, 50, 60].map((h, i) => (
+                   <div key={i} className="w-4 bg-primary/20 hover:bg-primary/50 transition-all rounded-t-lg relative group cursor-pointer" style={{ height: `${h}%` }}>
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-surface p-2 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 z-10">
+                        {h}k Token
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-black text-white italic tracking-tighter">{key.usageCount || 0}</p>
-                        <p className="text-[9px] text-slate-500 uppercase font-black">İstek</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-slate-500 text-center py-8 font-bold uppercase italic tracking-widest">Hiç API anahtarı bulunamadı.</p>
-                )}
+                   </div>
+                 ))}
               </div>
             </div>
           </div>
@@ -66,19 +42,20 @@ const AnalyticsView: React.FC = () => {
              <div className="bg-gradient-to-br from-primary/20 to-brandDark border border-primary/20 rounded-[40px] p-8 shadow-2xl">
                 <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 italic border-b border-white/5 pb-2">Hizmet Dağılımı</h3>
                 <div className="space-y-6">
-                   {['gemini', 'openai', 'deepseek', 'grok'].map(provider => {
-                     const providerUsage = keys.filter(k => k.provider === provider).reduce((acc, k) => acc + (k.usageCount || 0), 0);
-                     const percentage = totalUsage > 0 ? Math.round((providerUsage / totalUsage) * 100) : 0;
-                     const colors: Record<string, string> = {
-                       gemini: 'bg-primary',
-                       openai: 'bg-purple-500',
-                       deepseek: 'bg-emerald-500',
-                       grok: 'bg-orange-500'
-                     };
-                     return (
-                       <ProgressItem key={provider} label={provider} value={percentage} color={colors[provider] || 'bg-slate-500'} />
-                     );
-                   })}
+                   <ProgressItem label="Gemini AI" value={75} color="bg-primary" />
+                   <ProgressItem label="OpenAI" value={15} color="bg-purple-500" />
+                   <ProgressItem label="DeepSeek" value={8} color="bg-emerald-500" />
+                   <ProgressItem label="Diğer" value={2} color="bg-slate-500" />
+                </div>
+             </div>
+
+             <div className="glass-panel p-8 rounded-[32px] border border-white/5 shadow-xl">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Sistem Sağlığı</p>
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-full border-4 border-emerald-500 flex items-center justify-center">
+                      <span className="text-[10px] font-black text-emerald-500">A+</span>
+                   </div>
+                   <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase italic tracking-tighter">Tüm düğümler optimal seviyede çalışıyor.</p>
                 </div>
              </div>
           </div>
