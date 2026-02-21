@@ -24,6 +24,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
     { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
+    { id: AppView.LIVE_EDITOR, label: 'AI Geliştirici', icon: 'fa-microchip' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
     { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.AUDIO, label: 'Ses & Remix', icon: 'fa-music' },

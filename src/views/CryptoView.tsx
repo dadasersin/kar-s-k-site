@@ -129,7 +129,7 @@ const CryptoView: React.FC = () => {
                       {crypto.symbol === 'BTC' ? <Bitcoin className="w-7 h-7 text-orange-400" /> : <div className={`text-lg font-black ${crypto.color}`}>{crypto.symbol[0]}</div>}
                     </div>
                     <p className="text-[10px] font-black text-white mb-1 uppercase tracking-tighter">{crypto.symbol}</p>
-                    <p className="text-[14px] font-bold text-primary mb-1 italic tracking-tighter">$${crypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-[14px] font-bold text-primary mb-1 italic tracking-tighter">${crypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     <p className={`text-[9px] font-bold ${crypto.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {crypto.change >= 0 ? '+' : ''}{crypto.change.toFixed(2)}%
                     </p>
@@ -234,7 +234,7 @@ const CryptoView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 mb-8">
                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5">
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Fiyat</p>
-                      <p className="text-2xl font-black text-primary italic tracking-tighter">$${selectedCrypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-2xl font-black text-primary italic tracking-tighter">${selectedCrypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                    </div>
                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5">
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">24s Değişim</p>
