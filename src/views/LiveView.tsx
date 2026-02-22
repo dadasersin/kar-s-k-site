@@ -120,13 +120,14 @@ const LiveView: React.FC = () => {
           setIsConnecting(false);
           success = true;
           break;
-        } catch (err: any) {
-          console.error(`Live session key error [${keyEntry.label}]:`, err);
-          if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
+        } catch (err: unknown) {
+          const error = err as Error;
+          console.error(`Live session key error [${keyEntry.label}]:`, error);
+          if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
             markKeyAsExhausted(keyEntry.id);
             continue;
           } else {
-            throw err;
+            throw error;
           }
         }
       }

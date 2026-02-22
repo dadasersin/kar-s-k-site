@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, DollarSign, BarChart2, Briefcase, Info } from 'lucide-react';
+import { TrendingUp, DollarSign, BarChart2, Info, TrendingDown } from 'lucide-react';
 
 const BorsaView: React.FC = () => {
   const marketStats = [
@@ -10,16 +10,24 @@ const BorsaView: React.FC = () => {
     { label: 'BIST 100', value: '13,804', change: '+1.20%', icon: <BarChart2 className="w-5 h-5 text-primary" /> },
   ];
 
-  const topStocks = [
-    { ticker: 'THYAO', name: 'Türk Hava Yolları', price: '₺324.50', trend: 'up' },
-    { ticker: 'ASELS', name: 'Aselsan', price: '₺88.20', trend: 'up' },
-    { ticker: 'ISCTR', name: 'İş Bankası C', price: '₺16.45', trend: 'down' },
-    { ticker: 'TUPRS', name: 'Tüpraş', price: '₺182.10', trend: 'up' },
-    { ticker: 'YKBNK', name: 'Yapı Kredi Bankası', price: '₺31.12', trend: 'up' },
+  const winners = [
+    { ticker: 'THYAO', name: 'Türk Hava Yolları', price: '₺324.50', change: '+5.42%' },
+    { ticker: 'ASELS', name: 'Aselsan', price: '₺88.20', change: '+4.10%' },
+    { ticker: 'TUPRS', name: 'Tüpraş', price: '₺182.10', change: '+3.85%' },
+    { ticker: 'YKBNK', name: 'Yapı Kredi Bankası', price: '₺31.12', change: '+3.12%' },
+    { ticker: 'EREGL', name: 'Erdemir', price: '₺48.50', change: '+2.90%' },
+  ];
+
+  const losers = [
+    { ticker: 'ISCTR', name: 'İş Bankası C', price: '₺16.45', change: '-2.15%' },
+    { ticker: 'KCHOL', name: 'Koç Holding', price: '₺210.30', change: '-1.80%' },
+    { ticker: 'SAHOL', name: 'Sabancı Holding', price: '₺92.15', change: '-1.45%' },
+    { ticker: 'AKBNK', name: 'Akbank', price: '₺54.20', change: '-1.20%' },
+    { ticker: 'BIMAS', name: 'BİM Mağazalar', price: '₺480.00', change: '-0.95%' },
   ];
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto">
+    <div className="p-8 lg:p-12 max-w-7xl mx-auto overflow-y-auto h-full pb-32">
       <header className="mb-12">
         <h2 className="text-3xl font-bold mb-2">İstanbul Borsa Paneli</h2>
         <p className="text-gray-400">Canlı piyasa verileri ve yapay zeka destekli yatırım önerileri.</p>
@@ -47,18 +55,17 @@ const BorsaView: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recommended Stocks List */}
-        <div className="lg:col-span-2 bg-surface border border-white/5 rounded-custom overflow-hidden">
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <h3 className="font-bold flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-primary" />
-              Alınacak İlk 5 Hisse
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        {/* Winners List */}
+        <div className="bg-surface border border-white/5 rounded-custom overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-green-500/5">
+            <h3 className="font-bold flex items-center gap-2 text-green-400">
+              <TrendingUp className="w-5 h-5" />
+              Günün Yükselenleri
             </h3>
-            <span className="text-xs text-primary font-bold px-2 py-1 bg-primary/10 rounded">YZ ÖNERİSİ</span>
           </div>
           <div className="divide-y divide-white/5">
-            {topStocks.map((stock, idx) => (
+            {winners.map((stock, idx) => (
               <div key={idx} className="p-4 hover:bg-white/5 transition-colors flex items-center justify-between">
                 <div>
                   <h4 className="font-bold text-lg">{stock.ticker}</h4>
@@ -66,31 +73,51 @@ const BorsaView: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-lg">{stock.price}</p>
-                  <p className={`text-xs ${stock.trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
-                    {stock.trend === 'up' ? '▲ Yükseliş' : '▼ Düşüş'}
-                  </p>
+                  <p className="text-xs text-green-400 font-bold">{stock.change}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Info Card */}
-        <div className="space-y-6">
-          <div className="bg-primary/10 border border-primary/20 p-6 rounded-custom">
-            <h4 className="font-bold mb-4 flex items-center gap-2">
-              <Info className="w-4 h-4" />
-              Yatırım Notu
-            </h4>
-            <p className="text-sm text-gray-300 leading-relaxed">
-              Bu veriler yapay zeka algoritmalarımız tarafından piyasa hacmi, sosyal medya duyarlılığı ve teknik analiz verileri harmanlanarak oluşturulmuştur. Yatırım tavsiyesi değildir.
-            </p>
+        {/* Losers List */}
+        <div className="bg-surface border border-white/5 rounded-custom overflow-hidden">
+          <div className="p-6 border-b border-white/5 flex items-center justify-between bg-red-500/5">
+            <h3 className="font-bold flex items-center gap-2 text-red-400">
+              <TrendingDown className="w-5 h-5" />
+              Günün Düşenleri
+            </h3>
           </div>
-
-          <button className="w-full py-4 bg-primary text-white font-bold rounded-custom shadow-[0_0_20px_rgba(13,89,242,0.3)] hover:brightness-110 transition-all">
-            DETAYLI ANALİZ RAPORU AL
-          </button>
+          <div className="divide-y divide-white/5">
+            {losers.map((stock, idx) => (
+              <div key={idx} className="p-4 hover:bg-white/5 transition-colors flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-lg">{stock.ticker}</h4>
+                  <p className="text-xs text-gray-400">{stock.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-lg">{stock.price}</p>
+                  <p className="text-xs text-red-400 font-bold">{stock.change}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="bg-primary/10 border border-primary/20 p-8 rounded-custom flex flex-col md:flex-row items-center gap-8">
+        <div className="flex-1">
+          <h4 className="font-bold text-xl mb-4 flex items-center gap-2">
+            <Info className="w-6 h-6 text-primary" />
+            Yapay Zeka Yatırım Asistanı
+          </h4>
+          <p className="text-gray-300 leading-relaxed">
+            Nöral ağlarımız Borsa İstanbul verilerini, küresel piyasa trendlerini ve sosyal medya duyarlılığını saniyelik olarak analiz eder. Portföyünüzü optimize etmek için detaylı analiz raporu alabilirsiniz.
+          </p>
+        </div>
+        <button className="px-8 py-4 bg-primary text-white font-bold rounded-custom shadow-[0_0_20px_rgba(13,89,242,0.3)] hover:brightness-110 transition-all whitespace-nowrap">
+          ANALİZ RAPORU OLUŞTUR
+        </button>
       </div>
     </div>
   );
