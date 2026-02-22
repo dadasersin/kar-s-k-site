@@ -1,10 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bitcoin, TrendingUp, ShieldCheck, Zap, Activity } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Bitcoin, TrendingUp, ShieldCheck, Zap, Activity, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+interface Crypto {
+  symbol: string;
+  name: string;
+  price: string;
+  change: string;
+  color?: string;
+}
+
+interface HistoricalData {
+  name: string;
+  price: number;
+}
+
+const generateMockData = (basePrice: number, count: number): HistoricalData[] => {
+  return Array.from({ length: count }, (_, i) => ({
+    name: `Gün ${i + 1}`,
+    price: basePrice + Math.random() * (basePrice * 0.1) - (basePrice * 0.05)
+  }));
+};
 
 const CryptoView: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [selectedCrypto, setSelectedCrypto] = useState<Crypto | null>(null);
+  const [timeframe, setTimeframe] = useState<'D' | 'H' | 'A' | 'Y'>('A');
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const topCrypto = [
@@ -37,7 +60,7 @@ const CryptoView: React.FC = () => {
   }, [logs]);
 
   return (
-    <div className="p-4 lg:p-8 overflow-y-auto h-full pb-32 bg-brandDark">
+    <div className="p-4 lg:p-8 overflow-y-auto h-full pb-32 bg-brandDark relative">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           {/* Main Bot Control */}
@@ -73,7 +96,7 @@ const CryptoView: React.FC = () => {
             </div>
           </div>
 
-          {/* Top 5 Recommended Crypto - NEW SECTION */}
+          {/* Top 5 Recommended Crypto */}
           <div className="glass-panel rounded-[32px] p-8 backdrop-blur-xl border border-white/5">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-lg font-black italic text-white uppercase tracking-tighter flex items-center gap-3">
@@ -93,7 +116,8 @@ const CryptoView: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="bg-black/40 border border-white/5 p-4 rounded-2xl flex flex-col items-center hover:border-primary/40 transition-all group"
+                  className="bg-black/40 border border-white/5 p-4 rounded-2xl flex flex-col items-center hover:border-primary/40 transition-all group cursor-pointer"
+                  onClick={() => setSelectedCrypto(crypto)}
                 >
                   <div className={`w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
                     {crypto.symbol === 'BTC' ? <Bitcoin className="w-6 h-6 text-orange-400" /> : <div className={`font-black ${crypto.color}`}>{crypto.symbol[0]}</div>}
@@ -137,20 +161,104 @@ const CryptoView: React.FC = () => {
                 <span className="text-[10px] text-green-400 mb-1 font-bold">+2.4%</span>
               </div>
             </div>
-
-            <div className="mt-6 space-y-3">
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                <span className="text-gray-500">Aktif İşlem</span>
-                <span className="text-white">12</span>
-              </div>
-              <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                <span className="text-gray-500">24s Hacim</span>
-                <span className="text-white">$1.2M</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedCrypto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-brandDark border border-white/10 rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col relative shadow-2xl"
+            >
+              <button
+                onClick={() => setSelectedCrypto(null)}
+                className="absolute top-6 right-6 p-2 bg-white/5 rounded-full hover:bg-white/10 transition-all text-gray-400 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="p-8 border-b border-white/5 bg-gradient-to-r from-primary/5 to-transparent">
+                <div className="flex items-center gap-4 mb-2">
+                   <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center font-black text-xl text-white">
+                      {selectedCrypto.symbol === 'BTC' ? <Bitcoin className="w-6 h-6 text-white" /> : selectedCrypto.symbol[0]}
+                   </div>
+                   <div>
+                      <h3 className="text-2xl font-bold text-white">{selectedCrypto.name} ({selectedCrypto.symbol})</h3>
+                      <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Kripto Varlık Analizi</p>
+                   </div>
+                   <div className="ml-auto text-right pr-12">
+                      <p className="text-3xl font-black text-white italic">{selectedCrypto.price}</p>
+                      <p className={`font-bold ${selectedCrypto.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>{selectedCrypto.change}</p>
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex-1 p-8 flex flex-col">
+                <div className="flex gap-2 mb-8">
+                  {(['D', 'H', 'A', 'Y'] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTimeframe(t)}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeframe === t ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}
+                    >
+                      {t === 'D' ? 'GÜNLÜK' : t === 'H' ? 'HAFTALIK' : t === 'A' ? 'AYLIK' : 'YILLIK'}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex-1 min-h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={generateMockData(parseFloat(selectedCrypto.price.replace('$', '').replace(',', '')), timeframe === 'D' ? 24 : timeframe === 'H' ? 7 : timeframe === 'A' ? 30 : 365)}>
+                      <defs>
+                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0d59f2" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#0d59f2" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+                      <XAxis dataKey="name" hide />
+                      <YAxis hide domain={['auto', 'auto']} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#050505', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                        itemStyle={{ color: '#0d59f2' }}
+                      />
+                      <Area type="monotone" dataKey="price" stroke="#0d59f2" fillOpacity={1} fill="url(#colorPrice)" strokeWidth={3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="p-8 bg-black/40 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Hacim (24s)</p>
+                  <p className="text-sm font-bold text-white">$42.8B</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Piyasa Değeri</p>
+                  <p className="text-sm font-bold text-white">$1.3T</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Arz</p>
+                  <p className="text-sm font-bold text-white">19.6M</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">YZ Tahmini</p>
+                  <p className="text-sm font-bold text-green-500">YÜKSELİŞ (%88)</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
