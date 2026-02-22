@@ -29,6 +29,7 @@ import SecurityCenterView from './views/SecurityCenterView';
 import IntegrationsHubView from './views/IntegrationsHubView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
 import BorsaView from './views/BorsaView';
+import LiveEditorView from './views/LiveEditorView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -339,6 +340,7 @@ const App: React.FC = () => {
         {activeView === AppView.INTEGRATIONS && <IntegrationsHubView />}
         {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
         {activeView === AppView.BORSA && <BorsaView />}
+        {activeView === AppView.LIVE_EDITOR && <LiveEditorView />}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />

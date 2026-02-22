@@ -96,7 +96,7 @@ const ArtStudioView: React.FC = () => {
       };
       setArtworks([newArtwork, ...artworks]);
       setAiPrompt('');
-    } catch (e) {
+    } catch {
       alert("Sanat üretimi sırasında bir hata oluştu.");
     } finally {
       setIsGenerating(false);
@@ -118,7 +118,7 @@ const ArtStudioView: React.FC = () => {
               {tools.map(tool => (
                 <button
                   key={tool.type}
-                  onClick={() => setSelectedTool({ ...selectedTool, type: tool.type as any })}
+                  onClick={() => setSelectedTool({ ...selectedTool, type: tool.type as DrawingTool['type'] })}
                   className={`p-3 rounded-xl text-xs flex flex-col items-center gap-2 border transition-all ${
                     selectedTool.type === tool.type ? 'bg-primary border-primary text-white' : 'bg-white/5 border-white/10 text-slate-400'
                   }`}
