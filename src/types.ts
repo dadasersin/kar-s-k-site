@@ -26,7 +26,9 @@ export enum AppView {
   SECURITY = 'security',
   INTEGRATIONS = 'integrations',
   SOCIAL_MEDIA = 'social_media',
-  BORSA = 'borsa'
+  BORSA = 'borsa',
+  YOUTUBE = 'youtube',
+  LIVE_TV = 'live_tv'
 }
 
 export interface WorkflowNode {

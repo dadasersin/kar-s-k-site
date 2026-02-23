@@ -24,6 +24,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.BUILDER, label: 'LİVE AI DEVELOPER', icon: 'fa-code-branch' },
     { id: AppView.DOCKER_AI, label: 'Docker AI', icon: 'fa-server' },
     { id: AppView.BORSA, label: 'İstanbul Borsa', icon: 'fa-arrow-trend-up' },
+    { id: AppView.YOUTUBE, label: 'YouTube Hub', icon: 'fa-brands fa-youtube' },
+    { id: AppView.LIVE_TV, label: 'Canlı TV', icon: 'fa-tv' },
     { id: AppView.CRYPTO, label: 'Kripto Bot', icon: 'fa-bitcoin-sign' },
     { id: AppView.AUTOMATION, label: 'Otomasyon Hub', icon: 'fa-robot' },
     { id: AppView.SOCIAL_MEDIA, label: 'Sosyal Medya', icon: 'fa-share-nodes' },

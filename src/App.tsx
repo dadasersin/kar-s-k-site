@@ -29,6 +29,8 @@ import SecurityCenterView from './views/SecurityCenterView';
 import IntegrationsHubView from './views/IntegrationsHubView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
 import BorsaView from './views/BorsaView';
+import YouTubeView from './views/YouTubeView';
+import LiveTvView from './views/LiveTvView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -255,6 +257,8 @@ const App: React.FC = () => {
         else if (p.includes('inşa') || p.includes('developer') || p.includes('geliştir')) setActiveView(AppView.BUILDER);
         else if (p.includes('docker')) setActiveView(AppView.DOCKER_AI);
         else if (p.includes('borsa')) setActiveView(AppView.BORSA);
+        else if (p.includes('youtube')) setActiveView(AppView.YOUTUBE);
+        else if (p.includes('tv') || p.includes('televizyon')) setActiveView(AppView.LIVE_TV);
         else if (p.includes('kripto')) setActiveView(AppView.CRYPTO);
         else if (p.includes('otomasyon')) setActiveView(AppView.AUTOMATION);
         else if (p.includes('sosyal')) setActiveView(AppView.SOCIAL_MEDIA);
@@ -339,6 +343,8 @@ const App: React.FC = () => {
         {activeView === AppView.INTEGRATIONS && <IntegrationsHubView />}
         {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
         {activeView === AppView.BORSA && <BorsaView />}
+        {activeView === AppView.YOUTUBE && <YouTubeView />}
+        {activeView === AppView.LIVE_TV && <LiveTvView />}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />
