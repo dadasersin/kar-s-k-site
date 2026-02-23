@@ -408,8 +408,8 @@
     "name": "CNN Türk",
     "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/CNN_T%C3%BCrk_logo.svg/512px-CNN_T%C3%BCrk_logo.svg.png",
     "category": "News",
-    "url": "https://live.duhnet.tv/S2/HLS_LIVE/cnnturknp/playlist.m3u8",
-    "type": "m3u8",
+    "url": "https://www.youtube.com/embed/7u7_w_Q_f2U",
+    "type": "youtube",
     "id": "46",
     "color": "bg-red-600"
   },
@@ -741,8 +741,8 @@
     "name": "Haber Global",
     "logo": "https://i.imgur.com/fu6XeGS.png",
     "category": "News",
-    "url": "https://tv.ensonhaber.com/tv/tr/haberglobal/index.m3u8",
-    "type": "m3u8",
+    "url": "https://www.youtube.com/embed/W97n-uI-8y0",
+    "type": "youtube",
     "id": "83",
     "color": "bg-green-600"
   },
@@ -759,8 +759,8 @@
     "name": "Halk TV",
     "logo": "https://i.imgur.com/xM0HA30.png",
     "category": "Undefined",
-    "url": "https://halktv.blutv.com/blutv_halktv_live/live.m3u8",
-    "type": "m3u8",
+    "url": "https://www.youtube.com/embed/N8A6yA0pPDI",
+    "type": "youtube",
     "id": "85",
     "color": "bg-yellow-600"
   },

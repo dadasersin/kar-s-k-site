@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Tv, Play, Radio, Monitor, Info, Zap, Search, Heart, ExternalLink, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Tv, Play, Radio, Monitor, Info, Zap, Search, Heart, ExternalLink, AlertTriangle, RefreshCw, ShieldCheck } from 'lucide-react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import channelData from '../data/channels.json';
@@ -14,10 +14,17 @@ interface Channel {
   color: string;
 }
 
+const CORS_PROXIES = [
+  'https://corsproxy.io/?url=',
+  'https://api.allorigins.win/raw?url='
+];
+
 const LiveTvView: React.FC = () => {
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [playerError, setPlayerError] = useState(false);
+  const [isProxyActive, setIsProxyActive] = useState(false);
+  const [proxyIndex, setProxyIndex] = useState(0);
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('tv_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -36,8 +43,8 @@ const LiveTvView: React.FC = () => {
     localStorage.setItem('tv_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  useEffect(() => {
-    if (activeChannel && activeChannel.type === 'm3u8' && videoRef.current) {
+  const loadPlayer = (channel: Channel, useProxy: boolean = false) => {
+    if (channel.type === 'm3u8' && videoRef.current) {
       setPlayerError(false);
 
       // Cleanup previous player
@@ -50,6 +57,10 @@ const LiveTvView: React.FC = () => {
       videoRef.current.innerHTML = '';
       videoRef.current.appendChild(videoElement);
 
+      const finalUrl = useProxy
+        ? `${CORS_PROXIES[proxyIndex]}${encodeURIComponent(channel.url)}`
+        : channel.url;
+
       const player = playerRef.current = videojs(videoElement, {
         autoplay: true,
         controls: true,
@@ -57,22 +68,44 @@ const LiveTvView: React.FC = () => {
         fluid: true,
         preload: 'auto',
         sources: [{
-          src: activeChannel.url,
+          src: finalUrl,
           type: 'application/x-mpegURL'
         }]
       });
 
       player.on('error', () => {
-        setPlayerError(true);
+        if (!useProxy) {
+          console.log("Direct load failed, trying proxy...");
+          setIsProxyActive(true);
+          loadPlayer(channel, true);
+        } else if (proxyIndex < CORS_PROXIES.length - 1) {
+          console.log("Proxy failed, trying next proxy...");
+          setProxyIndex(prev => prev + 1);
+          loadPlayer(channel, true);
+        } else {
+          setPlayerError(true);
+          setIsProxyActive(false);
+        }
       });
 
-      return () => {
-        if (player) {
-          player.dispose();
-          playerRef.current = null;
-        }
-      };
+      player.on('playing', () => {
+        setPlayerError(false);
+      });
     }
+  };
+
+  useEffect(() => {
+    if (activeChannel) {
+      setProxyIndex(0);
+      setIsProxyActive(false);
+      loadPlayer(activeChannel, false);
+    }
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
   }, [activeChannel]);
 
   const toggleFavorite = (id: string) => {
@@ -81,9 +114,16 @@ const LiveTvView: React.FC = () => {
 
   const handleRetry = () => {
     if (activeChannel) {
-      const current = activeChannel;
-      setActiveChannel(null);
-      setTimeout(() => setActiveChannel(current), 100);
+      setProxyIndex(0);
+      setIsProxyActive(false);
+      loadPlayer(activeChannel, false);
+    }
+  };
+
+  const handleManualProxy = () => {
+    if (activeChannel) {
+      setIsProxyActive(true);
+      loadPlayer(activeChannel, true);
     }
   };
 
@@ -185,6 +225,12 @@ const LiveTvView: React.FC = () => {
                               >
                                  <RefreshCw className="w-3 h-3" /> TEKRAR DENE
                               </button>
+                              <button
+                                onClick={handleManualProxy}
+                                className="px-6 py-3 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-blue-500/30"
+                              >
+                                 <ShieldCheck className="w-3 h-3" /> PROXY İLE DENE
+                              </button>
                               <a
                                 href={activeChannel.url}
                                 target="_blank"
@@ -209,6 +255,13 @@ const LiveTvView: React.FC = () => {
                       ) : (
                         <div ref={videoRef} className="w-full h-full" />
                       )}
+
+                      {isProxyActive && !playerError && (
+                         <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-blue-600/80 backdrop-blur rounded-full flex items-center gap-2 border border-white/20">
+                            <ShieldCheck className="w-3 h-3 text-white animate-pulse" />
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">CORS Proxy Aktif</span>
+                         </div>
+                      )}
                     </div>
                     <div className="p-8 bg-white/5 border-t border-white/5 flex justify-between items-center">
                        <div className="flex items-center gap-6 overflow-hidden">
@@ -219,7 +272,7 @@ const LiveTvView: React.FC = () => {
                              <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter truncate">{activeChannel.name}</h4>
                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
                                 <Zap className="w-3 h-3 fill-current animate-pulse" />
-                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : 'M3U8 Stream'}
+                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : (isProxyActive ? 'Güvenli Stream (Proxy)' : 'Doğrudan Stream')}
                              </p>
                           </div>
                        </div>
@@ -239,10 +292,10 @@ const LiveTvView: React.FC = () => {
 
              <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-6 bg-blue-600/10 border border-blue-600/20 rounded-3xl flex items-center gap-4 group">
-                   <Zap className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+                   <ShieldCheck className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
                    <div>
-                      <p className="text-white font-bold text-xs uppercase tracking-tight">Hibrit Motor</p>
-                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">YT & M3U8 Desteği</p>
+                      <p className="text-white font-bold text-xs uppercase tracking-tight">Akıllı Proxy</p>
+                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">CORS Engeli Aşılır</p>
                    </div>
                 </div>
                 <div className="p-6 bg-red-600/10 border border-red-600/20 rounded-3xl flex items-center gap-4 group">
