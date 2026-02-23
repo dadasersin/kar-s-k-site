@@ -18,11 +18,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.AUDIO, label: 'Ses & Remix', icon: 'fa-music' },
     { id: AppView.LIVE, label: 'Canlı Etkileşim', icon: 'fa-bolt-lightning' },
-    { id: AppView.LIVE_EDITOR, label: 'Live AI Developer', icon: 'fa-code-branch' },
     { id: AppView.ART_STUDIO, label: 'Sanat Stüdyosu', icon: 'fa-palette' },
     { id: AppView.GAME_DEV, label: 'Oyun Geliştirme', icon: 'fa-gamepad' },
     { id: AppView.WORKFLOW, label: 'Neural Workflow', icon: 'fa-diagram-project' },
-    { id: AppView.BUILDER, label: 'Otonom İnşa', icon: 'fa-hammer' },
+    { id: AppView.BUILDER, label: 'LİVE AI DEVELOPER', icon: 'fa-code-branch' },
     { id: AppView.DOCKER_AI, label: 'Docker AI', icon: 'fa-server' },
     { id: AppView.BORSA, label: 'İstanbul Borsa', icon: 'fa-arrow-trend-up' },
     { id: AppView.CRYPTO, label: 'Kripto Bot', icon: 'fa-bitcoin-sign' },
@@ -102,10 +101,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
                  <p className={`text-[8px] font-black uppercase tracking-widest ${isApiActive ? 'text-green-500' : 'text-red-500'}`}>
                    {isApiActive ? 'Aktif' : 'Pasif'}
                  </p>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-                 <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500">Supabase: OK</p>
               </div>
             </div>
           </div>

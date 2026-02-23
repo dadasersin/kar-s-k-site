@@ -89,13 +89,13 @@ const WorkflowView: React.FC = () => {
             }
             success = true;
             break;
-          } catch (error: unknown) {
+          } catch (error: any) {
             console.error(`Workflow AI error [${keyEntry.label}]:`, error);
-            if ((error as Error).message?.includes('429') || (error as Error).message?.toLowerCase().includes('quota')) {
+            if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
               markKeyAsExhausted(keyEntry.id);
               continue;
             } else {
-              throw error as Error;
+              throw error;
             }
           }
         }

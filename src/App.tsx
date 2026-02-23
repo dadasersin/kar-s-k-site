@@ -11,7 +11,7 @@ import AudioView from './views/AudioView';
 import LiveView from './views/LiveView';
 import MusicView from './views/MusicView';
 import GalleryView from './views/GalleryView';
-import BuilderView from './views/BuilderView';
+import LiveAiDeveloperView from './views/LiveAiDeveloperView';
 import WorkflowView from './views/WorkflowView';
 import CryptoView from './views/CryptoView';
 import RequestView from './views/RequestView';
@@ -29,7 +29,6 @@ import SecurityCenterView from './views/SecurityCenterView';
 import IntegrationsHubView from './views/IntegrationsHubView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
 import BorsaView from './views/BorsaView';
-import LiveEditorView from './views/LiveEditorView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { SyncSettings, ChatMessage, ApiKeyEntry } from './types';
@@ -253,7 +252,7 @@ const App: React.FC = () => {
         else if (p.includes('sanat')) setActiveView(AppView.ART_STUDIO);
         else if (p.includes('oyun')) setActiveView(AppView.GAME_DEV);
         else if (p.includes('workflow') || p.includes('akış')) setActiveView(AppView.WORKFLOW);
-        else if (p.includes('inşa')) setActiveView(AppView.BUILDER);
+        else if (p.includes('inşa') || p.includes('developer') || p.includes('geliştir')) setActiveView(AppView.BUILDER);
         else if (p.includes('docker')) setActiveView(AppView.DOCKER_AI);
         else if (p.includes('borsa')) setActiveView(AppView.BORSA);
         else if (p.includes('kripto')) setActiveView(AppView.CRYPTO);
@@ -322,7 +321,7 @@ const App: React.FC = () => {
         {activeView === AppView.LIVE && <LiveView />}
         {activeView === AppView.MUSIC && <MusicView />}
         {activeView === AppView.GALLERY && <GalleryView />}
-        {activeView === AppView.BUILDER && <BuilderView />}
+        {activeView === AppView.BUILDER && <LiveAiDeveloperView />}
         {activeView === AppView.WORKFLOW && <WorkflowView />}
         {activeView === AppView.CRYPTO && <CryptoView />}
         {activeView === AppView.REQUESTS && <RequestView />}
@@ -340,7 +339,6 @@ const App: React.FC = () => {
         {activeView === AppView.INTEGRATIONS && <IntegrationsHubView />}
         {activeView === AppView.SOCIAL_MEDIA && <SocialMediaManagerView />}
         {activeView === AppView.BORSA && <BorsaView />}
-        {activeView === AppView.LIVE_EDITOR && <LiveEditorView />}
       </main>
 
       <VoiceAssistant onCommand={handleVoiceCommand} />
