@@ -37,7 +37,7 @@ const JulesStudioView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-10 pb-32">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-2">
           <div className="flex gap-1">

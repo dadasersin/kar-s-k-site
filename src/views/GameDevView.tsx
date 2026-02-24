@@ -63,7 +63,7 @@ const GameDevView: React.FC = () => {
   }, [objects, isPlaying]);
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-10 pb-32">
       <header className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div className="space-y-2">
           <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Oyun Geliştirme</h2>

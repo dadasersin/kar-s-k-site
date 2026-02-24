@@ -186,7 +186,7 @@ const AudioView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-slate-950 pb-24 md:pb-8">
+    <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-slate-950 pb-32 md:pb-8">
       <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
         <header className="text-center">
           <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center mb-6 shadow-2xl shadow-emerald-600/20 ring-1 ring-emerald-400/30">

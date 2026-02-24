@@ -2,7 +2,7 @@ import React from 'react';
 
 const SocialMediaManagerView: React.FC = () => {
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-10 pb-32">
       <header className="space-y-2">
         <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Sosyal Medya Yönetimi</h2>
         <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Multi-Platform Paylaşım ve Etkileşim Otomasyonu</p>

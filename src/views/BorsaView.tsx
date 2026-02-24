@@ -19,7 +19,7 @@ const BorsaView: React.FC = () => {
   ];
 
   return (
-    <div className="p-8 lg:p-12 max-w-7xl mx-auto">
+    <div className="p-8 lg:p-12 max-w-7xl mx-auto pb-32">
       <header className="mb-12">
         <h2 className="text-3xl font-bold mb-2">İstanbul Borsa Paneli</h2>
         <p className="text-gray-400">Canlı piyasa verileri ve yapay zeka destekli yatırım önerileri.</p>

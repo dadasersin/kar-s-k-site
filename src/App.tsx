@@ -104,22 +104,53 @@ function App() {
     for (const keyEntry of availableKeys) {
       try {
         setActiveModel(keyEntry.label);
-        const genAI = new GoogleGenerativeAI(keyEntry.key);
-        const model = genAI.getGenerativeModel({
-          model: keyEntry.modelName || 'gemini-1.5-flash',
-          systemInstruction: options?.systemInstruction
-        });
+        let responseText = '';
 
-        // Chat session with history
-        const chat = model.startChat({
-          history: messages.slice(-10).map(m => ({
-            role: m.role === 'user' ? 'user' : 'model',
-            parts: [{ text: m.text }]
-          }))
-        });
+        if (keyEntry.provider === 'gemini') {
+          const genAI = new GoogleGenerativeAI(keyEntry.key);
+          const model = genAI.getGenerativeModel({
+            model: keyEntry.modelName || 'gemini-1.5-flash',
+            systemInstruction: options?.systemInstruction
+          });
 
-        const result = await chat.sendMessage(text);
-        const responseText = result.response.text();
+          const chat = model.startChat({
+            history: messages.slice(-10).map(m => ({
+              role: m.role === 'user' ? 'user' : 'model',
+              parts: [{ text: m.text }]
+            }))
+          });
+
+          const result = await chat.sendMessage(text);
+          responseText = result.response.text();
+        } else {
+          // OpenAI, DeepSeek, Grok, vb. uyumlu API'lar
+          const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${keyEntry.key}`
+            },
+            body: JSON.stringify({
+              model: keyEntry.modelName,
+              messages: [
+                ...(options?.systemInstruction ? [{ role: 'system', content: options.systemInstruction }] : []),
+                ...messages.slice(-10).map(m => ({
+                  role: m.role === 'user' ? 'user' : 'assistant',
+                  content: m.text
+                })),
+                { role: 'user', content: text }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || `API Hatası: ${response.status}`);
+          }
+
+          const data = await response.json();
+          responseText = data.choices[0].message.content;
+        }
 
         const modelMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -163,9 +194,9 @@ function App() {
 
   const renderView = () => {
     switch (activeView) {
-      case AppView.HOME: return <HomeView />;
-      case AppView.TOOLS: return <ToolsView />;
-      case AppView.DASHBOARD: return <Dashboard />;
+      case AppView.HOME: return <HomeView onViewChange={setActiveView} />;
+      case AppView.TOOLS: return <ToolsView onViewChange={setActiveView} />;
+      case AppView.DASHBOARD: return <Dashboard onViewChange={setActiveView} />;
       case AppView.JULES_STUDIO: return <JulesStudioView />;
       case AppView.CHAT: return (
         <ChatView
@@ -215,7 +246,7 @@ function App() {
         syncStatus="idle"
         onManualSync={() => console.log('Syncing...')}
       />
-      <main className="flex-1 overflow-hidden relative ml-20 lg:ml-64">
+      <main className="flex-1 overflow-hidden relative ml-0 sm:ml-20 lg:ml-64">
         <div className="h-full overflow-y-auto">
           {renderView()}
         </div>
@@ -250,6 +281,7 @@ function App() {
           }
         }} />
       </main>
+      <BottomNav activeView={activeView} onViewChange={setActiveView} />
     </div>
   );
 }

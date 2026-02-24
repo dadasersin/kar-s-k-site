@@ -49,11 +49,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       desc: 'Multimodal gerçek zamanlı YZ asistanı.',
       icon: 'fa-bolt-lightning',
       color: 'bg-amber-600 shadow-amber-600/30'
+    },
+    {
+      view: AppView.BORSA,
+      title: 'Borsa',
+      desc: 'Anlık piyasa verileri ve analizler.',
+      icon: 'fa-arrow-trend-up',
+      color: 'bg-purple-600 shadow-purple-600/30'
+    },
+    {
+      view: AppView.LIVE_TV,
+      title: 'TV Pro',
+      desc: '400+ canlı kanal ve akıllı yayın.',
+      icon: 'fa-tv',
+      color: 'bg-red-600 shadow-red-600/30'
+    },
+    {
+      view: AppView.SYSTEM_EXPERT,
+      title: 'Uzman',
+      desc: 'Kendi kendine onarma ve sistem yönetimi.',
+      icon: 'fa-user-gear',
+      color: 'bg-slate-600 shadow-slate-600/30'
+    },
+    {
+      view: AppView.SETTINGS,
+      title: 'Ayarlar',
+      desc: 'API havuzu ve sistem yapılandırması.',
+      icon: 'fa-sliders',
+      color: 'bg-slate-800 shadow-slate-800/30'
     }
   ];
 
   return (
-    <div className="flex-1 p-5 md:p-10 overflow-y-auto bg-brandDark pb-24 md:pb-10">
+    <div className="flex-1 p-5 md:p-10 overflow-y-auto bg-brandDark pb-32">
       <header className="mb-10 md:mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
         <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1 rounded-full mb-4">
            <div className={`w-2 h-2 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>

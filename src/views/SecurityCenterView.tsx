@@ -2,7 +2,7 @@ import React from 'react';
 
 const SecurityCenterView: React.FC = () => {
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-10 pb-32">
       <header className="space-y-2">
         <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Güvenlik Merkezi</h2>
         <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">AI Destekli Tehdit Analizi ve Kalkan Yönetimi</p>

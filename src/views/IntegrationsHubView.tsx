@@ -23,7 +23,7 @@ const IntegrationsHubView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-10 pb-20">
+    <div className="space-y-10 pb-32">
       <header className="space-y-2">
         <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Entegrasyon Merkezi</h2>
         <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Tüm Harici Servisleri Tek Bir Noktadan Yönetin</p>
