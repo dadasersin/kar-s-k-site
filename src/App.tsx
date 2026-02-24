@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
+import VoiceAssistant from './components/VoiceAssistant';
+import { AppView } from './types';
+import type { ChatMessage } from './types';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
+
+// Views
 import HomeView from './views/HomeView';
 import BorsaView from './views/BorsaView';
 import CryptoView from './views/CryptoView';
@@ -8,11 +15,43 @@ import LiveTvView from './views/LiveTvView';
 import LiveAiDeveloperView from './views/LiveAiDeveloperView';
 import SystemExpertView from './views/SystemExpertView';
 import RuwisAiView from './views/RuwisAiView';
-import VoiceAssistant from './components/VoiceAssistant';
-import { AppView } from './types';
+import ToolsView from './views/ToolsView';
+import Dashboard from './views/Dashboard';
+import JulesStudioView from './views/JulesStudioView';
+import ChatView from './views/ChatView';
+import VisualsView from './views/VisualsView';
+import AudioView from './views/AudioView';
+import LiveView from './views/LiveView';
+import ArtStudioView from './views/ArtStudioView';
+import GameDevView from './views/GameDevView';
+import WorkflowView from './views/WorkflowView';
+import DockerConfigView from './views/DockerConfigView';
+import AutomationView from './views/AutomationView';
+import SocialMediaManagerView from './views/SocialMediaManagerView';
+import GoogleAppsView from './views/GoogleAppsView';
+import IntegrationsHubView from './views/IntegrationsHubView';
+import SecurityCenterView from './views/SecurityCenterView';
+import PromptLibraryView from './views/PromptLibraryView';
+import AnalyticsView from './views/AnalyticsView';
+import RequestView from './views/RequestView';
+import GalleryView from './views/GalleryView';
+import MusicView from './views/MusicView';
+import CreativeView from './views/CreativeView';
+import SystemView from './views/SystemView';
+import SettingsView from './views/SettingsView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem('chat_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [isTyping, setIsTyping] = useState(false);
+  const [activeModel, setActiveModel] = useState('Gemini 3 Flash');
+
+  useEffect(() => {
+    localStorage.setItem('chat_history', JSON.stringify(messages));
+  }, [messages]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
@@ -31,7 +70,6 @@ function App() {
         localStorage.setItem('system_error_logs', JSON.stringify(trimmedLogs));
       } catch (e) {
         console.error('Failed to save error log to localStorage', e);
-        localStorage.setItem('system_error_logs', JSON.stringify([errorLog]));
       }
     };
 
@@ -39,16 +77,132 @@ function App() {
     return () => window.removeEventListener('error', handleError);
   }, []);
 
+  const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+
+    const availableKeys = getAvailableKeys();
+    if (availableKeys.length === 0) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: "Hata: Herhangi bir API anahtarı bulunamadı. Lütfen Ayarlar sayfasından anahtar ekleyin.",
+        timestamp: Date.now()
+      }]);
+      setIsTyping(false);
+      return;
+    }
+
+    let success = false;
+    for (const keyEntry of availableKeys) {
+      try {
+        setActiveModel(keyEntry.label);
+        const genAI = new GoogleGenerativeAI(keyEntry.key);
+        const model = genAI.getGenerativeModel({
+          model: keyEntry.modelName || 'gemini-1.5-flash',
+          systemInstruction: options?.systemInstruction
+        });
+
+        // Chat session with history
+        const chat = model.startChat({
+          history: messages.slice(-10).map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }]
+          }))
+        });
+
+        const result = await chat.sendMessage(text);
+        const responseText = result.response.text();
+
+        const modelMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          text: responseText,
+          timestamp: Date.now()
+        };
+
+        setMessages(prev => [...prev, modelMsg]);
+        success = true;
+        break;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        console.error(`API Error [${keyEntry.label}]:`, error);
+        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
+          markKeyAsExhausted(keyEntry.id);
+          continue;
+        } else {
+          setMessages(prev => [...prev, {
+            id: (Date.now() + 1).toString(),
+            role: 'model',
+            text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
+            timestamp: Date.now()
+          }]);
+          break;
+        }
+      }
+    }
+
+    if (!success && availableKeys.length > 0) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        text: "Üzgünüm, şu anda tüm API servisleri kota aşımı veya teknik bir hata nedeniyle kullanılamıyor.",
+        timestamp: Date.now()
+      }]);
+    }
+
+    setIsTyping(false);
+  };
+
   const renderView = () => {
     switch (activeView) {
       case AppView.HOME: return <HomeView />;
+      case AppView.TOOLS: return <ToolsView />;
+      case AppView.DASHBOARD: return <Dashboard />;
+      case AppView.JULES_STUDIO: return <JulesStudioView />;
+      case AppView.CHAT: return (
+        <ChatView
+          messages={messages}
+          setMessages={setMessages}
+          onSendMessage={handleSendMessage}
+          isTyping={isTyping}
+          activeModelInfo={activeModel}
+        />
+      );
+      case AppView.VISUALS: return <VisualsView />;
+      case AppView.RUWIS_AI: return <RuwisAiView />;
+      case AppView.AUDIO: return <AudioView />;
+      case AppView.LIVE: return <LiveView />;
+      case AppView.ART_STUDIO: return <ArtStudioView />;
+      case AppView.GAME_DEV: return <GameDevView />;
+      case AppView.WORKFLOW: return <WorkflowView />;
+      case AppView.BUILDER: return <LiveAiDeveloperView />;
+      case AppView.DOCKER_AI: return <DockerConfigView />;
       case AppView.BORSA: return <BorsaView />;
-      case AppView.CRYPTO: return <CryptoView />;
       case AppView.YOUTUBE: return <YouTubeView />;
       case AppView.LIVE_TV: return <LiveTvView />;
-      case AppView.BUILDER: return <LiveAiDeveloperView />;
       case AppView.SYSTEM_EXPERT: return <SystemExpertView />;
-      case AppView.RUWIS_AI: return <RuwisAiView />;
+      case AppView.CRYPTO: return <CryptoView />;
+      case AppView.AUTOMATION: return <AutomationView />;
+      case AppView.SOCIAL_MEDIA: return <SocialMediaManagerView />;
+      case AppView.GOOGLE_APPS: return <GoogleAppsView />;
+      case AppView.INTEGRATIONS: return <IntegrationsHubView />;
+      case AppView.SECURITY: return <SecurityCenterView />;
+      case AppView.PROMPTS: return <PromptLibraryView />;
+      case AppView.ANALYTICS: return <AnalyticsView />;
+      case AppView.REQUESTS: return <RequestView />;
+      case AppView.GALLERY: return <GalleryView />;
+      case AppView.MUSIC: return <MusicView />;
+      case AppView.CREATIVE: return <CreativeView />;
+      case AppView.SYSTEM: return <SystemView />;
+      case AppView.SETTINGS: return <SettingsView />;
       default: return <HomeView />;
     }
   };
@@ -65,12 +219,35 @@ function App() {
         <div className="h-full overflow-y-auto">
           {renderView()}
         </div>
-        <VoiceAssistant onCommand={(cmd) => {
-          if (cmd.includes('ana sayfa')) setActiveView(AppView.HOME);
-          if (cmd.includes('borsa')) setActiveView(AppView.BORSA);
-          if (cmd.includes('kripto')) setActiveView(AppView.CRYPTO);
-          if (cmd.includes('televizyon') || cmd.includes('tv')) setActiveView(AppView.LIVE_TV);
-          if (cmd.includes('uzman') || cmd.includes('onarı')) setActiveView(AppView.SYSTEM_EXPERT);
+        <VoiceAssistant onCommand={(command, action, payload) => {
+          if (command === 'nav' && action === 'nav') {
+            const target = payload.toLowerCase();
+            if (target === 'home' || target.includes('ana sayfa')) setActiveView(AppView.HOME);
+            else if (target === 'tools' || target.includes('araçlar')) setActiveView(AppView.TOOLS);
+            else if (target === 'creative' || target.includes('sahne')) setActiveView(AppView.CREATIVE);
+            else if (target === 'dashboard' || target.includes('panel')) setActiveView(AppView.DASHBOARD);
+            else if (target === 'chat' || target.includes('sohbet')) setActiveView(AppView.CHAT);
+            else if (target === 'visuals' || target.includes('stüdyo')) setActiveView(AppView.VISUALS);
+            else if (target === 'ruwis_ai' || target.includes('görsel')) setActiveView(AppView.RUWIS_AI);
+            else if (target === 'audio' || target.includes('ses')) setActiveView(AppView.AUDIO);
+            else if (target === 'music' || target.includes('müzik')) setActiveView(AppView.MUSIC);
+            else if (target === 'gallery' || target.includes('galeri')) setActiveView(AppView.GALLERY);
+            else if (target === 'workflow' || target.includes('akışı')) setActiveView(AppView.WORKFLOW);
+            else if (target === 'builder' || target.includes('inşa')) setActiveView(AppView.BUILDER);
+            else if (target === 'crypto' || target.includes('kripto')) setActiveView(AppView.CRYPTO);
+            else if (target === 'google_apps' || target.includes('google')) setActiveView(AppView.GOOGLE_APPS);
+            else if (target === 'docker_ai' || target.includes('docker')) setActiveView(AppView.DOCKER_AI);
+            else if (target === 'requests' || target.includes('görev')) setActiveView(AppView.REQUESTS);
+            else if (target === 'system' || target.includes('sistem')) setActiveView(AppView.SYSTEM);
+            else if (target === 'settings' || target.includes('ayar')) setActiveView(AppView.SETTINGS);
+            else if (target === 'borsa') setActiveView(AppView.BORSA);
+            else if (target === 'youtube') setActiveView(AppView.YOUTUBE);
+            else if (target === 'live_tv' || target.includes('tv') || target.includes('televizyon')) setActiveView(AppView.LIVE_TV);
+            else if (target === 'system_expert' || target.includes('uzman')) setActiveView(AppView.SYSTEM_EXPERT);
+          } else if (command === 'chat') {
+            setActiveView(AppView.CHAT);
+            handleSendMessage(payload);
+          }
         }} />
       </main>
     </div>
