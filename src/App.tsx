@@ -7,6 +7,7 @@ import YouTubeView from './views/YouTubeView';
 import LiveTvView from './views/LiveTvView';
 import LiveAiDeveloperView from './views/LiveAiDeveloperView';
 import SystemExpertView from './views/SystemExpertView';
+import RuwisAiView from './views/RuwisAiView';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 
@@ -47,6 +48,7 @@ function App() {
       case AppView.LIVE_TV: return <LiveTvView />;
       case AppView.BUILDER: return <LiveAiDeveloperView />;
       case AppView.SYSTEM_EXPERT: return <SystemExpertView />;
+      case AppView.RUWIS_AI: return <RuwisAiView />;
       default: return <HomeView />;
     }
   };

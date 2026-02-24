@@ -29,7 +29,8 @@ export enum AppView {
   BORSA = 'borsa',
   YOUTUBE = 'youtube',
   LIVE_TV = 'live_tv',
-  SYSTEM_EXPERT = 'system_expert'
+  SYSTEM_EXPERT = 'system_expert',
+  RUWIS_AI = 'ruwis_ai'
 }
 
 export interface WorkflowNode {
