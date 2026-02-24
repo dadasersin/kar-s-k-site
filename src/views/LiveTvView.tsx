@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Tv, Play, Radio, Monitor, Info, Zap, Search, Heart, ExternalLink, AlertTriangle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Tv, Play, Radio, Monitor, Info, Zap, Search, Heart, ExternalLink, AlertTriangle, RefreshCw, ShieldCheck, Wrench } from 'lucide-react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import channelData from '../data/channels.json';
@@ -15,8 +15,10 @@ interface Channel {
 }
 
 const CORS_PROXIES = [
-  'https://corsproxy.io/?url=',
-  'https://api.allorigins.win/raw?url='
+  'https://api.allorigins.win/raw?url=',
+  'https://cors-anywhere.herokuapp.com/', // Note: Needs opt-in usually, but good fallback
+  'https://proxy.cors.sh/',
+  'https://corsproxy.io/?url='
 ];
 
 const LiveTvView: React.FC = () => {
@@ -25,6 +27,7 @@ const LiveTvView: React.FC = () => {
   const [playerError, setPlayerError] = useState(false);
   const [isProxyActive, setIsProxyActive] = useState(false);
   const [proxyIndex, setProxyIndex] = useState(0);
+  const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem('tv_favorites');
     return saved ? JSON.parse(saved) : [];
@@ -43,11 +46,10 @@ const LiveTvView: React.FC = () => {
     localStorage.setItem('tv_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  const loadPlayer = (channel: Channel, useProxy: boolean = false) => {
+  const loadPlayer = (channel: Channel, useProxy: boolean = false, pIndex: number = 0) => {
     if (channel.type === 'm3u8' && videoRef.current) {
       setPlayerError(false);
 
-      // Cleanup previous player
       if (playerRef.current) {
         playerRef.current.dispose();
       }
@@ -58,7 +60,7 @@ const LiveTvView: React.FC = () => {
       videoRef.current.appendChild(videoElement);
 
       const finalUrl = useProxy
-        ? `${CORS_PROXIES[proxyIndex]}${encodeURIComponent(channel.url)}`
+        ? `${CORS_PROXIES[pIndex]}${encodeURIComponent(channel.url)}`
         : channel.url;
 
       const player = playerRef.current = videojs(videoElement, {
@@ -67,6 +69,14 @@ const LiveTvView: React.FC = () => {
         responsive: true,
         fluid: true,
         preload: 'auto',
+        html5: {
+          vhs: {
+            overrideNative: true,
+            withCredentials: false
+          },
+          nativeAudioTracks: false,
+          nativeVideoTracks: false
+        },
         sources: [{
           src: finalUrl,
           type: 'application/x-mpegURL'
@@ -74,22 +84,27 @@ const LiveTvView: React.FC = () => {
       });
 
       player.on('error', () => {
+        const currentError = player.error();
+        console.warn(`Player Error [Proxy: ${useProxy}, Index: ${pIndex}]:`, currentError);
+
         if (!useProxy) {
-          console.log("Direct load failed, trying proxy...");
+          setIsAutoFixing(true);
           setIsProxyActive(true);
-          loadPlayer(channel, true);
-        } else if (proxyIndex < CORS_PROXIES.length - 1) {
-          console.log("Proxy failed, trying next proxy...");
-          setProxyIndex(prev => prev + 1);
-          loadPlayer(channel, true);
+          setTimeout(() => loadPlayer(channel, true, 0), 1000);
+        } else if (pIndex < CORS_PROXIES.length - 1) {
+          setIsAutoFixing(true);
+          setProxyIndex(pIndex + 1);
+          setTimeout(() => loadPlayer(channel, true, pIndex + 1), 1500);
         } else {
           setPlayerError(true);
           setIsProxyActive(false);
+          setIsAutoFixing(false);
         }
       });
 
       player.on('playing', () => {
         setPlayerError(false);
+        setIsAutoFixing(false);
       });
     }
   };
@@ -98,6 +113,7 @@ const LiveTvView: React.FC = () => {
     if (activeChannel) {
       setProxyIndex(0);
       setIsProxyActive(false);
+      setIsAutoFixing(false);
       loadPlayer(activeChannel, false);
     }
     return () => {
@@ -116,14 +132,8 @@ const LiveTvView: React.FC = () => {
     if (activeChannel) {
       setProxyIndex(0);
       setIsProxyActive(false);
+      setIsAutoFixing(true);
       loadPlayer(activeChannel, false);
-    }
-  };
-
-  const handleManualProxy = () => {
-    if (activeChannel) {
-      setIsProxyActive(true);
-      loadPlayer(activeChannel, true);
     }
   };
 
@@ -138,7 +148,7 @@ const LiveTvView: React.FC = () => {
                </div>
                <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Canlı TV Pro</h2>
             </div>
-            <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Kesintisiz Yayın & Hibrit Altyapı</p>
+            <p className="text-slate-500 text-sm font-bold tracking-widest uppercase">Kesintisiz Yayın & Akıllı Proxy Sistemi</p>
           </div>
 
           <div className="flex-1 max-w-md w-full relative">
@@ -209,27 +219,36 @@ const LiveTvView: React.FC = () => {
                 ) : (
                   <div className="flex flex-col h-full">
                     <div className="w-full aspect-video bg-black rounded-t-[3rem] overflow-hidden relative group/player">
-                      {playerError ? (
+                      {isAutoFixing ? (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm p-10 text-center animate-in fade-in">
+                           <div className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center mb-6 border border-blue-500/30">
+                              <Wrench className="w-10 h-10 text-blue-500 animate-bounce" />
+                           </div>
+                           <h4 className="text-xl font-black text-white uppercase mb-2">Otomatik Onarım Devrede</h4>
+                           <p className="text-slate-400 text-xs max-w-md mb-8 font-bold uppercase tracking-wider leading-relaxed">
+                              CORS engeli algılandı. Kodlama uzmanı alternatif proxy sunucuları üzerinden bağlantı kuruyor...
+                           </p>
+                           <div className="flex gap-1">
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                           </div>
+                        </div>
+                      ) : playerError ? (
                         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md p-10 text-center animate-in fade-in">
                            <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6 border border-red-500/30">
                               <AlertTriangle className="w-10 h-10 text-red-500" />
                            </div>
-                           <h4 className="text-xl font-black text-white uppercase mb-2">Yayın Yüklenemedi</h4>
+                           <h4 className="text-xl font-black text-white uppercase mb-2">Yayın Aşılamadı</h4>
                            <p className="text-slate-400 text-sm max-w-md mb-8 font-bold uppercase tracking-wider leading-relaxed">
-                              Bu kanalın yayını tarayıcı güvenlik politikaları (CORS) veya bağlantı sorunu nedeniyle portal içinde açılamıyor.
+                              Tüm proxy ve onarım yöntemleri denendi ancak yayın kaynağı erişime kapalı.
                            </p>
                            <div className="flex flex-wrap justify-center gap-4">
                               <button
                                 onClick={handleRetry}
                                 className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-white/10"
                               >
-                                 <RefreshCw className="w-3 h-3" /> TEKRAR DENE
-                              </button>
-                              <button
-                                onClick={handleManualProxy}
-                                className="px-6 py-3 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-blue-500/30"
-                              >
-                                 <ShieldCheck className="w-3 h-3" /> PROXY İLE DENE
+                                 <RefreshCw className="w-3 h-3" /> YENİDEN DENE
                               </button>
                               <a
                                 href={activeChannel.url}
@@ -237,7 +256,7 @@ const LiveTvView: React.FC = () => {
                                 rel="noopener noreferrer"
                                 className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
                               >
-                                 <ExternalLink className="w-3 h-3" /> DIŞ BAĞLANTIDA AÇ
+                                 <ExternalLink className="w-3 h-3" /> KAYNAK SİTESİNDE AÇ
                               </a>
                            </div>
                         </div>
@@ -256,10 +275,10 @@ const LiveTvView: React.FC = () => {
                         <div ref={videoRef} className="w-full h-full" />
                       )}
 
-                      {isProxyActive && !playerError && (
+                      {isProxyActive && !playerError && !isAutoFixing && (
                          <div className="absolute top-4 right-4 z-10 px-3 py-1 bg-blue-600/80 backdrop-blur rounded-full flex items-center gap-2 border border-white/20">
                             <ShieldCheck className="w-3 h-3 text-white animate-pulse" />
-                            <span className="text-[8px] font-black text-white uppercase tracking-widest">CORS Proxy Aktif</span>
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">Akıllı Proxy Aktif (Kanal {proxyIndex + 1})</span>
                          </div>
                       )}
                     </div>
@@ -272,7 +291,7 @@ const LiveTvView: React.FC = () => {
                              <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter truncate">{activeChannel.name}</h4>
                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
                                 <Zap className="w-3 h-3 fill-current animate-pulse" />
-                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : (isProxyActive ? 'Güvenli Stream (Proxy)' : 'Doğrudan Stream')}
+                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : (isProxyActive ? 'Onarılmış Güvenli Stream' : 'Doğrudan Stream')}
                              </p>
                           </div>
                        </div>
@@ -294,22 +313,22 @@ const LiveTvView: React.FC = () => {
                 <div className="p-6 bg-blue-600/10 border border-blue-600/20 rounded-3xl flex items-center gap-4 group">
                    <ShieldCheck className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
                    <div>
-                      <p className="text-white font-bold text-xs uppercase tracking-tight">Akıllı Proxy</p>
-                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">CORS Engeli Aşılır</p>
+                      <p className="text-white font-bold text-xs uppercase tracking-tight">Derin Proxy</p>
+                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Gelişmiş CORS Tünelleme</p>
                    </div>
                 </div>
-                <div className="p-6 bg-red-600/10 border border-red-600/20 rounded-3xl flex items-center gap-4 group">
-                   <Monitor className="w-6 h-6 text-red-400 group-hover:scale-110 transition-transform" />
+                <div className="p-6 bg-indigo-600/10 border border-indigo-600/20 rounded-3xl flex items-center gap-4 group">
+                   <Wrench className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition-transform" />
                    <div>
-                      <p className="text-white font-bold text-xs uppercase tracking-tight">Kanal Havuzu</p>
-                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">220+ Aktif Yayın</p>
+                      <p className="text-white font-bold text-xs uppercase tracking-tight">Kendi Kendini Onarma</p>
+                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Otomatik Hata Giderme</p>
                    </div>
                 </div>
                 <div className="p-6 bg-green-600/10 border border-green-600/20 rounded-3xl flex items-center gap-4 group">
                    <Info className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
                    <div>
-                      <p className="text-white font-bold text-xs uppercase tracking-tight">Hata Yönetimi</p>
-                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Otomatik Kurtarma</p>
+                      <p className="text-white font-bold text-xs uppercase tracking-tight">Hibrid Motor</p>
+                      <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest">Multi-Kanal Desteği</p>
                    </div>
                 </div>
              </div>
