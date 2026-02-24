@@ -35,7 +35,7 @@ const MusicView: React.FC = () => {
               <div className="flex-1">
                 <h4 className={`font-bold transition-colors ${playingId === i ? 'text-primary' : ''}`}>Nöral Frekanslar v{i}</h4>
                 <div className="flex items-center gap-2">
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">AI Generated • 3:45</p>
+                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">YZ ÜRETİMİ • 3:45</p>
                   {playingId === i && (
                     <div className="flex gap-0.5 items-end h-3">
                       <div className="w-0.5 bg-primary animate-music-bar-1"></div>

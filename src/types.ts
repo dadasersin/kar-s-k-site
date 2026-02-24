@@ -30,7 +30,9 @@ export enum AppView {
   YOUTUBE = 'youtube',
   LIVE_TV = 'live_tv',
   SYSTEM_EXPERT = 'system_expert',
-  RUWIS_AI = 'ruwis_ai'
+  RUWIS_AI = 'ruwis_ai',
+  ANTIGRAVITY = 'antigravity',
+  FIGMA_STUDIO = 'figma_studio'
 }
 
 export interface WorkflowNode {

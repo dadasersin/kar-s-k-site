@@ -40,6 +40,8 @@ import MusicView from './views/MusicView';
 import CreativeView from './views/CreativeView';
 import SystemView from './views/SystemView';
 import SettingsView from './views/SettingsView';
+import AntigravityView from './views/AntigravityView';
+import FigmaStudioView from './views/FigmaStudioView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -171,7 +173,7 @@ function App() {
         break;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        console.error(`API Error [${keyEntry.label}]:`, error);
+        console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
           markKeyAsExhausted(keyEntry.id);
           continue;
@@ -241,6 +243,8 @@ function App() {
       case AppView.CREATIVE: return <CreativeView />;
       case AppView.SYSTEM: return <SystemView />;
       case AppView.SETTINGS: return <SettingsView />;
+      case AppView.ANTIGRAVITY: return <AntigravityView />;
+      case AppView.FIGMA_STUDIO: return <FigmaStudioView />;
       default: return <HomeView />;
     }
   };

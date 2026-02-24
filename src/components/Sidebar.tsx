@@ -39,8 +39,10 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.REQUESTS, label: 'Görev Yönetimi', icon: 'fa-list-check' },
     { id: AppView.GALLERY, label: 'Galeri', icon: 'fa-images' },
     { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
+    { id: AppView.FIGMA_STUDIO, label: 'Figma Stüdyo', icon: 'fa-brands fa-figma' },
     { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
     { id: AppView.SYSTEM, label: 'Sistem Çekirdeği', icon: 'fa-microchip' },
+    { id: AppView.ANTIGRAVITY, label: 'Model Kotası', icon: 'fa-gauge-high' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
@@ -74,7 +76,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
             </div>
             <div className="hidden lg:block overflow-hidden">
               <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">Ersin Güleş</h1>
-              <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">AI Manager</p>
+              <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">YZ YÖNETİCİSİ</p>
             </div>
           </div>
         </div>

@@ -112,9 +112,9 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, setMessages, onSendMessag
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${isWebSearch ? 'border-primary/50 bg-primary/10 text-primary' : 'border-white/5 text-slate-500'}`}
             >
                <i className="fa-solid fa-globe text-[10px]"></i>
-               <span className="text-[9px] font-black uppercase tracking-widest">{isWebSearch ? 'Web Açık' : 'Web Kapalı'}</span>
+               <span className="text-[9px] font-black uppercase tracking-widest">{isWebSearch ? 'Web Araştırma Aktif' : 'Web Kapalı'}</span>
             </button>
-            <button onClick={() => { if(confirm('Tüm sohbet silinsin mi?')) { setMessages([]); localStorage.removeItem('chat_history'); } }} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors">
+            <button onClick={() => { if(confirm('Tüm sohbet geçmişi silinsin mi?')) { setMessages([]); localStorage.removeItem('chat_history'); } }} className="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors">
               <i className="fa-solid fa-trash-can text-xs"></i>
             </button>
         </div>
@@ -137,7 +137,7 @@ const ChatView: React.FC<ChatViewProps> = ({ messages, setMessages, onSendMessag
             }`}>
               <p className="whitespace-pre-wrap text-[13px] leading-relaxed">{m.text}</p>
               <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                <span className="text-[7px] opacity-40 uppercase font-black tracking-tighter">{m.role === 'model' ? 'AI Assistant' : 'Authorized User'}</span>
+                <span className="text-[7px] opacity-40 uppercase font-black tracking-tighter">{m.role === 'model' ? 'YZ ASİSTANI' : 'YETKİLİ KULLANICI'}</span>
                 <span className="text-[8px] opacity-40 font-mono">
                   {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>

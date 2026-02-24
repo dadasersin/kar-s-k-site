@@ -296,7 +296,7 @@ const LiveTvView: React.FC = () => {
                              <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter truncate">{activeChannel.name}</h4>
                              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
                                 <Zap className="w-3 h-3 fill-current animate-pulse" />
-                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : (isProxyActive ? 'Onarılmış Güvenli Stream' : 'Doğrudan Stream')}
+                                {activeChannel.type === 'youtube' ? 'YouTube Canlı Yayın' : (isProxyActive ? 'Onarılmış Güvenli Akış' : 'Doğrudan Akış')}
                              </p>
                           </div>
                        </div>

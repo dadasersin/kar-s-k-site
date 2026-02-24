@@ -8,7 +8,7 @@ interface BottomNavProps {
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeView, onViewChange }) => {
   const navItems = [
-    { id: AppView.HOME, label: 'EV', icon: 'fa-house' },
+    { id: AppView.HOME, label: 'ANA SAYFA', icon: 'fa-house' },
     { id: AppView.CHAT, label: 'SOHBET', icon: 'fa-comments' },
     { id: AppView.TOOLS, label: 'ARAÇLAR', icon: 'fa-screwdriver-wrench' },
     { id: AppView.LIVE_TV, label: 'TV', icon: 'fa-tv' },

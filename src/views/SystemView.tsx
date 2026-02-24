@@ -2,10 +2,10 @@ import React from 'react';
 
 const SystemView: React.FC = () => {
   const modules = [
-    { name: 'Neural Reasoning', status: 'Optimal', load: '42%', color: 'text-primary' },
-    { name: 'Creative Synthesis', status: 'Active', load: '18%', color: 'text-purple-400' },
-    { name: 'Temporal Processing', status: 'Standby', load: '0%', color: 'text-blue-400' },
-    { name: 'Jules External Sync', status: 'Connected', load: '100%', color: 'text-emerald-400' },
+    { name: 'Nöral Muhakeme', status: 'Optimal', load: '42%', color: 'text-primary' },
+    { name: 'Yaratıcı Sentez', status: 'Aktif', load: '18%', color: 'text-purple-400' },
+    { name: 'Zamansal İşleme', status: 'Beklemede', load: '0%', color: 'text-blue-400' },
+    { name: 'Harici Senkronizasyon', status: 'Bağlı', load: '100%', color: 'text-emerald-400' },
   ];
 
   return (
@@ -16,13 +16,13 @@ const SystemView: React.FC = () => {
             <div className="absolute top-0 right-0 p-8">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">Core Online & Synced</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500">ÇEKİRDEK ÇEVRİMİÇİ</span>
               </div>
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase mb-4">Autonomous Intelligence</h2>
+            <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase mb-4">Otonom Zeka Çekirdeği</h2>
             <p className="text-gray-400 max-w-2xl leading-relaxed mb-10 text-sm">
-              Yapay Zeka Merkezi operates with full authorization. System is currently linked to <span className="text-primary font-bold">Jules Session Protocol</span> for enhanced high-level reasoning.
+              Yapay Zeka Merkezi tam yetkiyle çalışmaktadır. Sistem şu anda gelişmiş muhakeme için <span className="text-primary font-bold">Jules Oturum Protokolü</span>'ne bağlıdır.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -46,20 +46,20 @@ const SystemView: React.FC = () => {
           <div className="glass-panel rounded-[40px] p-10 relative overflow-hidden shadow-xl">
             <h3 className="text-xl font-black italic tracking-tighter text-white uppercase mb-6 flex items-center gap-3">
               <i className="fa-solid fa-terminal text-primary"></i>
-              Command Execution Log
+              Komut Yürütme Günlüğü
             </h3>
             <div className="space-y-4 font-mono text-[10px] text-gray-500">
               <div className="flex gap-4 p-3 bg-black/40 rounded-xl border border-white/5">
                 <span className="text-primary">[14:22:01]</span>
-                <span className="text-gray-300">USER_AUTH_LEVEL: MASTER_ERSIN_GULES</span>
+                <span className="text-gray-300">KULLANICI_YETKİ_SEVİYESİ: MASTER_ERSIN_GULES</span>
               </div>
               <div className="flex gap-4 p-3 bg-black/40 rounded-xl border border-white/5">
                 <span className="text-primary">[14:25:12]</span>
-                <span className="text-emerald-400 italic font-bold">JULES_SESSION: INITIALIZING EXTERNAL HANDSHAKE...</span>
+                <span className="text-emerald-400 italic font-bold">JULES_OTURUMU: HARİCİ EL SIKIŞMA BAŞLATILIYOR...</span>
               </div>
               <div className="flex gap-4 p-3 bg-black/40 rounded-xl border border-white/5">
                 <span className="text-primary">[14:25:15]</span>
-                <span className="text-emerald-500 font-bold uppercase">Link Established: Remote Access Granted</span>
+                <span className="text-emerald-500 font-bold uppercase">Bağlantı Kuruldu: Uzaktan Erişim Sağlandı</span>
               </div>
             </div>
           </div>
@@ -68,18 +68,18 @@ const SystemView: React.FC = () => {
         <div className="lg:col-span-4 space-y-8 h-full">
           <div className="bg-gradient-to-br from-primary/20 to-brandDark border border-primary/20 rounded-[40px] p-10 relative overflow-hidden h-full flex flex-col shadow-2xl">
             <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/10 blur-[80px] rounded-full"></div>
-            <h3 className="text-xl font-black italic tracking-tighter text-white uppercase mb-8 border-b border-white/5 pb-2">AI Overrides</h3>
+            <h3 className="text-xl font-black italic tracking-tighter text-white uppercase mb-8 border-b border-white/5 pb-2">YZ Öncelikleri</h3>
 
             <div className="space-y-6 flex-1">
-              <ToggleItem label="Self-Modification" desc="Allow AI to rewrite UI" active />
-              <ToggleItem label="Global Search" desc="Real-time data streams" active />
-              <ToggleItem label="Session Sync" desc="Jules external link" active color="bg-emerald-500" />
+              <ToggleItem label="Kendi Kendini Düzenleme" desc="YZ'nin arayüzü değiştirmesine izin ver" active />
+              <ToggleItem label="Global Arama" desc="Gerçek zamanlı veri akışları" active />
+              <ToggleItem label="Oturum Senkronizasyonu" desc="Jules harici bağlantısı" active color="bg-emerald-500" />
             </div>
 
             <div className="mt-auto p-6 bg-primary/10 border border-primary/20 rounded-3xl">
-              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 italic">Remote Notice</p>
+              <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 italic">Uzaktan Bildirim</p>
               <p className="text-[11px] text-gray-400 italic leading-relaxed">
-                "System is now optimized for external session bridging. Your environment and Jules protocols are fully aligned."
+                "Sistem artık harici oturum köprülemesi için optimize edilmiştir. Ortamınız ve Jules protokolleri tam olarak hizalanmıştır."
               </p>
             </div>
           </div>

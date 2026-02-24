@@ -42,16 +42,16 @@ const RuwisAiView: React.FC = () => {
     localStorage.setItem('ruwis_history', JSON.stringify(history.slice(0, 10)));
   }, [history]);
 
-  const styles = ['Cinematic', 'Photorealistic', 'Cyberpunk', 'Oil Painting', 'Anime', '3D Render', 'Sketch'];
-  const lightings = ['Golden Hour', 'Studio Light', 'Neon', 'Sunset', 'Moody', 'Dynamic Light'];
-  const perspectives = ['Wide Angle', 'Macro', 'Bird\'s Eye', 'Low Angle', 'Eye Level'];
+  const styles = ['Sinematik', 'Fotorealistik', 'Cyberpunk', 'Yağlı Boya', 'Anime', '3D Render', 'Eskiz'];
+  const lightings = ['Altın Saat', 'Stüdyo Işığı', 'Neon', 'Gün Batımı', 'Moody', 'Dinamik Işık'];
+  const perspectives = ['Geniş Açı', 'Makro', 'Kuş Bakışı', 'Düşük Açı', 'Göz Hizası'];
 
   const randomPrompts = [
-    "A futuristic city with flying cars and neon lights, rain on pavement",
-    "A mystical forest with glowing mushrooms and a hidden waterfall",
-    "An ancient astronaut discovering a crystal pyramid on a distant planet",
-    "A steam-powered robot making tea in a Victorian living room",
-    "Cyberpunk cat wearing a high-tech armor in a Tokyo alley"
+    "Uçan arabalar ve neon ışıklarla dolu fütüristik bir şehir, kaldırımlarda yağmur",
+    "Parlayan mantarlar ve gizli bir şelale ile mistik bir orman",
+    "Uzak bir gezegende kristal bir piramit keşfeden antik bir astronot",
+    "Viktorya dönemi oturma odasında çay yapan buharla çalışan bir robot",
+    "Tokyo ara sokağında yüksek teknoloji zırh giyen cyberpunk bir kedi"
   ];
 
   const handleSurpriseMe = () => {
@@ -315,7 +315,7 @@ const RuwisAiView: React.FC = () => {
                         <div className="absolute top-8 left-8 p-4 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 opacity-0 group-hover/result:opacity-100 transition-all">
                            <div className="flex items-center gap-2 mb-2">
                               <Info className="w-3 h-3 text-purple-500" />
-                              <span className="text-[10px] font-black uppercase text-white tracking-widest">Metadata</span>
+                              <span className="text-[10px] font-black uppercase text-white tracking-widest">ÜST VERİ</span>
                            </div>
                            <p className="text-[9px] text-slate-400 font-bold max-w-[200px] leading-relaxed">"{prompt}"</p>
                         </div>

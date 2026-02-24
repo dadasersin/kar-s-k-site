@@ -146,7 +146,7 @@ const LiveAiDeveloperView: React.FC = () => {
                   {isProcessing && (
                     <div className="flex items-center gap-2 text-white/50">
                       <Loader2 className="w-2 h-2 animate-spin" />
-                      <span>Processing sequence...</span>
+                      <span>İşlem dizisi yürütülüyor...</span>
                     </div>
                   )}
                </div>
@@ -198,7 +198,7 @@ const LiveAiDeveloperView: React.FC = () => {
                                   'bg-blue-500/20 text-blue-400'
                                 }`}>
                                    {c.status === 'deployed' ? <CheckCircle2 className="w-3 h-3" /> : <Loader2 className="w-3 h-3 animate-spin" />}
-                                   {c.status === 'deployed' ? 'DEPLOYED' : c.status.toUpperCase()}
+                                   {c.status === 'deployed' ? 'YAYINLANDI' : c.status.toUpperCase()}
                                 </div>
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{new Date(c.timestamp).toLocaleTimeString()}</span>
                              </div>
@@ -207,7 +207,7 @@ const LiveAiDeveloperView: React.FC = () => {
                                 <div className="p-8 bg-black/40 rounded-3xl border border-white/5 flex items-center justify-center min-h-[150px] group-hover:border-primary/30 transition-colors">
                                    <div className="text-center">
                                       <h5 className="text-xl font-bold text-white mb-2">{c.name}</h5>
-                                      <p className="text-slate-500 text-sm">Requirements: {prompt || 'User specifications applied.'}</p>
+                                      <p className="text-slate-500 text-sm">Gereksinimler: {prompt || 'Kullanıcı spesifikasyonları uygulandı.'}</p>
                                       {c.status === 'deployed' && (
                                         <button className="mt-6 px-8 py-3 bg-primary/20 text-primary border border-primary/30 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all">
                                           Etkileşime Geç

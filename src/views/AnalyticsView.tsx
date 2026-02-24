@@ -15,8 +15,8 @@ const AnalyticsView: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard label="Toplam İstek" value="1,284" sub="Son 30 gün" trend="+12%" />
           <StatCard label="Tahmini Maliyet" value="$14.20" sub="Aylık toplam" trend="-3%" />
-          <StatCard label="Ort. Yanıt Hızı" value="1.2s" sub="Global ortalama" trend="-150ms" />
-          <StatCard label="Başarı Oranı" value="99.9%" sub="Tüm modüller" trend="Stabil" />
+          <StatCard label="Ort. Yanıt Hızı" value="1.2sn" sub="Genel ortalama" trend="-150ms" />
+          <StatCard label="Başarı Oranı" value="99.9%" sub="Tüm modüller" trend="Kararlı" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">

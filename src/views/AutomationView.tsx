@@ -5,9 +5,9 @@ const AutomationView: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const workflows = [
-    { id: 1, name: 'Gmail to Discord Sync', status: 'active', frequency: 'Real-time' },
-    { id: 2, name: 'Crypto Price Alert', status: 'paused', frequency: '5 min' },
-    { id: 3, name: 'AI Image Social Poster', status: 'active', frequency: 'Daily' },
+    { id: 1, name: 'Gmail - Discord Senkronizasyonu', status: 'aktif', frequency: 'Gerçek Zamanlı' },
+    { id: 2, name: 'Kripto Fiyat Alarmı', status: 'duraklatıldı', frequency: '5 dak' },
+    { id: 3, name: 'YZ Görsel Sosyal Medya Paylaşımı', status: 'aktif', frequency: 'Günlük' },
   ];
 
   return (
@@ -64,9 +64,9 @@ const AutomationView: React.FC = () => {
              <div className="bg-gradient-to-br from-primary/20 to-brandDark border border-primary/20 rounded-[40px] p-8 shadow-2xl">
                 <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 italic border-b border-white/5 pb-2">Servis Durumu</h3>
                 <div className="space-y-6">
-                   <StatusItem label="Render Worker" status="Running" color="bg-emerald-500" />
-                   <StatusItem label="Webhooks" status="Listening" color="bg-primary" />
-                   <StatusItem label="Database" status="Synced" color="bg-emerald-500" />
+                   <StatusItem label="Render İşleyicisi" status="Çalışıyor" color="bg-emerald-500" />
+                   <StatusItem label="Webhooklar" status="Dinleniyor" color="bg-primary" />
+                   <StatusItem label="Veritabanı" status="Eşitlendi" color="bg-emerald-500" />
                 </div>
                 <button
                   onClick={() => { setIsProcessing(true); setTimeout(() => setIsProcessing(false), 2000); }}

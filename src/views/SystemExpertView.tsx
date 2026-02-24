@@ -43,10 +43,10 @@ const SystemExpertView: React.FC = () => {
   };
 
   const commonPatches = [
-    { id: 'p1', title: 'CORS Media Resolver', desc: 'TV yayınlarındaki erişim engellerini aşmak için proxy rotasyonunu optimize eder.', status: 'Active' },
-    { id: 'p2', title: 'API Failover Engine', desc: 'Borsa ve Kripto verileri için yedek veri kaynaklarını devreye sokar.', status: 'Standby' },
-    { id: 'p3', title: 'Memory Leak Patch', desc: 'Uzun süreli oturumlarda RAM kullanımını optimize eder.', status: 'Active' },
-    { id: 'p4', title: 'Turkish Voice Assistant Fix', desc: 'Sesli komutlardaki aksan algılama hassasiyetini artırır.', status: 'Update Ready' }
+    { id: 'p1', title: 'CORS Media Resolver', desc: 'TV yayınlarındaki erişim engellerini aşmak için proxy rotasyonunu optimize eder.', status: 'Aktif' },
+    { id: 'p2', title: 'API Failover Engine', desc: 'Borsa ve Kripto verileri için yedek veri kaynaklarını devreye sokar.', status: 'Beklemede' },
+    { id: 'p3', title: 'Memory Leak Patch', desc: 'Uzun süreli oturumlarda RAM kullanımını optimize eder.', status: 'Aktif' },
+    { id: 'p4', title: 'Turkish Voice Assistant Fix', desc: 'Sesli komutlardaki aksan algılama hassasiyetini artırır.', status: 'Güncelleme Hazır' }
   ];
 
   return (
@@ -176,7 +176,7 @@ const SystemExpertView: React.FC = () => {
                               <div className="p-3 bg-indigo-600/10 rounded-2xl">
                                  <Zap className="w-5 h-5 text-indigo-500" />
                               </div>
-                              <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${patch.status === 'Active' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : 'text-blue-500 border-blue-500/20 bg-blue-500/5'}`}>
+                               <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${patch.status === 'Aktif' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : 'text-blue-500 border-blue-500/20 bg-blue-500/5'}`}>
                                  {patch.status}
                               </span>
                            </div>
