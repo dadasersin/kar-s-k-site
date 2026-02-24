@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layout, PenTool, Figma, Cpu, MessageSquare, Box, Download, Link2, AlertCircle, RefreshCw, Layers, Sparkles } from 'lucide-react';
+import { Layout, PenTool, Figma, Cpu, MessageSquare, Box, Download, Link2, AlertCircle, RefreshCw, Layers, Sparkles, Hash, Signal } from 'lucide-react';
 
 const FigmaStudioView: React.FC = () => {
   const [figmaUrl, setFigmaUrl] = useState('');
+  const [socketChannel, setSocketChannel] = useState('');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -18,7 +19,7 @@ const FigmaStudioView: React.FC = () => {
   ];
 
   const handleConnect = () => {
-    if (!figmaUrl.trim()) return;
+    if (!figmaUrl.trim() && !socketChannel.trim()) return;
     setIsConnecting(true);
     setTimeout(() => {
       setIsConnecting(false);
@@ -30,7 +31,6 @@ const FigmaStudioView: React.FC = () => {
     setIsAnalyzing(true);
     setTimeout(() => {
       setIsAnalyzing(false);
-      alert("Tasarım Analizi Tamamlandı! YZ önerileri 'YZ Asistanı' sekmesine eklendi.");
     }, 3000);
   };
 
@@ -68,29 +68,69 @@ const FigmaStudioView: React.FC = () => {
           {/* Main Area */}
           <div className="lg:col-span-8 space-y-6">
             {!isConnected ? (
-              <div className="glass-panel rounded-[40px] p-12 text-center flex flex-col items-center justify-center min-h-[500px] border border-white/5 bg-white/5 shadow-2xl">
-                 <div className="w-24 h-24 rounded-[2rem] bg-pink-600/10 flex items-center justify-center mb-8 border border-pink-500/20">
-                    <Link2 className="w-10 h-10 text-pink-500" />
+              <div className="glass-panel rounded-[40px] p-8 lg:p-12 text-center flex flex-col items-center justify-center min-h-[500px] border border-white/5 bg-white/5 shadow-2xl relative overflow-hidden">
+                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 via-orange-500 to-pink-500"></div>
+
+                 <div className="w-20 h-20 rounded-[2rem] bg-pink-600/10 flex items-center justify-center mb-8 border border-pink-500/20">
+                    <Link2 className="w-8 h-8 text-pink-500" />
                  </div>
+
                  <h3 className="text-2xl font-black text-white uppercase italic mb-4">Tasarıma Bağlanın</h3>
-                 <p className="text-slate-500 text-sm max-w-md mb-10 font-bold uppercase tracking-widest leading-relaxed">
-                   Figma dosya linkinizi buraya yapıştırarak MCP protokolü üzerinden YZ destekli tasarım sürecini başlatın.
+                 <p className="text-slate-500 text-xs max-w-md mb-10 font-bold uppercase tracking-widest leading-relaxed">
+                   Figma dosya linkinizi veya MCP Socket kanal ID'nizi kullanarak bağlantıyı kurun.
                  </p>
-                 <div className="w-full max-w-lg flex gap-3">
-                    <input
-                      type="text"
-                      value={figmaUrl}
-                      onChange={(e) => setFigmaUrl(e.target.value)}
-                      placeholder="https://www.figma.com/file/..."
-                      className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-pink-500 transition-all"
-                    />
+
+                 <div className="w-full max-w-lg space-y-4">
+                    <div className="relative">
+                      <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        value={figmaUrl}
+                        onChange={(e) => setFigmaUrl(e.target.value)}
+                        placeholder="Figma Dosya URL'si"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-xs text-white outline-none focus:border-pink-500 transition-all placeholder:text-slate-700"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 text-slate-600">
+                      <div className="flex-1 h-px bg-white/5"></div>
+                      <span className="text-[10px] font-black uppercase italic">VEYA</span>
+                      <div className="flex-1 h-px bg-white/5"></div>
+                    </div>
+
+                    <div className="relative">
+                      <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        value={socketChannel}
+                        onChange={(e) => setSocketChannel(e.target.value)}
+                        placeholder="MCP Socket Kanal ID (Örn: b2-33-a1...)"
+                        className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-xs text-white outline-none focus:border-pink-500 transition-all font-mono placeholder:text-slate-700"
+                      />
+                    </div>
+
                     <button
                       onClick={handleConnect}
-                      disabled={isConnecting || !figmaUrl.trim()}
-                      className="px-10 py-4 bg-pink-600 hover:bg-pink-500 text-white font-black uppercase tracking-widest rounded-2xl shadow-xl transition-all disabled:opacity-50 text-[10px]"
+                      disabled={isConnecting || (!figmaUrl.trim() && !socketChannel.trim())}
+                      className="w-full py-5 bg-pink-600 hover:bg-pink-500 text-white font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl transition-all disabled:opacity-50 text-[10px] mt-4 flex items-center justify-center gap-3"
                     >
-                      {isConnecting ? 'BAĞLANIYOR...' : 'BAĞLAN'}
+                      {isConnecting ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>BAĞLANIYOR...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Signal className="w-4 h-4" />
+                          <span>BAĞLANTIYI BAŞLAT</span>
+                        </>
+                      )}
                     </button>
+                 </div>
+
+                 <div className="mt-8 flex gap-4 text-[9px] font-black text-slate-600 uppercase tracking-widest">
+                    <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-emerald-500" /> MCP Ready</span>
+                    <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-emerald-500" /> Socket Server V2</span>
                  </div>
               </div>
             ) : (
@@ -99,7 +139,7 @@ const FigmaStudioView: React.FC = () => {
                    <div className="px-8 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Canlı Senkronizasyon Aktif</span>
+                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Canlı Senkronizasyon Aktif: {socketChannel || 'Figma API'}</span>
                       </div>
                       <div className="flex gap-2">
                          <button className="p-2 hover:bg-white/10 rounded-lg text-slate-500 transition-colors"><Download className="w-4 h-4" /></button>
@@ -107,7 +147,7 @@ const FigmaStudioView: React.FC = () => {
                       </div>
                    </div>
 
-                   <div className="flex-1 flex items-center justify-center p-12">
+                   <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
                       {activeTab === 'design' ? (
                         <div className="text-center space-y-6 opacity-30 group">
                            <Layout className="w-32 h-32 text-slate-400 mx-auto group-hover:scale-110 transition-transform duration-700" />
@@ -195,6 +235,12 @@ const FigmaStudioView: React.FC = () => {
                       <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">MCP Protokolü</span>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${isConnected ? 'text-emerald-500' : 'text-slate-600'}`}>
                         {isConnected ? 'Çevrimiçi' : 'Bekleniyor'}
+                      </span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Socket Server</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isConnected ? 'text-emerald-500' : 'text-slate-600'}`}>
+                        {isConnected ? 'Aktif' : 'Aktif Değil'}
                       </span>
                    </div>
                    <div className="flex justify-between items-center">

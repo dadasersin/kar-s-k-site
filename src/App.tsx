@@ -42,6 +42,10 @@ import SystemView from './views/SystemView';
 import SettingsView from './views/SettingsView';
 import AntigravityView from './views/AntigravityView';
 import FigmaStudioView from './views/FigmaStudioView';
+import AgentSkillsView from './views/AgentSkillsView';
+import AntigravityToolkitView from './views/AntigravityToolkitView';
+import QuotioView from './views/QuotioView';
+import PromptMasterView from './views/PromptMasterView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -245,6 +249,10 @@ function App() {
       case AppView.SETTINGS: return <SettingsView />;
       case AppView.ANTIGRAVITY: return <AntigravityView />;
       case AppView.FIGMA_STUDIO: return <FigmaStudioView />;
+      case AppView.AGENT_SKILLS: return <AgentSkillsView />;
+      case AppView.AG_TOOLKIT: return <AntigravityToolkitView />;
+      case AppView.QUOTIO: return <QuotioView />;
+      case AppView.PROMPT_MASTER: return <PromptMasterView />;
       default: return <HomeView />;
     }
   };
@@ -286,6 +294,10 @@ function App() {
             else if (target === 'youtube') setActiveView(AppView.YOUTUBE);
             else if (target === 'live_tv' || target.includes('tv') || target.includes('televizyon')) setActiveView(AppView.LIVE_TV);
             else if (target === 'system_expert' || target.includes('uzman')) setActiveView(AppView.SYSTEM_EXPERT);
+            else if (target === 'agent_skills' || target.includes('beceri')) setActiveView(AppView.AGENT_SKILLS);
+            else if (target === 'ag_toolkit' || target.includes('araçlar')) setActiveView(AppView.AG_TOOLKIT);
+            else if (target === 'quotio' || target.includes('failover')) setActiveView(AppView.QUOTIO);
+            else if (target === 'prompt_master' || target.includes('prompt')) setActiveView(AppView.PROMPT_MASTER);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);

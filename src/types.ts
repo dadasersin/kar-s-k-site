@@ -32,7 +32,11 @@ export enum AppView {
   SYSTEM_EXPERT = 'system_expert',
   RUWIS_AI = 'ruwis_ai',
   ANTIGRAVITY = 'antigravity',
-  FIGMA_STUDIO = 'figma_studio'
+  FIGMA_STUDIO = 'figma_studio',
+  AGENT_SKILLS = 'agent_skills',
+  PROMPT_MASTER = 'prompt_master',
+  QUOTIO = 'quotio',
+  AG_TOOLKIT = 'ag_toolkit'
 }
 
 export interface WorkflowNode {

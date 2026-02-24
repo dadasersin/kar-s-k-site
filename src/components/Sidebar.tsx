@@ -17,6 +17,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
     { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.RUWIS_AI, label: 'RUWIS AI', icon: 'fa-sparkles' },
+    { id: AppView.AGENT_SKILLS, label: 'Ajan Becerileri', icon: 'fa-brain' },
     { id: AppView.AUDIO, label: 'Ses & Remix', icon: 'fa-music' },
     { id: AppView.LIVE, label: 'Canlı Etkileşim', icon: 'fa-bolt-lightning' },
     { id: AppView.ART_STUDIO, label: 'Sanat Stüdyosu', icon: 'fa-palette' },
@@ -41,8 +42,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
     { id: AppView.FIGMA_STUDIO, label: 'Figma Stüdyo', icon: 'fa-brands fa-figma' },
     { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
+    { id: AppView.PROMPT_MASTER, label: 'Prompt Mühendisliği', icon: 'fa-book-sparkles' },
+    { id: AppView.QUOTIO, label: 'Quotio Failover', icon: 'fa-shield-heart' },
     { id: AppView.SYSTEM, label: 'Sistem Çekirdeği', icon: 'fa-microchip' },
     { id: AppView.ANTIGRAVITY, label: 'Model Kotası', icon: 'fa-gauge-high' },
+    { id: AppView.AG_TOOLKIT, label: 'Model Araçları', icon: 'fa-toolbox' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
