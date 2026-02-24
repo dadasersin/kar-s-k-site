@@ -12,11 +12,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
     const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (envKey && envKey.length > 5) return true;
 
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (settingsStr) {
-      const settings = JSON.parse(settingsStr);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
+    try {
+      const settingsStr = localStorage.getItem('sync_settings');
+      if (settingsStr) {
+        const settings = JSON.parse(settingsStr);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
+      }
+    } catch (e) {
+      console.error("Error in Dashboard API check", e);
     }
     return false;
   })();

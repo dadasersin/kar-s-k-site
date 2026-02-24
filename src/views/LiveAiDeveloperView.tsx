@@ -15,8 +15,13 @@ const LiveAiDeveloperView: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState<string[]>(['> Live AI Developer Engine initialized.', '> Waiting for requirements...']);
   const [components, setComponents] = useState<BuiltComponent[]>(() => {
-    const saved = localStorage.getItem('live_ai_components');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('live_ai_components');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to parse live_ai_components", e);
+      return [];
+    }
   });
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
 

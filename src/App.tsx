@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { ChatMessage } from './types';
@@ -43,11 +44,16 @@ import SettingsView from './views/SettingsView';
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem('chat_history');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('chat_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to parse chat history", e);
+      return [];
+    }
   });
   const [isTyping, setIsTyping] = useState(false);
-  const [activeModel, setActiveModel] = useState('Gemini 3 Flash');
+  const [activeModel, setActiveModel] = useState('Gemini 1.5 Flash');
 
   useEffect(() => {
     localStorage.setItem('chat_history', JSON.stringify(messages));
@@ -64,7 +70,8 @@ function App() {
       };
 
       try {
-        const existingLogs = JSON.parse(localStorage.getItem('system_error_logs') || '[]');
+        const savedLogs = localStorage.getItem('system_error_logs');
+        const existingLogs = savedLogs ? JSON.parse(savedLogs) : [];
         existingLogs.push(errorLog);
         const trimmedLogs = existingLogs.slice(-50);
         localStorage.setItem('system_error_logs', JSON.stringify(trimmedLogs));
@@ -246,7 +253,7 @@ function App() {
         syncStatus="idle"
         onManualSync={() => console.log('Syncing...')}
       />
-      <main className="flex-1 overflow-hidden relative ml-0 sm:ml-20 lg:ml-64">
+      <main className="flex-1 overflow-hidden relative lg:ml-64">
         <div className="h-full overflow-y-auto">
           {renderView()}
         </div>

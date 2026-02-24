@@ -50,19 +50,23 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
     if (envKey && envKey.length > 5) return true;
 
-    const settingsStr = localStorage.getItem('sync_settings');
-    if (settingsStr) {
-      const settings = JSON.parse(settingsStr);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
+    try {
+      const settingsStr = localStorage.getItem('sync_settings');
+      if (settingsStr) {
+        const settings = JSON.parse(settingsStr);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
+      }
+    } catch (e) {
+      console.error("Error checking API status", e);
     }
     return false;
   })();
 
   return (
     <>
-      {/* RESPONSIVE SIDEBAR (Icon Rail on Mobile, Full on Desktop) */}
-      <aside className="fixed left-0 top-0 h-full w-20 lg:w-64 flex flex-col glass-panel border-r border-slate-800 z-50 transition-all duration-300">
+      {/* RESPONSIVE SIDEBAR (Hidden on Mobile, Full on Desktop) */}
+      <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col glass-panel border-r border-slate-800 z-50 transition-all duration-300">
         <div className="p-4 lg:p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 lg:w-12 lg:h-12 shrink-0 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(13,89,242,0.4)]">

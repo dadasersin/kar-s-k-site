@@ -5,16 +5,20 @@ const RequestView: React.FC = () => {
   const [requests, setRequests] = useState<SystemRequest[]>([]);
 
   const loadTasks = () => {
-    const saved = localStorage.getItem('quantum_tasks');
-    if (saved) {
-      setRequests(JSON.parse(saved));
-    } else {
-      const initial: SystemRequest[] = [
-        { id: '#1024', topic: 'Quantum API Analizi', date: '28.01', status: 'warning', statusText: 'Bekliyor', priority: 'high' },
-        { id: '#1023', topic: 'Neon Tema Entegrasyonu', date: '28.01', status: 'success', statusText: 'Tamamlandı', priority: 'medium' },
-      ];
-      setRequests(initial);
-      localStorage.setItem('quantum_tasks', JSON.stringify(initial));
+    try {
+      const saved = localStorage.getItem('quantum_tasks');
+      if (saved) {
+        setRequests(JSON.parse(saved));
+      } else {
+        const initial: SystemRequest[] = [
+          { id: '#1024', topic: 'Quantum API Analizi', date: '28.01', status: 'warning', statusText: 'Bekliyor', priority: 'high' },
+          { id: '#1023', topic: 'Neon Tema Entegrasyonu', date: '28.01', status: 'success', statusText: 'Tamamlandı', priority: 'medium' },
+        ];
+        setRequests(initial);
+        localStorage.setItem('quantum_tasks', JSON.stringify(initial));
+      }
+    } catch (e) {
+      console.error("Failed to load tasks", e);
     }
   };
 

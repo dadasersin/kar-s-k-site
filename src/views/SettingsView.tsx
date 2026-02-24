@@ -22,10 +22,14 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
   const [customUrl, setCustomUrl] = useState('');
 
   useEffect(() => {
-    const saved = localStorage.getItem('sync_settings');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSettings(prev => ({ ...prev, ...parsed }));
+    try {
+      const saved = localStorage.getItem('sync_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setSettings(prev => ({ ...prev, ...parsed }));
+      }
+    } catch (e) {
+      console.error("Failed to parse sync_settings", e);
     }
   }, []);
 

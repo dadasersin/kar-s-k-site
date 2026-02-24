@@ -29,8 +29,13 @@ const LiveTvView: React.FC = () => {
   const [proxyIndex, setProxyIndex] = useState(0);
   const [isAutoFixing, setIsAutoFixing] = useState(false);
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('tv_favorites');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('tv_favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to parse tv_favorites", e);
+      return [];
+    }
   });
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);

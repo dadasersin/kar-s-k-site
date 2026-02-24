@@ -20,8 +20,13 @@ const RuwisAiView: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
   const [history, setHistory] = useState<GenerationHistory[]>(() => {
-    const saved = localStorage.getItem('ruwis_history');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('ruwis_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to parse ruwis_history", e);
+      return [];
+    }
   });
 
   const [settings, setSettings] = useState({
