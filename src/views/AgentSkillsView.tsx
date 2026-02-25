@@ -214,6 +214,29 @@ const AgentSkillsView: React.FC = () => {
       setTimeout(() => {
         setLogs(prev => [...prev, msg]);
         if (index === messages.length - 1) {
+          // Register skill as dynamic module
+          try {
+            const activeModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+            if (!activeModules.some((m: any) => m.id === skill.id)) {
+              activeModules.push({
+                id: skill.id,
+                label: skill.name,
+                code: `// Skill Module: ${skill.name}\n// Provider: ${skill.provider}\n// Category: ${skill.category}\n\n${skill.description}`,
+                icon: skill.category === 'Belge İşleme' ? 'fa-file-lines' :
+                      skill.category === 'Veri ve Analiz' ? 'fa-chart-pie' :
+                      skill.category === 'Geliştirme' ? 'fa-code' :
+                      skill.category === 'Otomasyon' ? 'fa-robot' :
+                      skill.category === 'Güvenlik' ? 'fa-shield-halved' : 'fa-flask',
+                timestamp: Date.now()
+              });
+              localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
+              // Trigger a storage event to update the sidebar if needed (though App.tsx handles it usually)
+              window.dispatchEvent(new Event('storage'));
+            }
+          } catch (e) {
+            console.error('Failed to register skill module', e);
+          }
+
           setTimeout(() => setInstallingId(null), 2000);
         }
       }, (index + 1) * 600);

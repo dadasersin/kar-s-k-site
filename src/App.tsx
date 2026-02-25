@@ -64,6 +64,7 @@ import CursorProxyView from './views/CursorProxyView';
 import AntigravitySyncView from './views/AntigravitySyncView';
 import AntigravityLauncherView from './views/AntigravityLauncherView';
 import UserManualView from './views/UserManualView';
+import SiteEditingView from './views/SiteEditingView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -354,6 +355,7 @@ function App() {
       case AppView.AG_SYNC: return <AntigravitySyncView />;
       case AppView.AG_LAUNCHER: return <AntigravityLauncherView />;
       case AppView.USER_MANUAL: return <UserManualView />;
+      case AppView.SITE_EDIT: return <SiteEditingView />;
       default: return <HomeView />;
     }
   };
@@ -417,6 +419,7 @@ function App() {
             else if (target === 'ag_sync' || target.includes('yedek')) setActiveView(AppView.AG_SYNC);
             else if (target === 'ag_launcher' || target.includes('başlatıcı')) setActiveView(AppView.AG_LAUNCHER);
             else if (target === 'user_manual' || target.includes('kılavuz')) setActiveView(AppView.USER_MANUAL);
+            else if (target === 'site_edit' || target.includes('düzenleme')) setActiveView(AppView.SITE_EDIT);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);

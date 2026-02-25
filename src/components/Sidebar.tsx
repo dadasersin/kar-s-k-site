@@ -65,6 +65,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.AG_SYNC, label: 'AG Senkronize', icon: 'fa-folder-tree' },
     { id: AppView.AG_LAUNCHER, label: 'AG Başlatıcı', icon: 'fa-power-off' },
     { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' },
+    { id: AppView.SITE_EDIT, label: 'Site Düzenleme', icon: 'fa-layout' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
@@ -104,7 +105,9 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
               <span className="font-bold text-xl text-white font-sans">EG</span>
             </div>
             <div className="hidden lg:block overflow-hidden">
-              <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">Ersin Güleş</h1>
+              <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">
+                {localStorage.getItem('site_title') || 'Ersin Güleş'}
+              </h1>
               <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">YZ YÖNETİCİSİ</p>
             </div>
           </div>

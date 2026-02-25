@@ -53,7 +53,8 @@ export enum AppView {
   CURSOR_PROXY = 'cursor_proxy',
   AG_SYNC = 'ag_sync',
   AG_LAUNCHER = 'ag_launcher',
-  USER_MANUAL = 'user_manual'
+  USER_MANUAL = 'user_manual',
+  SITE_EDIT = 'site_edit'
 }
 
 export interface WorkflowNode {
