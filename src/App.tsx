@@ -6,6 +6,7 @@ import { AppView } from './types';
 import type { ChatMessage } from './types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
+import { pushToGitHub } from './utils/githubSync';
 
 // Views
 import HomeView from './views/HomeView';
@@ -77,6 +78,37 @@ function App() {
   });
   const [isTyping, setIsTyping] = useState(false);
   const [activeModel, setActiveModel] = useState('Gemini 1.5 Flash');
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+
+  const handleGitHubSync = async () => {
+    setSyncStatus('syncing');
+    try {
+      const savedSettings = localStorage.getItem('sync_settings');
+      if (!savedSettings) {
+        alert("Lütfen önce Ayarlar sayfasından GitHub bilgilerinizi girin.");
+        setSyncStatus('error');
+        return;
+      }
+      const settings = JSON.parse(savedSettings);
+      const result = await pushToGitHub({
+        token: settings.token,
+        repo: settings.repo,
+        path: settings.path
+      });
+
+      if (result.success) {
+        alert("GitHub senkronizasyonu başarılı!");
+        setSyncStatus('success');
+      } else {
+        alert(`Hata: ${result.message}`);
+        setSyncStatus('error');
+      }
+    } catch (e) {
+      alert("Beklenmedik bir hata oluştu.");
+      setSyncStatus('error');
+    }
+    setTimeout(() => setSyncStatus('idle'), 3000);
+  };
 
   useEffect(() => {
     localStorage.setItem('chat_history', JSON.stringify(messages));
@@ -223,6 +255,41 @@ function App() {
   };
 
   const renderView = () => {
+    // Check for dynamic module first
+    const dynamicModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+    const dynamicMod = dynamicModules.find((m: any) => m.id === activeView);
+    if (dynamicMod) {
+      return (
+        <div className="p-8 lg:p-12 animate-in fade-in duration-700">
+           <div className="max-w-4xl mx-auto space-y-10">
+              <div className="flex items-center gap-6">
+                 <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 border border-emerald-500/30 shadow-2xl">
+                    <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
+                 </div>
+                 <div>
+                    <h1 className="text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Otonom Olarak Üretilen Aktif Modül</p>
+                 </div>
+              </div>
+
+              <div className="glass-panel p-10 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl">
+                 <div className="prose prose-invert max-w-none">
+                    <div dangerouslySetInnerHTML={{ __html: `<div class="p-8 bg-black/40 rounded-2xl border border-white/5 text-slate-300 italic">Bu modül ${new Date(dynamicMod.timestamp).toLocaleDateString('tr-TR')} tarihinde başarıyla yayına alındı. Kod içeriği sistem çekirdeğine entegre edildi.</div>` }} />
+                 </div>
+                 <div className="mt-10 p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl">
+                    <p className="text-sm font-medium text-slate-400 leading-relaxed">
+                       Bu bileşen Live AI Developer tarafından üretilmiştir. Kod içeriği:
+                    </p>
+                    <pre className="mt-4 font-mono text-[10px] text-emerald-400/80 bg-black/60 p-4 rounded-xl overflow-x-auto">
+                       {dynamicMod.code}
+                    </pre>
+                 </div>
+              </div>
+           </div>
+        </div>
+      );
+    }
+
     switch (activeView) {
       case AppView.HOME: return <HomeView onViewChange={setActiveView} />;
       case AppView.TOOLS: return <ToolsView onViewChange={setActiveView} />;
@@ -296,8 +363,9 @@ function App() {
       <Sidebar
         activeView={activeView}
         onViewChange={setActiveView}
-        syncStatus="idle"
-        onManualSync={() => console.log('Syncing...')}
+        syncStatus={syncStatus}
+        onManualSync={() => console.log('Manual Status Check...')}
+        onGitHubSync={handleGitHubSync}
       />
       <main className="flex-1 overflow-hidden relative lg:ml-64">
         <div className="h-full overflow-y-auto">

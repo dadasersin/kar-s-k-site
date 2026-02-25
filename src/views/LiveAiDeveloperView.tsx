@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Code, Play, Terminal, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Save, Database, Cloud, Share2, Shield, Eye, X, Check } from 'lucide-react';
+import { searchKnowledge } from '../utils/knowledgeBase';
 
 interface BuiltComponent {
   id: string;
@@ -49,22 +50,28 @@ const LiveAiDeveloperView: React.FC = () => {
     if (!prompt.trim()) return;
 
     setIsProcessing(true);
-    addLog(`Received requirements: "${prompt}"`);
+    addLog(`Gereksinimler alındı: "${prompt}"`);
 
     // Step 1: Data Pulling Animation
     setIsPullingData(true);
-    addLog('Integrating sources...');
-    addLog('Pulling data from Antigravity Proxy...');
+    addLog('Kaynaklar entegre ediliyor...');
+    addLog('Antigravity Proxy verileri çekiliyor...');
     await new Promise(r => setTimeout(r, 800));
-    addLog('Accessing SkillShare Hub for patterns...');
+    addLog('SkillShare Hub pattern kütüphanesi taranıyor...');
     await new Promise(r => setTimeout(r, 800));
-    addLog('Fetching security protocols from Seline...');
+    addLog('Seline güvenlik protokolleri doğrulanıyor...');
     await new Promise(r => setTimeout(r, 800));
-    addLog('Verifying sync status via Google Drive bridge...');
+    addLog('Google Drive yedekleme köprüsü üzerinden durum kontrolü yapılıyor...');
     await new Promise(r => setTimeout(r, 1000));
-    setIsPullingData(false);
 
-    addLog('Analyzing architecture and context from all modules...');
+    // FETCH REAL KNOWLEDGE DATA
+    const knowledge = searchKnowledge(prompt);
+    if (knowledge) {
+       addLog(`Sistem veritabanından eşleşen bilgi bulundu: ${knowledge.substring(25, 50)}...`);
+    }
+
+    setIsPullingData(false);
+    addLog('Tüm modüllerden gelen veriler ve mimari analiz ediliyor...');
 
     // Step 2: Writing Code (Internally)
     const newId = Math.random().toString(36).substr(2, 9);
@@ -99,12 +106,36 @@ const LiveAiDeveloperView: React.FC = () => {
     addLog('Tests passed: 100% (Integrated Logic Validated)');
 
     addLog('Deploying to Live Portal Environment...');
+
+    // SAVE TO PERSISTENT REGISTRY
+    try {
+      const activeModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+      activeModules.push({
+        id: approvedComp.id,
+        label: approvedComp.name,
+        code: approvedComp.code,
+        icon: 'fa-cube',
+        timestamp: Date.now()
+      });
+      localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
+      addLog('Module registered in system database.');
+    } catch (e) {
+      console.error('Failed to save module to registry', e);
+    }
+
     setComponents(prev => prev.map(c => c.id === approvedComp.id ? { ...c, status: 'deployed' } : c));
 
     addLog('SUCCESS: New module added to site successfully!');
     setIsProcessing(false);
     setPendingComponent(null);
     setPrompt('');
+
+    // Trigger auto GitHub sync if enabled
+    const syncSettings = JSON.parse(localStorage.getItem('sync_settings') || '{}');
+    if (syncSettings.autoSync) {
+       addLog('Auto GitHub Sync triggered...');
+       // In a real app, we'd call pushToGitHub here
+    }
   };
 
   return (

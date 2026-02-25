@@ -90,6 +90,21 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
     alert('Senkronizasyon ayarları kaydedildi.');
   };
 
+  const [supabaseSettings, setSupabaseSettings] = useState({
+    url: '',
+    anonKey: ''
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('supabase_config');
+    if (saved) setSupabaseSettings(JSON.parse(saved));
+  }, []);
+
+  const saveSupabase = () => {
+    localStorage.setItem('supabase_config', JSON.stringify(supabaseSettings));
+    alert('Veritabanı bağlantısı kaydedildi.');
+  };
+
   return (
     <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-brandDark pb-32">
       <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -207,7 +222,7 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
         <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
            <div className="flex items-center gap-4">
               <i className="fa-brands fa-github text-3xl text-white"></i>
-              <h3 className="text-lg font-bold text-white">Bulut Senkronizasyonu</h3>
+              <h3 className="text-lg font-bold text-white">GitHub Senkronizasyonu</h3>
            </div>
            <p className="text-xs text-slate-400">Tüm anahtar ve sohbet geçmişinizi kendi GitHub deponuzda yedekleyin.</p>
 
@@ -253,6 +268,40 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                 ŞİMDİ SENKRONİZE ET
               </button>
            </form>
+        </section>
+
+        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
+           <div className="flex items-center gap-4">
+              <i className="fa-solid fa-database text-3xl text-primary"></i>
+              <h3 className="text-lg font-bold text-white">Merkezi Veritabanı (Supabase)</h3>
+           </div>
+           <p className="text-xs text-slate-400">Modülleri ve ayarları kalıcı olarak bulutta saklamak için bir Supabase projesi bağlayın.</p>
+
+           <div className="space-y-4 pt-4 border-t border-slate-800">
+              <div className="space-y-2">
+                 <label className="text-[10px] font-bold text-slate-500 uppercase">Supabase URL</label>
+                 <input
+                   type="text"
+                   value={supabaseSettings.url}
+                   onChange={(e) => setSupabaseSettings({...supabaseSettings, url: e.target.value})}
+                   placeholder="https://xyz.supabase.co"
+                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
+                 />
+              </div>
+              <div className="space-y-2">
+                 <label className="text-[10px] font-bold text-slate-500 uppercase">Anon Key</label>
+                 <input
+                   type="password"
+                   value={supabaseSettings.anonKey}
+                   onChange={(e) => setSupabaseSettings({...supabaseSettings, anonKey: e.target.value})}
+                   placeholder="eyJhbGci..."
+                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-primary transition-all"
+                 />
+              </div>
+              <button onClick={saveSupabase} className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl">
+                 VERİTABANI BAĞLANTISINI KAYDET
+              </button>
+           </div>
         </section>
       </div>
     </div>

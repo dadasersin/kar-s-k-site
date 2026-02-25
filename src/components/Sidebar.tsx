@@ -6,9 +6,10 @@ interface NavigationProps {
   onViewChange: (view: AppView) => void;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   onManualSync: () => void;
+  onGitHubSync?: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync, onGitHubSync }) => {
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
@@ -67,6 +68,13 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
+  // Dynamic Modules from Database/LocalStorage
+  const dynamicModules = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+    } catch (e) { return []; }
+  })();
+
   // Helper to check if API key is provided via settings or env
   const isApiActive = (() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -118,9 +126,39 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
               <span className="hidden lg:block font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
             </button>
           ))}
+
+          {dynamicModules.length > 0 && (
+             <>
+               <div className="pt-4 pb-2 px-6">
+                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Aktif Modüller</p>
+               </div>
+               {dynamicModules.map((mod: any) => (
+                 <button
+                    key={mod.id}
+                    onClick={() => onViewChange(mod.id)}
+                    className={`w-full flex items-center gap-4 px-3 lg:px-4 py-2.5 rounded-xl transition-all duration-300 group ${
+                      (activeView as string) === mod.id
+                        ? 'bg-emerald-500/10 text-emerald-400 shadow-inner border border-emerald-500/20'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    }`}
+                    title={mod.label}
+                  >
+                    <i className={`fa-solid ${mod.icon || 'fa-cube'} w-6 lg:w-5 text-center text-lg lg:text-base`}></i>
+                    <span className="hidden lg:block font-bold text-[10px] uppercase tracking-wider truncate">{mod.label}</span>
+                  </button>
+               ))}
+             </>
+          )}
         </nav>
 
-        <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20">
+        <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">
+          <button
+            onClick={onGitHubSync}
+            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[9px] font-black uppercase tracking-widest border border-white/5 transition-all flex items-center justify-center gap-2"
+          >
+             <i className="fa-brands fa-github"></i> GITHUB'A YÜKLE
+          </button>
+
           <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onClick={onManualSync}>
             <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
               <i className={`fa-solid fa-plug-circle-bolt text-primary ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}></i>

@@ -1,45 +1,17 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Book, Search, Layers, Box, Cpu, Zap, Globe, MessageSquare, Shield, Rocket, HelpCircle, ChevronRight, PlayCircle, ExternalLink, Smartphone } from 'lucide-react';
+import { Book, Search, Layers, Box, Cpu, Zap, Globe, MessageSquare, Shield, Rocket, HelpCircle, ChevronRight, PlayCircle, ExternalLink, Smartphone, ListChecks, Info, Lightbulb } from 'lucide-react';
+import { MODULE_MANUALS } from '../data/moduleManuals';
 
 const UserManualView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'basics' | 'ai' | 'finance' | 'tools'>('basics');
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
-  const manualEntries = [
-    {
-      category: 'Temel Özellikler',
-      items: [
-        { title: 'Ana Sayfa (Home)', desc: 'Sisteminizin genel durumunu ve hızlı işlem kartlarını görebileceğiniz merkezi bir panel.' },
-        { title: 'Kontrol Paneli (Dashboard)', desc: 'İş akışlarınızı, aktif modülleri ve sistem metriklerini izlemek için kullanılır.' },
-        { title: 'Sistem Ayarları', desc: 'API anahtarlarınızı, tema tercihlerini ve senkronizasyon ayarlarını yönettiğiniz bölüm.' },
-      ]
-    },
-    {
-      category: 'YZ & Ajanlar',
-      items: [
-        { title: 'AI Sohbet (Chat)', desc: 'Gemini, Claude ve OpenAI modelleriyle doğrudan etkileşim kurun. Dosya analizi ve web araması desteği mevcuttur.' },
-        { title: 'Jules AI Studio', desc: 'Karmaşık YZ çıktılarını (kod, metin, görsel) birleştirerek tam projeler oluşturmanızı sağlar.' },
-        { title: 'Ajan Becerileri', desc: 'Ajanlarınıza yeni yetenekler (PDF okuma, AWS yönetimi vb.) kazandırmak için SKILL.md dosyalarını yönetin.' },
-        { title: 'RUWIS AI', desc: 'Gelişmiş görsel üretim ve düzenleme stüdyosu. Hayallerinizi sanata dönüştürün.' },
-      ]
-    },
-    {
-      category: 'Finans & Takip',
-      items: [
-        { title: 'İstanbul Borsa (BIST)', desc: 'BIST 100 hisselerini anlık olarak takip edin, kazanan ve kaybedenleri analiz edin.' },
-        { title: 'Kripto Bot', desc: 'Global kripto para piyasasını canlı izleyin ve algoritmik sinyalleri kontrol edin.' },
-      ]
-    },
-    {
-      category: 'Geliştirici Araçları',
-      items: [
-        { title: 'LİVE AI DEVELOPER', desc: 'Gerçek zamanlı AI kod yazımı. Tüm entegrasyonlardan veri çekerek yeni modüller inşa eder.' },
-        { title: 'Figma Stüdyo', desc: 'MCP protokolü üzerinden Figma tasarımlarınızı analiz edin ve koda dönüştürün.' },
-        { title: 'Docker AI', desc: 'Docker yapılandırmalarınızı analiz eder ve hataları otomatik olarak teşhis eder.' },
-      ]
-    }
-  ];
+  const filteredManuals = MODULE_MANUALS.filter(m =>
+    m.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="p-4 lg:p-8 overflow-y-auto h-full pb-32 bg-brandDark text-slate-200">
@@ -69,26 +41,23 @@ const UserManualView: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-8 space-y-12">
-             {manualEntries.map((section, idx) => (
-               <div key={idx} className="space-y-6">
-                  <h3 className="text-xl font-black text-white uppercase italic tracking-widest border-l-4 border-blue-600 pl-6">{section.category}</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                     {section.items.filter(item => item.title.toLowerCase().includes(searchTerm.toLowerCase()) || item.desc.toLowerCase().includes(searchTerm.toLowerCase())).map((item, i) => (
-                       <motion.div
-                         key={i}
-                         whileHover={{ x: 10 }}
-                         className="p-6 bg-white/5 border border-white/5 rounded-3xl group hover:border-blue-500/30 transition-all cursor-default"
-                       >
-                          <div className="flex justify-between items-start mb-2">
-                             <h4 className="font-bold text-white uppercase text-sm tracking-tight group-hover:text-blue-400 transition-colors">{item.title}</h4>
-                             <HelpCircle className="w-4 h-4 text-slate-700" />
-                          </div>
-                          <p className="text-xs text-slate-400 leading-relaxed font-medium">{item.desc}</p>
-                       </motion.div>
-                     ))}
-                  </div>
-               </div>
-             ))}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredManuals.map((manual) => (
+                  <motion.div
+                    key={manual.id}
+                    layoutId={manual.id}
+                    onClick={() => setSelectedEntry(manual)}
+                    className="p-8 bg-white/5 border border-white/5 rounded-[2.5rem] group hover:border-blue-500/50 transition-all cursor-pointer relative overflow-hidden"
+                  >
+                     <div className="flex justify-between items-start mb-4">
+                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full">{manual.category}</span>
+                        <ChevronRight className="w-5 h-5 text-slate-700 group-hover:text-blue-500 transition-all group-hover:translate-x-1" />
+                     </div>
+                     <h3 className="text-xl font-black text-white uppercase italic tracking-tight mb-2">{manual.title}</h3>
+                     <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{manual.description}</p>
+                  </motion.div>
+                ))}
+             </div>
           </div>
 
           <div className="lg:col-span-4 space-y-8">
@@ -129,6 +98,83 @@ const UserManualView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* MANUAL DETAIL MODAL */}
+      <AnimatePresence>
+        {selectedEntry && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 lg:p-8"
+          >
+            <motion.div
+              layoutId={selectedEntry.id}
+              className="w-full max-w-3xl bg-[#0d0d0d] border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+            >
+               <div className="p-8 lg:p-10 border-b border-white/5 flex items-center justify-between">
+                  <div>
+                     <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">{selectedEntry.category}</span>
+                     <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter mt-1">{selectedEntry.title}</h3>
+                  </div>
+                  <button onClick={() => setSelectedEntry(null)} className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-all">
+                     <i className="fa-solid fa-xmark"></i>
+                  </button>
+               </div>
+
+               <div className="flex-1 overflow-y-auto p-8 lg:p-10 space-y-10 custom-scrollbar-hidden">
+                  <section className="space-y-4">
+                     <div className="flex items-center gap-3 text-white">
+                        <Info className="w-5 h-5 text-blue-500" />
+                        <h4 className="font-black uppercase text-sm tracking-widest">Genel Bakış</h4>
+                     </div>
+                     <p className="text-slate-400 text-sm leading-relaxed italic">{selectedEntry.description}</p>
+                  </section>
+
+                  <section className="space-y-4">
+                     <div className="flex items-center gap-3 text-white">
+                        <ListChecks className="w-5 h-5 text-blue-500" />
+                        <h4 className="font-black uppercase text-sm tracking-widest">Kullanım Adımları</h4>
+                     </div>
+                     <div className="space-y-3">
+                        {selectedEntry.steps.map((step: string, i: number) => (
+                          <div key={i} className="flex gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                             <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center shrink-0">{i+1}</span>
+                             <p className="text-xs text-slate-300 font-medium">{step}</p>
+                          </div>
+                        ))}
+                     </div>
+                  </section>
+
+                  {selectedEntry.tips.length > 0 && (
+                    <section className="space-y-4">
+                       <div className="flex items-center gap-3 text-white">
+                          <Lightbulb className="w-5 h-5 text-amber-500" />
+                          <h4 className="font-black uppercase text-sm tracking-widest">Profesyonel İpuçları</h4>
+                       </div>
+                       <div className="p-6 bg-amber-500/5 border border-amber-500/20 rounded-3xl">
+                          <ul className="list-disc list-inside space-y-2">
+                             {selectedEntry.tips.map((tip: string, i: number) => (
+                               <li key={i} className="text-xs text-amber-200/70 italic font-medium">{tip}</li>
+                             ))}
+                          </ul>
+                       </div>
+                    </section>
+                  )}
+               </div>
+
+               <div className="p-8 bg-white/5 border-t border-white/5 flex justify-end">
+                  <button
+                    onClick={() => setSelectedEntry(null)}
+                    className="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl"
+                  >
+                     ANLADIM
+                  </button>
+               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
