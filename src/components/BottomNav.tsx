@@ -4,13 +4,13 @@ import { AppView } from '../types';
 interface BottomNavProps {
   activeView: AppView;
   onViewChange: (view: AppView) => void;
+  onMenuToggle?: () => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeView, onViewChange }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ activeView, onViewChange, onMenuToggle }) => {
   const navItems = [
     { id: AppView.HOME, label: 'ANA SAYFA', icon: 'fa-house' },
     { id: AppView.CHAT, label: 'SOHBET', icon: 'fa-comments' },
-    { id: AppView.TOOLS, label: 'ARAÇLAR', icon: 'fa-screwdriver-wrench' },
     { id: AppView.LIVE_TV, label: 'TV', icon: 'fa-tv' },
     { id: AppView.DASHBOARD, label: 'PANEL', icon: 'fa-chart-pie' },
   ];
@@ -34,6 +34,16 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeView, onViewChange }) => {
           <span className="text-[10px] font-black tracking-tighter uppercase">{item.label}</span>
         </button>
       ))}
+
+      <button
+        onClick={onMenuToggle}
+        className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-slate-500 hover:text-white transition-all"
+      >
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-0.5">
+           <i className="fa-solid fa-bars-staggered text-xl"></i>
+        </div>
+        <span className="text-[10px] font-black tracking-tighter uppercase">MENÜ</span>
+      </button>
     </nav>
   );
 };

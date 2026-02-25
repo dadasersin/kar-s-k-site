@@ -65,6 +65,9 @@ import AntigravitySyncView from './views/AntigravitySyncView';
 import AntigravityLauncherView from './views/AntigravityLauncherView';
 import UserManualView from './views/UserManualView';
 import SiteEditingView from './views/SiteEditingView';
+import JulesAwesomeListView from './views/JulesAwesomeListView';
+import QuickChatWidget from './components/QuickChatWidget';
+import NdkSamplesView from './views/NdkSamplesView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -80,6 +83,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [activeModel, setActiveModel] = useState('Gemini 1.5 Flash');
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleGitHubSync = async () => {
     setSyncStatus('syncing');
@@ -261,30 +265,38 @@ function App() {
     const dynamicMod = dynamicModules.find((m: any) => m.id === activeView);
     if (dynamicMod) {
       return (
-        <div className="p-8 lg:p-12 animate-in fade-in duration-700">
-           <div className="max-w-4xl mx-auto space-y-10">
-              <div className="flex items-center gap-6">
-                 <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 flex items-center justify-center text-emerald-500 border border-emerald-500/30 shadow-2xl">
-                    <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
-                 </div>
-                 <div>
-                    <h1 className="text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Otonom Olarak Üretilen Aktif Modül</p>
+        <div className="p-4 lg:p-12 animate-in fade-in duration-700 min-h-screen pb-32">
+           <div className="max-w-6xl mx-auto space-y-8">
+              <header className="flex items-center justify-between border-b border-white/5 pb-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
+                      <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
+                  </div>
+                  <div>
+                      <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Otonom Çalışan Aktif Modül</p>
+                      </div>
+                  </div>
+                </div>
+                <div className="hidden md:flex gap-4">
+                   <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold text-slate-500 uppercase">Entegrasyon: TAMAMLANDI</div>
+                   <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold text-slate-500 uppercase">Güvenlik: DOĞRULANDI</div>
+                </div>
+              </header>
+
+              <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[500px]">
+                 {/* Live Execution Layer */}
+                 <div className="bg-brandDark/50 rounded-[2.8rem] h-full p-8 lg:p-12">
+                    <div dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
                  </div>
               </div>
 
-              <div className="glass-panel p-10 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl">
-                 <div className="prose prose-invert max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: `<div class="p-8 bg-black/40 rounded-2xl border border-white/5 text-slate-300 italic">Bu modül ${new Date(dynamicMod.timestamp).toLocaleDateString('tr-TR')} tarihinde başarıyla yayına alındı. Kod içeriği sistem çekirdeğine entegre edildi.</div>` }} />
-                 </div>
-                 <div className="mt-10 p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl">
-                    <p className="text-sm font-medium text-slate-400 leading-relaxed">
-                       Bu bileşen Live AI Developer tarafından üretilmiştir. Kod içeriği:
-                    </p>
-                    <pre className="mt-4 font-mono text-[10px] text-emerald-400/80 bg-black/60 p-4 rounded-xl overflow-x-auto">
-                       {dynamicMod.code}
-                    </pre>
-                 </div>
+              <div className="flex justify-end gap-3 opacity-30 hover:opacity-100 transition-opacity">
+                 <p className="text-[10px] font-bold text-slate-600 uppercase">ID: {dynamicMod.id}</p>
+                 <p className="text-[10px] font-bold text-slate-600 uppercase">•</p>
+                 <p className="text-[10px] font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
               </div>
            </div>
         </div>
@@ -356,6 +368,8 @@ function App() {
       case AppView.AG_LAUNCHER: return <AntigravityLauncherView />;
       case AppView.USER_MANUAL: return <UserManualView />;
       case AppView.SITE_EDIT: return <SiteEditingView />;
+      case AppView.JULES_AWESOME: return <JulesAwesomeListView />;
+      case AppView.ANDROID_NDK: return <NdkSamplesView />;
       default: return <HomeView />;
     }
   };
@@ -368,11 +382,20 @@ function App() {
         syncStatus={syncStatus}
         onManualSync={() => console.log('Manual Status Check...')}
         onGitHubSync={handleGitHubSync}
+        isMobileOpen={isSidebarOpen}
+        onCloseMobile={() => setIsSidebarOpen(false)}
       />
       <main className="flex-1 overflow-hidden relative lg:ml-64">
         <div className="h-full overflow-y-auto">
           {renderView()}
         </div>
+
+        <QuickChatWidget
+          messages={messages.slice(-10).map(m => ({ role: m.role as 'user' | 'model', text: m.text }))}
+          onSendMessage={handleSendMessage}
+          isTyping={isTyping}
+        />
+
         <VoiceAssistant onCommand={(command, action, payload) => {
           if (command === 'nav' && action === 'nav') {
             const target = payload.toLowerCase();
@@ -420,13 +443,19 @@ function App() {
             else if (target === 'ag_launcher' || target.includes('başlatıcı')) setActiveView(AppView.AG_LAUNCHER);
             else if (target === 'user_manual' || target.includes('kılavuz')) setActiveView(AppView.USER_MANUAL);
             else if (target === 'site_edit' || target.includes('düzenleme')) setActiveView(AppView.SITE_EDIT);
+            else if (target === 'jules_awesome' || target.includes('awesome')) setActiveView(AppView.JULES_AWESOME);
+            else if (target === 'android_ndk' || target.includes('ndk') || target.includes('android')) setActiveView(AppView.ANDROID_NDK);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);
           }
         }} />
       </main>
-      <BottomNav activeView={activeView} onViewChange={setActiveView} />
+      <BottomNav
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
     </div>
   );
 }

@@ -82,6 +82,19 @@ export const MODULE_MANUALS: ManualEntry[] = [
     tips: ['Tüm veriler sadece yerel sisteminizde tutulur, buluta gönderilmez.']
   },
   {
+    id: 'jules_awesome',
+    title: 'Jules Awesome List',
+    category: 'Geliştirici Araçları',
+    description: 'Google Labs Jules Agent için küratörlüğü yapılmış en iyi prompt koleksiyonu.',
+    steps: [
+      'Sol menüden "Jules Awesome" sekmesine geçin.',
+      'Kategoriler arasından (Hata Ayıklama, Dokümantasyon, vb.) ihtiyacınız olanı seçin.',
+      'İstediğiniz promptun yanındaki "Kopyala" ikonuna basarak panonuza alın.',
+      'Jules Agent veya herhangi bir LLM üzerinde bu promptu kullanın.'
+    ],
+    tips: ['Her prompt modern yazılım prensiplerine (SOLID, Design Patterns) uygun olarak optimize edilmiştir.']
+  },
+  {
     id: 'ag_sync',
     title: 'AG Senkronize',
     category: 'Yedekleme',

@@ -7,9 +7,19 @@ interface NavigationProps {
   syncStatus: 'idle' | 'syncing' | 'success' | 'error';
   onManualSync: () => void;
   onGitHubSync?: () => void;
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncStatus, onManualSync, onGitHubSync }) => {
+const Navigation: React.FC<NavigationProps> = ({
+  activeView,
+  onViewChange,
+  syncStatus,
+  onManualSync,
+  onGitHubSync,
+  isMobileOpen,
+  onCloseMobile
+}) => {
   const menuItems = [
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
@@ -66,6 +76,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     { id: AppView.AG_LAUNCHER, label: 'AG Başlatıcı', icon: 'fa-power-off' },
     { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' },
     { id: AppView.SITE_EDIT, label: 'Site Düzenleme', icon: 'fa-layout' },
+    { id: AppView.JULES_AWESOME, label: 'Jules Awesome', icon: 'fa-list-ul' },
+    { id: AppView.ANDROID_NDK, label: 'Android NDK Samples', icon: 'fa-brands fa-android' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
@@ -95,10 +107,25 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
     return false;
   })();
 
+  const handleItemClick = (id: AppView | string) => {
+    onViewChange(id as any);
+    if (onCloseMobile) onCloseMobile();
+  };
+
   return (
     <>
-      {/* RESPONSIVE SIDEBAR (Hidden on Mobile, Full on Desktop) */}
-      <aside className="fixed left-0 top-0 h-full w-64 hidden lg:flex flex-col glass-panel border-r border-slate-800 z-50 transition-all duration-300">
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden animate-in fade-in duration-300"
+          onClick={onCloseMobile}
+        />
+      )}
+
+      {/* RESPONSIVE SIDEBAR */}
+      <aside className={`fixed left-0 top-0 h-full w-64 flex flex-col glass-panel border-r border-slate-800 z-[60] transition-all duration-500 lg:translate-x-0 ${
+        isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
+      }`}>
         <div className="p-4 lg:p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 lg:w-12 lg:h-12 shrink-0 rounded-xl bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(13,89,242,0.4)]">
@@ -108,7 +135,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
               <h1 className="font-bold text-xs tracking-tight text-white font-sans truncate">
                 {localStorage.getItem('site_title') || 'Ersin Güleş'}
               </h1>
-              <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">YZ YÖNETİCİSİ</p>
+              <p className="text-[9px] text-primary uppercase font-bold tracking-widest font-sans">Portal Sahibi</p>
             </div>
           </div>
         </div>
@@ -117,7 +144,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id)}
+              onClick={() => handleItemClick(item.id)}
               className={`w-full flex items-center gap-4 px-3 lg:px-4 py-3 lg:py-2.5 rounded-xl transition-all duration-300 group ${
                 activeView === item.id
                   ? 'bg-primary/10 text-primary shadow-inner border border-primary/20'
@@ -126,7 +153,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
               title={item.label}
             >
               <i className={`fa-solid ${item.icon} w-6 lg:w-5 text-center text-lg lg:text-base transition-transform group-hover:scale-110 ${activeView === item.id ? 'text-primary' : ''}`}></i>
-              <span className="hidden lg:block font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider truncate">{item.label}</span>
             </button>
           ))}
 
@@ -138,7 +165,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
                {dynamicModules.map((mod: any) => (
                  <button
                     key={mod.id}
-                    onClick={() => onViewChange(mod.id)}
+                    onClick={() => handleItemClick(mod.id)}
                     className={`w-full flex items-center gap-4 px-3 lg:px-4 py-2.5 rounded-xl transition-all duration-300 group ${
                       (activeView as string) === mod.id
                         ? 'bg-emerald-500/10 text-emerald-400 shadow-inner border border-emerald-500/20'
@@ -147,12 +174,34 @@ const Navigation: React.FC<NavigationProps> = ({ activeView, onViewChange, syncS
                     title={mod.label}
                   >
                     <i className={`fa-solid ${mod.icon || 'fa-cube'} w-6 lg:w-5 text-center text-lg lg:text-base`}></i>
-                    <span className="hidden lg:block font-bold text-[10px] uppercase tracking-wider truncate">{mod.label}</span>
+                    <span className="font-bold text-[10px] uppercase tracking-wider truncate">{mod.label}</span>
                   </button>
                ))}
              </>
           )}
         </nav>
+
+        {/* Music Player Widget */}
+        <div className="p-4 border-t border-white/5 hidden lg:block">
+          <div className="bg-brandDark/50 p-3 rounded-xl border border-white/10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                <div className="w-0.5 h-3 bg-primary animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                <div className="w-0.5 h-5 bg-primary animate-bounce mx-0.5"></div>
+                <div className="w-0.5 h-2 bg-primary animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-[8px] text-gray-500 uppercase font-black tracking-widest">Şimdi Çalıyor</p>
+                <p className="text-[10px] font-bold truncate text-slate-200">Nöral Frekanslar v2</p>
+              </div>
+            </div>
+            <div className="flex justify-between items-center text-slate-400">
+              <button className="hover:text-primary transition-colors"><i className="fa-solid fa-backward-step text-xs"></i></button>
+              <button className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-pause text-[10px]"></i></button>
+              <button className="hover:text-primary transition-colors"><i className="fa-solid fa-forward-step text-xs"></i></button>
+            </div>
+          </div>
+        </div>
 
         <div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-900/20 space-y-2">
           <button

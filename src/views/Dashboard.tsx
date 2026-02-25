@@ -69,6 +69,41 @@ const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
       color: 'bg-red-600 shadow-red-600/30'
     },
     {
+      view: AppView.JULES_AWESOME,
+      title: 'Awesome',
+      desc: 'Jules Awesome List entegrasyonu.',
+      icon: 'fa-list-ul',
+      color: 'bg-indigo-600 shadow-indigo-600/30'
+    },
+    {
+      view: AppView.ANDROID_NDK,
+      title: 'Android NDK',
+      desc: 'Native örnekleri ve referanslar.',
+      icon: 'fa-brands fa-android',
+      color: 'bg-green-700 shadow-green-700/30'
+    },
+    {
+      view: AppView.AGENT_SKILLS,
+      title: 'Beceriler',
+      desc: 'Yapay zeka asistan yetenekleri.',
+      icon: 'fa-brain',
+      color: 'bg-pink-600 shadow-pink-600/30'
+    },
+    {
+      view: AppView.USER_MANUAL,
+      title: 'Kılavuz',
+      desc: 'Portal kullanım rehberi ve detaylar.',
+      icon: 'fa-book',
+      color: 'bg-orange-600 shadow-orange-600/30'
+    },
+    {
+      view: AppView.SITE_EDIT,
+      title: 'Düzenle',
+      desc: 'Site yapısı ve modülleri yönetin.',
+      icon: 'fa-layout',
+      color: 'bg-teal-600 shadow-teal-600/30'
+    },
+    {
       view: AppView.SYSTEM_EXPERT,
       title: 'Uzman',
       desc: 'Kendi kendine onarma ve sistem yönetimi.',

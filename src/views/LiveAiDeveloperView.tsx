@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Code, Play, Terminal, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Save, Database, Cloud, Share2, Shield, Eye, X, Check } from 'lucide-react';
+import { Code, Play, Terminal, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Save, Database, Cloud, Share2, Shield, Eye, X, Check, Zap } from 'lucide-react';
 import { searchKnowledge } from '../utils/knowledgeBase';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys } from '../utils/apiPool';
 
 interface BuiltComponent {
   id: string;
@@ -73,22 +75,48 @@ const LiveAiDeveloperView: React.FC = () => {
     setIsPullingData(false);
     addLog('Tüm modüllerden gelen veriler ve mimari analiz ediliyor...');
 
-    // Step 2: Writing Code (Internally)
-    const newId = Math.random().toString(36).substr(2, 9);
-    const newComp: BuiltComponent = {
-      id: newId,
-      name: prompt.split(' ').slice(0, 2).join(' ') || 'New Module',
-      code: `// Integrated module for: ${prompt}\n// Sources: AG Proxy, SkillShare, Seline\n\nexport const MyModule = () => {\n  return (\n    <div className="p-8 bg-gradient-to-br from-indigo-900/40 to-black rounded-[2rem] border border-indigo-500/30 shadow-2xl">\n      <div className="flex items-center gap-4 mb-6">\n        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/40">\n           <i className="fa-solid fa-microchip text-white text-xl"></i>\n        </div>\n        <h3 className="text-white font-black text-2xl uppercase italic tracking-tighter">${prompt}</h3>\n      </div>\n      <p className="text-slate-400 text-sm leading-relaxed mb-8">Bu bileşen tüm entegre kaynaklardan veri çekilerek otonom olarak üretilmiştir.</p>\n      <div className="grid grid-cols-2 gap-4">\n         <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-xs font-bold text-slate-500 uppercase">Durum: AKTİF</div>\n         <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-xs font-bold text-slate-500 uppercase">Güvenlik: DOĞRULANDI</div>\n      </div>\n    </div>\n  );\n};`,
-      status: 'writing',
-      timestamp: Date.now()
-    };
+    // Step 2: ACTUAL CODE GENERATION VIA AI
+    try {
+      addLog('Yapay zeka motoru ile gerçek kod üretiliyor...');
+      const keys = getAvailableKeys('gemini');
+      if (keys.length === 0) throw new Error('API Anahtarı bulunamadı.');
 
-    await new Promise(r => setTimeout(r, 1500));
-    addLog('Code generation complete. Synthesizing visual preview...');
+      const genAI = new GoogleGenerativeAI(keys[0].key);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    setPendingComponent(newComp);
-    setShowApprovalModal(true);
-    setIsProcessing(false);
+      const aiPrompt = `
+        Sen bir React ve Tailwind CSS uzmanısın.
+        Kullanıcı şunları istiyor: "${prompt}"
+
+        Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
+        Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
+        Kodun başına ve sonuna markdown ( \`\`\`html ) koyma, direkt kodu ver.
+        Bu kod bir iframe içinde veya div içinde render edilecek.
+        Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
+        DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
+      `;
+
+      const result = await model.generateContent(aiPrompt);
+      const generatedCode = result.response.text().trim();
+
+      const newId = Math.random().toString(36).substr(2, 9);
+      const newComp: BuiltComponent = {
+        id: newId,
+        name: prompt.split(' ').slice(0, 3).join(' ') || 'Yeni Modül',
+        code: generatedCode,
+        status: 'writing',
+        timestamp: Date.now()
+      };
+
+      addLog('Kod üretimi tamamlandı. Görsel doğrulama hazırlanıyor...');
+      setPendingComponent(newComp);
+      setShowApprovalModal(true);
+    } catch (e: any) {
+      addLog(`HATA: ${e.message}`);
+      console.error(e);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const approveAndDeploy = async () => {
@@ -273,17 +301,15 @@ const LiveAiDeveloperView: React.FC = () => {
                              </div>
 
                              {activeTab === 'preview' ? (
-                                <div className="p-8 bg-black/40 rounded-3xl border border-white/5 flex flex-col group-hover:border-primary/30 transition-colors">
-                                   <div className="flex items-center gap-4 mb-4">
-                                      <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
-                                         <i className="fa-solid fa-microchip"></i>
+                                <div className="bg-black/40 rounded-3xl border border-white/5 flex flex-col group-hover:border-primary/30 transition-colors overflow-hidden">
+                                   <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                         <span className="text-[10px] font-black text-white uppercase italic tracking-tight">{c.name}</span>
                                       </div>
-                                      <h5 className="text-xl font-bold text-white uppercase italic tracking-tight">{c.name}</h5>
                                    </div>
-                                   <p className="text-slate-400 text-sm leading-relaxed mb-6">Bu modül tüm sistem kaynakları entegre edilerek üretilmiştir.</p>
-                                   <div className="grid grid-cols-2 gap-4">
-                                      <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black text-slate-500 uppercase">Kaynak: AG PROXY</div>
-                                      <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black text-slate-500 uppercase">Güvenlik: SELINE</div>
+                                   <div className="p-6">
+                                      <div dangerouslySetInnerHTML={{ __html: c.code }} />
                                    </div>
                                 </div>
                              ) : (
@@ -330,15 +356,19 @@ const LiveAiDeveloperView: React.FC = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                      <div className="space-y-6">
                         <div className="flex items-center gap-3">
-                           <Eye className="w-4 h-4 text-primary" />
-                           <h4 className="text-xs font-black text-white uppercase tracking-widest">Görsel Önizleme</h4>
+                           <Zap className="w-4 h-4 text-primary" />
+                           <h4 className="text-xs font-black text-white uppercase tracking-widest">Canlı Modül Önizlemesi</h4>
                         </div>
-                        <div className="aspect-video bg-gradient-to-br from-primary/20 to-black rounded-[2rem] border border-primary/20 flex flex-col items-center justify-center p-8 text-center shadow-inner">
-                           <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white mb-6 shadow-xl shadow-primary/20">
-                              <i className="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+                        <div className="aspect-video bg-black rounded-[2rem] border border-white/10 overflow-hidden shadow-inner flex flex-col">
+                           <div className="p-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Çalışma Modu: AKTİF</span>
+                              <div className="flex gap-1">
+                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                              </div>
                            </div>
-                           <h5 className="text-xl font-black text-white uppercase italic mb-2">{pendingComponent?.name}</h5>
-                           <p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-tight">TÜM MODÜLLERDEN VERİ ÇEKİLEREK OLUŞTURULAN YENİ ÖZELLİK SİMÜLASYONU</p>
+                           <div className="flex-1 overflow-auto bg-slate-900/20 p-4">
+                              <div dangerouslySetInnerHTML={{ __html: pendingComponent?.code || '' }} />
+                           </div>
                         </div>
                      </div>
                      <div className="space-y-6">

@@ -54,7 +54,9 @@ export enum AppView {
   AG_SYNC = 'ag_sync',
   AG_LAUNCHER = 'ag_launcher',
   USER_MANUAL = 'user_manual',
-  SITE_EDIT = 'site_edit'
+  SITE_EDIT = 'site_edit',
+  JULES_AWESOME = 'jules_awesome',
+  ANDROID_NDK = 'android_ndk'
 }
 
 export interface WorkflowNode {
