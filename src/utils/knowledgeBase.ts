@@ -1,3 +1,5 @@
+import { getRegistryKnowledge } from './moduleRegistry';
+
 export interface KnowledgeSource {
   id: string;
   name: string;
@@ -42,12 +44,15 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
 };
 
 export const searchKnowledge = (query: string): string => {
+  const registry = getRegistryKnowledge();
   const all = getAggregatedKnowledge();
   const matches = all.filter(k =>
     k.name.toLowerCase().includes(query.toLowerCase()) ||
     k.content.toLowerCase().includes(query.toLowerCase())
   );
 
-  if (matches.length === 0) return '';
-  return `\n---\nKAYNAK VERİSİ (${matches[0].name}):\n${matches[0].content}\n---`;
+  const registryContext = query.length > 3 ? `\n---\nPORTAL MODÜL KAYITLARI (ORCHESTRATION):\n${registry}\n---` : '';
+
+  if (matches.length === 0) return registryContext;
+  return `${registryContext}\n---\nKAYNAK VERİSİ (${matches[0].name}):\n${matches[0].content}\n---`;
 };
