@@ -36,7 +36,24 @@ export enum AppView {
   AGENT_SKILLS = 'agent_skills',
   PROMPT_MASTER = 'prompt_master',
   QUOTIO = 'quotio',
-  AG_TOOLKIT = 'ag_toolkit'
+  AG_TOOLKIT = 'ag_toolkit',
+  DEV_TOOLS = 'dev_tools',
+  CODER_CONFIG = 'coder_config',
+  AGENTIC_CONFIG = 'agentic_config',
+  TRANSPARENT_PNG = 'transparent_png',
+  SKILLSHARE = 'skillshare',
+  SELINE = 'seline',
+  AG2API = 'ag2api',
+  CURSOR_BRIDGE = 'cursor_bridge',
+  KHOATA_TOOL = 'khoata_tool',
+  CODEX_SWITCHER = 'codex_switcher',
+  AG_COPILOT = 'ag_copilot',
+  AG_USAGE_CHECKER = 'ag_usage_checker',
+  PROMPT_EXPERT = 'prompt_expert',
+  CURSOR_PROXY = 'cursor_proxy',
+  AG_SYNC = 'ag_sync',
+  AG_LAUNCHER = 'ag_launcher',
+  USER_MANUAL = 'user_manual'
 }
 
 export interface WorkflowNode {
