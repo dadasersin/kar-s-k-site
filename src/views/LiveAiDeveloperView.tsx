@@ -84,7 +84,7 @@ const LiveAiDeveloperView: React.FC = () => {
       if (keys.length === 0) throw new Error('API Anahtarı bulunamadı.');
 
       const genAI = new GoogleGenerativeAI(keys[0].key);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: keys[0].modelName || "gemini-1.5-flash" });
 
       const aiPrompt = `
         Sen bir React ve Tailwind CSS uzmanısın ve "Ersin Güleş Portal" sisteminin baş mimarısın.

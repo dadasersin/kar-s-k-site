@@ -12,7 +12,7 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
       key: systemKey,
       label: 'Sistem Gemini',
       provider: 'gemini',
-      modelName: 'gemini-3-flash-preview',
+      modelName: 'gemini-1.5-flash',
       isQuotaExhausted: false
     });
   }
@@ -23,7 +23,14 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
     if (settingsStr) {
       const settings: SyncSettings = JSON.parse(settingsStr);
       if (settings.customApiKeys) {
-        allKeys.push(...settings.customApiKeys.filter(k => !k.isQuotaExhausted));
+        // Migration: Old model name fix
+        const migratedKeys = settings.customApiKeys.map(k => {
+          if (k.modelName === 'gemini-3-flash-preview') {
+            return { ...k, modelName: 'gemini-1.5-flash' };
+          }
+          return k;
+        });
+        allKeys.push(...migratedKeys.filter(k => !k.isQuotaExhausted));
       }
     }
   } catch (e) {
