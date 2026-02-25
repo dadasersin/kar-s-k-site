@@ -35,7 +35,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             </div>
             <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-6 rounded-custom w-40 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => onViewChange(AppView.DASHBOARD)}>
               <p className="text-xs text-gray-500 uppercase font-bold mb-1">Modüller</p>
-              <p className="text-lg font-bold">32 Birim</p>
+              <p className="text-lg font-bold">55 Birim</p>
             </div>
             <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-6 rounded-custom w-40">
               <p className="text-xs text-gray-500 uppercase font-bold mb-1">Gecikme</p>
