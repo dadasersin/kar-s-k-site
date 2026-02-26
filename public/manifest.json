@@ -1,0 +1,15 @@
+{
+  "short_name": "AI Portal",
+  "name": "Ersin Güleş Yapay Zeka Merkezi",
+  "icons": [
+    {
+      "src": "vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0d59f2",
+  "background_color": "#050505"
+}
