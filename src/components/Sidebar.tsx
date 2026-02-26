@@ -78,7 +78,6 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.SITE_EDIT, label: 'Site Düzenleme', icon: 'fa-layout' },
     { id: AppView.JULES_AWESOME, label: 'Jules Awesome', icon: 'fa-list-ul' },
     { id: AppView.ANDROID_NDK, label: 'Android NDK Samples', icon: 'fa-brands fa-android' },
-    { id: AppView.WEATHER, label: 'Hava Durumu', icon: 'fa-cloud-sun' },
     { id: AppView.SETTINGS, label: 'Sistem Ayarları', icon: 'fa-sliders' },
   ];
 
