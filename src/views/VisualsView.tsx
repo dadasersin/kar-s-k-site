@@ -100,7 +100,7 @@ const VisualsView: React.FC = () => {
             }
           } else if (keyEntry.provider === 'gemini') {
             const genAI = new GoogleGenerativeAI(keyEntry.key);
-            const aiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const aiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
             // Note: Public Gemini 1.5 Flash doesn't support image generation via generateContent in standard SDK yet.
             // Using a high-quality fallback for now or attempt experimental if supported in user's env.

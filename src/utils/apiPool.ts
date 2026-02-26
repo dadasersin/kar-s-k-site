@@ -12,7 +12,7 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
       key: systemKey,
       label: 'Sistem Gemini',
       provider: 'gemini',
-      modelName: 'gemini-1.5-flash',
+      modelName: 'gemini-1.5-flash-latest',
       isQuotaExhausted: false
     });
   }
@@ -26,7 +26,7 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
         // Migration: Old model name fix
         const migratedKeys = settings.customApiKeys.map(k => {
           if (k.modelName === 'gemini-3-flash-preview') {
-            return { ...k, modelName: 'gemini-1.5-flash' };
+            return { ...k, modelName: 'gemini-1.5-flash-latest' };
           }
           return k;
         });
