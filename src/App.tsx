@@ -187,8 +187,17 @@ function App() {
       setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, searchMsg]);
 
       // Simulate learning
-      setTimeout(() => {
+      setTimeout(async () => {
         saveLearnedKnowledge(orchestration.target || 'Genel Arabuluculuk', `Kullanıcı "${text}" bilgisini araştırmamı istedi. Bu konu portal altyapısı için kritik öneme sahip.`);
+
+        // Auto Sync if enabled
+        const savedSettings = localStorage.getItem('sync_settings');
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          if (settings.autoSync) {
+            handleGitHubSync();
+          }
+        }
       }, 2000);
       return;
     }
