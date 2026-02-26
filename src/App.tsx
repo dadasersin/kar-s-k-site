@@ -69,6 +69,48 @@ import JulesAwesomeListView from './views/JulesAwesomeListView';
 import QuickChatWidget from './components/QuickChatWidget';
 import NdkSamplesView from './views/NdkSamplesView';
 
+const prepareGeminiHistory = (msgs: ChatMessage[]) => {
+  const filtered = msgs.filter(m => {
+    const t = m.text.toLowerCase();
+    // Filter out technical errors and common error prefixes
+    const isError = t.startsWith("hata:") ||
+                    t.startsWith("hata oluştu") ||
+                    t.startsWith("üzgünüm,") ||
+                    t.includes("[googlegenerativeai error]") ||
+                    t.includes("api hatası") ||
+                    t.includes("kota aşımı");
+    return !isError;
+  });
+
+  const history: { role: "user" | "model"; parts: { text: string }[] }[] = [];
+
+  for (const m of filtered) {
+    const role = m.role === "user" ? "user" : "model";
+    if (history.length === 0) {
+      if (role === "user") {
+        history.push({ role, parts: [{ text: m.text }] });
+      }
+    } else {
+      const prev = history[history.length - 1];
+      if (prev.role === role) {
+        prev.parts[0].text += "\n\n" + m.text;
+      } else {
+        history.push({ role, parts: [{ text: m.text }] });
+      }
+    }
+  }
+
+  // Ensure we start with user and end with model (so next is user)
+  let result = history.slice(-10);
+  while (result.length > 0 && result[0].role !== "user") {
+    result.shift();
+  }
+  while (result.length > 0 && result[result.length - 1].role !== "model") {
+    result.pop();
+  }
+  return result;
+};
+
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -181,10 +223,7 @@ function App() {
           });
 
           const chat = model.startChat({
-            history: messages.slice(-10).map(m => ({
-              role: m.role === 'user' ? 'user' : 'model',
-              parts: [{ text: m.text }]
-            }))
+            history: prepareGeminiHistory(messages)
           });
 
           const result = await chat.sendMessage(text);
