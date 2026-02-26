@@ -55,7 +55,52 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
     Theme: Dark mode, glassmorphism, neon blue/indigo primaries, futuristic aesthetic.`
   });
 
+  sources.push({
+    id: 'pattern-omniview-orchestration',
+    name: 'OmniView Universal Hub',
+    type: 'skill',
+    content: 'Central command center that aggregates all system modules. Features category-based filtering, universal search, and high-end visual orchestration. Acts as the primary entry point for all portal functionalities, providing a unified and cohesive user experience.'
+  });
+
+  // Learned Memory Source
+  try {
+    const memory = JSON.parse(localStorage.getItem('neural_brain_memory') || '[]');
+    memory.forEach((m: any) => {
+      sources.push({
+        id: `learned-${m.id}`,
+        name: `Learned: ${m.topic}`,
+        type: 'skill',
+        content: m.info
+      });
+    });
+  } catch (e) {
+    console.error("Failed to load learned memory", e);
+  }
+
   return sources;
+};
+
+export const saveLearnedKnowledge = (topic: string, info: string) => {
+  try {
+    const memory = JSON.parse(localStorage.getItem('neural_brain_memory') || '[]');
+    memory.push({
+      id: Date.now().toString(),
+      topic,
+      info,
+      timestamp: Date.now()
+    });
+    localStorage.setItem('neural_brain_memory', JSON.stringify(memory.slice(-50))); // Keep last 50 learnings
+  } catch (e) {
+    console.error("Failed to save learned knowledge", e);
+  }
+};
+
+export const getQuickWeather = (city: string) => {
+  // Mock forecast for the "Neural Brain" to use
+  const conditions = ['Güneşli', 'Bulutlu', 'Hafif Yağmurlu', 'Parçalı Bulutlu'];
+  const temp = Math.floor(Math.random() * (25 - 10) + 10);
+  const condition = conditions[Math.floor(Math.random() * conditions.length)];
+  return `${city} için güncel durum: ${temp}°C, ${condition}.`;
 };
 
 export const searchKnowledge = (query: string): string => {

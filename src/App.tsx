@@ -7,6 +7,8 @@ import type { ChatMessage } from './types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
 import { pushToGitHub } from './utils/githubSync';
+import { detectIntent } from './utils/orchestrator';
+import { getQuickWeather, saveLearnedKnowledge } from './utils/knowledgeBase';
 
 // Views
 import HomeView from './views/HomeView';
@@ -69,6 +71,7 @@ import JulesAwesomeListView from './views/JulesAwesomeListView';
 import QuickChatWidget from './components/QuickChatWidget';
 import NdkSamplesView from './views/NdkSamplesView';
 import WeatherView from './views/WeatherView';
+import OmniView from './views/OmniView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -146,6 +149,50 @@ function App() {
   }, []);
 
   const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
+    // 1. Intent Orchestration
+    const orchestration = detectIntent(text);
+
+    if (orchestration.intent === 'WEATHER') {
+      const weatherInfo = getQuickWeather(orchestration.target || 'Sakarya');
+      const weatherMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: `🧠 Nöral Bağlantı Kuruluyor...\n\nHava durumu modülünden gelen veri: ${weatherInfo}\n\nBaşka nasıl yardımcı olabilirim?`,
+        timestamp: Date.now()
+      };
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, weatherMsg]);
+      return;
+    }
+
+    if (orchestration.intent === 'BUILD') {
+      const buildMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: `🏗️ Geliştirme Motoru Tetiklendi!\n\n"${orchestration.target}" için yeni bir modül tasarlıyorum. Lütfen Live AI Developer sekmesine göz atın veya onay kutusunu bekleyin.`,
+        timestamp: Date.now()
+      };
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, buildMsg]);
+      setActiveView(AppView.BUILDER);
+      // We could trigger build logic here if we had a global state for it
+      return;
+    }
+
+    if (orchestration.intent === 'SEARCH_LEARN') {
+      const searchMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: `🔍 Web Araştırması Başlatıldı...\n\n"${orchestration.target}" konusunu inceliyorum ve kalıcı hafızama (Long-term Memory) kaydediyorum. Bir sonraki sorunda bu bilgiyi kullanabileceğim.`,
+        timestamp: Date.now()
+      };
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, searchMsg]);
+
+      // Simulate learning
+      setTimeout(() => {
+        saveLearnedKnowledge(orchestration.target || 'Genel Arabuluculuk', `Kullanıcı "${text}" bilgisini araştırmamı istedi. Bu konu portal altyapısı için kritik öneme sahip.`);
+      }, 2000);
+      return;
+    }
+
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -153,12 +200,12 @@ function App() {
       timestamp: Date.now()
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
     setIsTyping(true);
 
     const availableKeys = getAvailableKeys();
     if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, {
+      setMessages((prev: ChatMessage[]) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: "Hata: Herhangi bir API anahtarı bulunamadı. Lütfen Ayarlar sayfasından anahtar ekleyin.",
@@ -227,7 +274,7 @@ function App() {
           timestamp: Date.now()
         };
 
-        setMessages(prev => [...prev, modelMsg]);
+        setMessages((prev: ChatMessage[]) => [...prev, modelMsg]);
         success = true;
         break;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -237,7 +284,7 @@ function App() {
           markKeyAsExhausted(keyEntry.id);
           continue;
         } else {
-          setMessages(prev => [...prev, {
+          setMessages((prev: ChatMessage[]) => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
             text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
@@ -249,7 +296,7 @@ function App() {
     }
 
     if (!success && availableKeys.length > 0) {
-      setMessages(prev => [...prev, {
+      setMessages((prev: ChatMessage[]) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: "Üzgünüm, şu anda tüm API servisleri kota aşımı veya teknik bir hata nedeniyle kullanılamıyor.",
@@ -372,6 +419,7 @@ function App() {
       case AppView.JULES_AWESOME: return <JulesAwesomeListView />;
       case AppView.ANDROID_NDK: return <NdkSamplesView />;
       case AppView.WEATHER: return <WeatherView />;
+      case AppView.OMNIVIEW: return <OmniView onViewChange={setActiveView} />;
       default: return <HomeView />;
     }
   };

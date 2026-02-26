@@ -21,6 +21,7 @@ const Navigation: React.FC<NavigationProps> = ({
   onCloseMobile
 }) => {
   const menuItems = [
+    { id: AppView.OMNIVIEW, label: 'Omni Hub', icon: 'fa-layer-group' },
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
@@ -146,8 +147,8 @@ const Navigation: React.FC<NavigationProps> = ({
               key={item.id}
               onClick={() => handleItemClick(item.id)}
               className={`w-full flex items-center gap-4 px-3 lg:px-4 py-3 lg:py-2.5 rounded-xl transition-all duration-300 group ${activeView === item.id
-                  ? 'bg-primary/10 text-primary shadow-inner border border-primary/20'
-                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                ? 'bg-primary/10 text-primary shadow-inner border border-primary/20'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                 }`}
               title={item.label}
             >
@@ -166,8 +167,8 @@ const Navigation: React.FC<NavigationProps> = ({
                   key={mod.id}
                   onClick={() => handleItemClick(mod.id)}
                   className={`w-full flex items-center gap-4 px-3 lg:px-4 py-2.5 rounded-xl transition-all duration-300 group ${(activeView as string) === mod.id
-                      ? 'bg-emerald-500/10 text-emerald-400 shadow-inner border border-emerald-500/20'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    ? 'bg-emerald-500/10 text-emerald-400 shadow-inner border border-emerald-500/20'
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                     }`}
                   title={mod.label}
                 >

@@ -57,7 +57,8 @@ export enum AppView {
   SITE_EDIT = 'site_edit',
   JULES_AWESOME = 'jules_awesome',
   ANDROID_NDK = 'android_ndk',
-  WEATHER = 'weather'
+  WEATHER = 'weather',
+  OMNIVIEW = 'omniview'
 }
 
 export interface WorkflowNode {
