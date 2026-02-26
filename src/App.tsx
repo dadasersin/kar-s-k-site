@@ -68,6 +68,7 @@ import SiteEditingView from './views/SiteEditingView';
 import JulesAwesomeListView from './views/JulesAwesomeListView';
 import QuickChatWidget from './components/QuickChatWidget';
 import NdkSamplesView from './views/NdkSamplesView';
+import WeatherView from './views/WeatherView';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
@@ -176,7 +177,7 @@ function App() {
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName || 'gemini-1.5-flash',
+            model: keyEntry.modelName || 'gemini-1.5-flash-latest',
             systemInstruction: options?.systemInstruction
           });
 
@@ -370,6 +371,7 @@ function App() {
       case AppView.SITE_EDIT: return <SiteEditingView />;
       case AppView.JULES_AWESOME: return <JulesAwesomeListView />;
       case AppView.ANDROID_NDK: return <NdkSamplesView />;
+      case AppView.WEATHER: return <WeatherView />;
       default: return <HomeView />;
     }
   };
@@ -445,6 +447,7 @@ function App() {
             else if (target === 'site_edit' || target.includes('düzenleme')) setActiveView(AppView.SITE_EDIT);
             else if (target === 'jules_awesome' || target.includes('awesome')) setActiveView(AppView.JULES_AWESOME);
             else if (target === 'android_ndk' || target.includes('ndk') || target.includes('android')) setActiveView(AppView.ANDROID_NDK);
+            else if (target === 'weather' || target.includes('hava') || target.includes('durumu')) setActiveView(AppView.WEATHER);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);

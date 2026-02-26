@@ -88,6 +88,7 @@ const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ onCommand }) => {
     else if (text.includes('görev')) onCommand('nav', 'nav', 'requests');
     else if (text.includes('sistem')) onCommand('nav', 'nav', 'system');
     else if (text.includes('ayar')) onCommand('nav', 'nav', 'settings');
+    else if (text.includes('hava durumu')) onCommand('nav', 'nav', 'weather');
     // Genel Gezinme
     else if (text.includes('aç') || text.includes('git')) {
       onCommand('nav', 'nav', text);
