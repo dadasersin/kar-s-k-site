@@ -6,7 +6,7 @@
   body {
     @apply bg-brandDark text-gray-100 font-sans selection:bg-primary/30 selection:text-white relative overflow-x-hidden;
   }
-  
+
   body::before {
     content: '';
     position: fixed;
@@ -25,8 +25,17 @@
 }
 
 @keyframes pulse-slow {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
 }
 
 .orb-glow {
@@ -38,57 +47,99 @@
   transition: all 0.3s ease-in-out;
 }
 
-    /* Music Bars Animation */
-    @keyframes music-bar {
-      0%, 100% { height: 4px; }
-      50% { height: 12px; }
-    }
-    .animate-music-bar-1 { animation: music-bar 0.8s infinite ease-in-out; }
-    .animate-music-bar-2 { animation: music-bar 1.2s infinite ease-in-out; animation-delay: 0.2s; }
-    .animate-music-bar-3 { animation: music-bar 1s infinite ease-in-out; animation-delay: 0.4s; }
+/* Music Bars Animation */
+@keyframes music-bar {
 
-    /* Tailwind-like Entry Animations */
-    .animate-in {
-      animation-duration: 0.5s;
-      animation-fill-mode: both;
-    }
-    .fade-in {
-      animation-name: fadeIn;
-    }
-    .slide-in-from-bottom-4 {
-      animation-name: slideInFromBottom;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes slideInFromBottom {
-      from { transform: translateY(1rem); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .animate-spin-slow {
-      animation: spin 8s linear infinite;
-    }
+  0%,
+  100% {
+    height: 4px;
+  }
 
-    .glass-panel {
-      @apply bg-slate-900/40 backdrop-blur-2xl border border-slate-800/50 shadow-2xl;
-    }
+  50% {
+    height: 12px;
+  }
+}
 
-    .pb-safe {
-      padding-bottom: env(safe-area-inset-bottom);
-    }
+.animate-music-bar-1 {
+  animation: music-bar 0.8s infinite ease-in-out;
+}
 
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-    .scrollbar-hide {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
+.animate-music-bar-2 {
+  animation: music-bar 1.2s infinite ease-in-out;
+  animation-delay: 0.2s;
+}
+
+.animate-music-bar-3 {
+  animation: music-bar 1s infinite ease-in-out;
+  animation-delay: 0.4s;
+}
+
+/* Tailwind-like Entry Animations */
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-bottom-4 {
+  animation-name: slideInFromBottom;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}
+
+.glass-panel {
+  @apply bg-slate-900/40 backdrop-blur-2xl border border-slate-800/50 shadow-2xl;
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 .hidden-section {
   display: none;
