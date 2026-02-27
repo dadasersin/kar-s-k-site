@@ -28,6 +28,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
     { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
+    { id: AppView.GOOGLE_AI_STUDIO, label: 'Google AI Studio', icon: 'fa-microchip' },
     { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.RUWIS_AI, label: 'RUWIS AI', icon: 'fa-sparkles' },
     { id: AppView.AGENT_SKILLS, label: 'Ajan Becerileri', icon: 'fa-brain' },

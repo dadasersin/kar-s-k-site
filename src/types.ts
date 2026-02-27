@@ -57,7 +57,8 @@ export enum AppView {
   SITE_EDIT = 'site_edit',
   JULES_AWESOME = 'jules_awesome',
   OMNIVIEW = 'omniview',
-  NEURAL_LOGIC = 'neural_logic'
+  NEURAL_LOGIC = 'neural_logic',
+  GOOGLE_AI_STUDIO = 'google_ai_studio'
 }
 
 export interface WorkflowNode {
