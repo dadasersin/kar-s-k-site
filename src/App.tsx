@@ -8,6 +8,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
 import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
+import { getStorageItem } from './utils/storage';
 import { saveLearnedKnowledge, getQuickWeather } from './utils/knowledgeBase';
 
 import OmniView from './views/OmniView';
@@ -307,11 +308,10 @@ function App() {
           const cleanTopic = orchestration.target || 'Yeni Araştırma';
           const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
           saveLearnedKnowledge(cleanTopic, cleanInfo);
-          
+
           // Auto GitHub sync if enabled
-          const savedSettings = localStorage.getItem('sync_settings');
-          if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
+          const settings = getStorageItem('sync_settings', null);
+          if (settings) {
             if (settings.autoSync) {
                setTimeout(() => handleGitHubSync(), 1000);
             }
@@ -347,7 +347,7 @@ function App() {
             text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
             timestamp: Date.now()
          }]);
-         
+
          // Start background logic chain
          const chain = createReasoningChain(text, true);
          setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
@@ -394,12 +394,12 @@ function App() {
         // Build Logic Chain for successful API flows
         const isBuild = orchestration.intent === 'BUILD';
         const isSearch = orchestration.intent === 'SEARCH_LEARN';
-        
+
         if (isBuild || isSearch) {
           const chain = createReasoningChain(text, false);
            updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-           
+
            setTimeout(() => {
              updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
              updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
@@ -417,7 +417,7 @@ function App() {
 
   const renderView = () => {
     // Check for dynamic module first
-    const dynamicModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+    const dynamicModules = getStorageItem('active_dynamic_modules', []);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dynamicMod = dynamicModules.find((m: any) => m.id === activeView);
     if (dynamicMod) {
