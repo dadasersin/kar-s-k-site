@@ -58,6 +58,8 @@ export enum AppView {
   JULES_AWESOME = 'jules_awesome',
   OMNIVIEW = 'omniview',
   NEURAL_LOGIC = 'neural_logic',
+}
+export interface WorkflowNode {
 
   id: string;
   name: string;
