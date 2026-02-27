@@ -75,7 +75,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.CURSOR_PROXY, label: 'Cursor AG Proxy', icon: 'fa-rocket' },
     { id: AppView.AG_SYNC, label: 'AG Senkronize', icon: 'fa-folder-tree' },
     { id: AppView.AG_LAUNCHER, label: 'AG Başlatıcı', icon: 'fa-power-off' },
-    { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' },
+    { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' }, ];
 
 
   // Dynamic Modules from Database/LocalStorage

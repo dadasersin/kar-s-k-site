@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
-import { getActiveChains, ReasoningChain, LogicNode } from '../utils/neuralLogic';
+import { getActiveChains } from '../utils/neuralLogic';
+import type { ReasoningChain, LogicNode } from '../utils/neuralLogic';
 
 interface NeuralLogicViewProps {
     onViewChange?: (view: AppView) => void;
@@ -41,7 +42,7 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
         else if (status === 'processing' || status === 'learning') colorClass = 'bg-primary/50 animate-pulse';
 
         return (
-            <div className={\`absolute left-6 top-10 bottom-[-20px] w-0.5 \${colorClass}\`}></div>
+            <div className={`absolute left-6 top-10 bottom-[-20px] w-0.5 ${colorClass}`}></div>
     );
   };
 
@@ -87,7 +88,7 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
                 <div 
                   key={chain.id}
                   onClick={() => setActiveChainId(chain.id)}
-                  className={\`p-4 rounded-2xl border cursor-pointer transition-all duration-300 \${activeChainId === chain.id ? 'bg-purple-500/10 border-purple-500/30 shadow-lg' : 'bg-brandDark/50 border-white/5 hover:bg-white/5'}\`}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${activeChainId === chain.id ? 'bg-purple-500/10 border-purple-500/30 shadow-lg' : 'bg-brandDark/50 border-white/5 hover:bg-white/5'}`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <p className="text-sm font-bold text-white truncate pr-4">{chain.topic}</p>
@@ -136,16 +137,16 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
                       <div key={node.id} className="relative flex items-start gap-6 group">
                         {renderNodeLine(node.status, idx === activeChain.nodes.length - 1)}
                         
-                        <div className={\`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-500 \${
+                        <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-500 ${
                           node.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500/30' : 
                           node.status === 'processing' || node.status === 'learning' ? 'bg-primary/20 border-primary/30 shadow-[0_0_20px_rgba(13,89,242,0.3)]' :
                           'bg-slate-800/50 border-slate-700'
-                        } border\`}>
+                        } border`}>
                           {renderNodeIcon(node.status)}
                         </div>
                         
                         <div className="flex-1 pt-2 pb-6">
-                          <h4 className={\`text-lg font-bold mb-1 transition-colors \${node.status === 'processing' ? 'text-primary' : 'text-white'}\`}>{node.stepName}</h4>
+                          <h4 className={`text-lg font-bold mb-1 transition-colors ${node.status === 'processing' ? 'text-primary' : 'text-white'}`}>{node.stepName}</h4>
                           <p className="text-sm text-slate-400 mb-3">{node.description}</p>
                           
                           {node.result && (
