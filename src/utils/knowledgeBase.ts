@@ -1,3 +1,4 @@
+import { getStorageItem } from './storage';
 export interface KnowledgeSource {
   id: string;
   name: string;
@@ -10,7 +11,7 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
 
   // 1. Fetch Prompts from localStorage/Presets
   try {
-    const customPrompts = JSON.parse(localStorage.getItem('prompt_library') || '[]');
+    const customPrompts = getStorageItem('prompt_library', []);
     sources.push(...customPrompts.map((p: any) => ({
       id: p.id,
       name: p.title,
@@ -21,7 +22,7 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
 
   // 2. Fetch Active Modules
   try {
-    const modules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+    const modules = getStorageItem('active_dynamic_modules', []);
     sources.push(...modules.map((m: any) => ({
       id: m.id,
       name: m.label,
@@ -64,7 +65,7 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
 
   // Learned Memory Source
   try {
-    const memory = JSON.parse(localStorage.getItem('neural_brain_memory') || '[]');
+    const memory = getStorageItem('neural_brain_memory', []);
     memory.forEach((m: any) => {
       sources.push({
         id: `learned-${m.id}`,
@@ -82,7 +83,7 @@ export const getAggregatedKnowledge = (): KnowledgeSource[] => {
 
 export const saveLearnedKnowledge = (topic: string, info: string) => {
   try {
-    const memory = JSON.parse(localStorage.getItem('neural_brain_memory') || '[]');
+    const memory = getStorageItem('neural_brain_memory', []);
     memory.push({
       id: Date.now().toString(),
       topic,

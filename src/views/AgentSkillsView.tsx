@@ -1,3 +1,4 @@
+import { getStorageItem } from '../utils/storage';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -216,7 +217,7 @@ const AgentSkillsView: React.FC = () => {
         if (index === messages.length - 1) {
           // Register skill as dynamic module
           try {
-            const activeModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+            const activeModules = getStorageItem('active_dynamic_modules', []);
             if (!activeModules.some((m: any) => m.id === skill.id)) {
               activeModules.push({
                 id: skill.id,

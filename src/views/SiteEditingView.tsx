@@ -1,3 +1,4 @@
+import { getStorageItem } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout, Palette, Trash2, Edit3, Save, Plus, AlertCircle, CheckCircle2, RefreshCcw } from 'lucide-react';
@@ -17,7 +18,7 @@ const SiteEditingView: React.FC = () => {
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
-    const savedModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+    const savedModules = getStorageItem('active_dynamic_modules', []);
     setModules(savedModules);
 
     const savedTitle = localStorage.getItem('site_title') || 'Ersin Güleş';

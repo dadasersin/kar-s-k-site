@@ -1,3 +1,4 @@
+import { getStorageItem } from '../utils/storage';
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Code, Play, Terminal, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Save, Database, Cloud, Share2, Shield, Eye, X, Check, Zap } from 'lucide-react';
@@ -138,7 +139,7 @@ const LiveAiDeveloperView: React.FC = () => {
 
       // SAVE TO PERSISTENT REGISTRY
       try {
-         const activeModules = JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+         const activeModules = getStorageItem('active_dynamic_modules', []);
          activeModules.push({
             id: approvedComp.id,
             label: approvedComp.name,
@@ -160,7 +161,7 @@ const LiveAiDeveloperView: React.FC = () => {
       setPrompt('');
 
       // Trigger auto GitHub sync if enabled
-      const syncSettings = JSON.parse(localStorage.getItem('sync_settings') || '{}');
+      const syncSettings = getStorageItem('sync_settings', {});
       if (syncSettings.autoSync) {
          addLog('Auto GitHub Sync triggered...');
          // In a real app, we'd call pushToGitHub here
