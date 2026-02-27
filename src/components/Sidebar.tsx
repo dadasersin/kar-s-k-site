@@ -22,6 +22,7 @@ const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const menuItems = [
     { id: AppView.OMNIVIEW, label: 'Omni Hub', icon: 'fa-layer-group' },
+    { id: AppView.NEURAL_LOGIC, label: 'Neural Logic', icon: 'fa-brain' },
     { id: AppView.HOME, label: 'Ana Sayfa', icon: 'fa-house-chimney' },
     { id: AppView.TOOLS, label: 'YZ Araçları', icon: 'fa-screwdriver-wrench' },
     { id: AppView.DASHBOARD, label: 'Kontrol Paneli', icon: 'fa-chart-pie' },
@@ -76,6 +77,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.AG_SYNC, label: 'AG Senkronize', icon: 'fa-folder-tree' },
     { id: AppView.AG_LAUNCHER, label: 'AG Başlatıcı', icon: 'fa-power-off' },
     { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' },
+  ];
 
 
   // Dynamic Modules from Database/LocalStorage
