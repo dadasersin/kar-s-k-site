@@ -287,7 +287,7 @@ function App() {
 
           if (!response.ok) {
             const errData = await response.json();
-            throw new Error(errData.error?.message || \`API Hatası: \${response.status}\`);
+            throw new Error(errData.error?.message || `API Hatası: ${response.status}`);
           }
 
           const data = await response.json();
