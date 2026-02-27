@@ -61,6 +61,7 @@ import SkillShareView from './views/SkillShareView';
 import NdkSamplesView from './views/NdkSamplesView';
 import WeatherView from './views/WeatherView';
 import NeuralLogicView from './views/NeuralLogicView';
+import GoogleAiStudioView from './views/GoogleAiStudioView';
 import { createReasoningChain, updateNodeStatus, completeChain } from './utils/neuralLogic';
 
 const prepareGeminiHistory = (msgs: ChatMessage[]) => {
@@ -515,6 +516,7 @@ function App() {
       case AppView.ANDROID_NDK: return <NdkSamplesView />;
       case AppView.WEATHER: return <WeatherView />;
       case AppView.NEURAL_LOGIC as any: return <NeuralLogicView onViewChange={setActiveView} />;
+      case AppView.GOOGLE_AI_STUDIO: return <GoogleAiStudioView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };
@@ -592,6 +594,7 @@ function App() {
             else if (target === 'android_ndk' || target.includes('ndk') || target.includes('android')) setActiveView(AppView.ANDROID_NDK);
             else if (target === 'omniview' || target.includes('hub')) setActiveView(AppView.OMNIVIEW);
             else if (target === 'weather' || target.includes('hava')) setActiveView(AppView.WEATHER);
+            else if (target.includes('ai studio')) setActiveView(AppView.GOOGLE_AI_STUDIO);
             else if (target.includes('nöral') || target.includes('mantık')) setActiveView(AppView.NEURAL_LOGIC as any);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
