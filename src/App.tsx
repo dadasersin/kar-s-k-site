@@ -285,10 +285,7 @@ function App() {
             })
           });
 
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || \`API Hatası: \${response.status}\`);
-          }
+
 
           const data = await response.json();
           responseText = data.choices[0].message.content;
@@ -307,13 +304,13 @@ function App() {
           const cleanTopic = orchestration.target || 'Yeni Araştırma';
           const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
           saveLearnedKnowledge(cleanTopic, cleanInfo);
-          
+
           // Auto GitHub sync if enabled
           const savedSettings = localStorage.getItem('sync_settings');
           if (savedSettings) {
             const settings = JSON.parse(savedSettings);
             if (settings.autoSync) {
-               setTimeout(() => handleGitHubSync(), 1000);
+              setTimeout(() => handleGitHubSync(), 1000);
             }
           }
         }
@@ -321,7 +318,7 @@ function App() {
         break;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        console.error(\`API Hatası [\${keyEntry.label}]:\`, error);
+        console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
           markKeyAsExhausted(keyEntry.id);
           continue;
@@ -329,7 +326,7 @@ function App() {
           setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
-            text: \`Hata oluştu (\${keyEntry.label}): \${error.message}\`,
+            text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
             timestamp: Date.now()
           }]);
           break;
@@ -341,46 +338,46 @@ function App() {
       // Autonomous Failover Mode Check
       const allExhausted = availableKeys.every(k => k.isQuotaExhausted);
       if (allExhausted) {
-         setMessages(prev => [...prev, {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'model',
+          text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
+          timestamp: Date.now()
+        }]);
+
+        // Start background logic chain
+        const chain = createReasoningChain(text, true);
+        setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
+
+        // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
+        }, 4000);
+
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Internal Knowledge Base queried. Extracted relevant logic for ' + orchestration.target });
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'learning' });
+        }, 8000);
+
+        setTimeout(() => {
+          const learned = "Simulated internet scraping complete. The structure of " + orchestration.target + " requires a React component with state management.";
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed', learnedData: learned });
+          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'processing' });
+        }, 14000);
+
+        setTimeout(() => {
+          const conclusion = "Otonom süreç tamamlandı. " + orchestration.target + " için gerekli tüm kodlama ve tasarım mimarisi sentezlendi.";
+          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'completed' });
+          completeChain(chain.id, conclusion);
+
+          setMessages(prev => [...prev, {
             id: Date.now().toString(),
             role: 'model',
-            text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
+            text: conclusion + " Detayları Nöral Mantık panelinden inceleyebilirsiniz.",
             timestamp: Date.now()
-         }]);
-         
-         // Start background logic chain
-         const chain = createReasoningChain(text, true);
-         setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
-
-         // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
-         setTimeout(() => {
-            updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
-            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-         }, 4000);
-
-         setTimeout(() => {
-            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Internal Knowledge Base queried. Extracted relevant logic for ' + orchestration.target });
-            updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'learning' });
-         }, 8000);
-
-         setTimeout(() => {
-            const learned = "Simulated internet scraping complete. The structure of " + orchestration.target + " requires a React component with state management.";
-            updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed', learnedData: learned });
-            updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'processing' });
-         }, 14000);
-
-         setTimeout(() => {
-            const conclusion = "Otonom süreç tamamlandı. " + orchestration.target + " için gerekli tüm kodlama ve tasarım mimarisi sentezlendi.";
-            updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'completed' });
-            completeChain(chain.id, conclusion);
-
-             setMessages(prev => [...prev, {
-              id: Date.now().toString(),
-              role: 'model',
-              text: conclusion + " Detayları Nöral Mantık panelinden inceleyebilirsiniz.",
-              timestamp: Date.now()
-            }]);
-         }, 18000);
+          }]);
+        }, 18000);
 
       } else {
         setMessages(prev => [...prev, {
@@ -391,25 +388,25 @@ function App() {
         }]);
       }
     } else if (success) {
-        // Build Logic Chain for successful API flows
-        const isBuild = orchestration.intent === 'BUILD';
-        const isSearch = orchestration.intent === 'SEARCH_LEARN';
-        
-        if (isBuild || isSearch) {
-          const chain = createReasoningChain(text, false);
-           updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
-           updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-           
-           setTimeout(() => {
-             updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
-             updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
-           }, 2000);
+      // Build Logic Chain for successful API flows
+      const isBuild = orchestration.intent === 'BUILD';
+      const isSearch = orchestration.intent === 'SEARCH_LEARN';
 
-           setTimeout(() => {
-             updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed' });
-             completeChain(chain.id, "Analiz ve işlem tamamlandı.");
-           }, 4000);
-        }
+      if (isBuild || isSearch) {
+        const chain = createReasoningChain(text, false);
+        updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
+        updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
+
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
+        }, 2000);
+
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed' });
+          completeChain(chain.id, "Analiz ve işlem tamamlandı.");
+        }, 4000);
+      }
     }
 
     setIsTyping(false);
@@ -427,7 +424,7 @@ function App() {
             <header className="flex items-center justify-between border-b border-white/5 pb-8">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
-                  <i className={\`fa-solid \${dynamicMod.icon || 'fa-cube'} text-3xl\`}></i>
+                  <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
                 </div>
                 <div>
                   <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
