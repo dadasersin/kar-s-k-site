@@ -56,16 +56,15 @@ export enum AppView {
   USER_MANUAL = 'user_manual',
   SITE_EDIT = 'site_edit',
   JULES_AWESOME = 'jules_awesome',
-  ANDROID_NDK = 'android_ndk'
-}
+  OMNIVIEW = 'omniview',
+  NEURAL_LOGIC = 'neural_logic',
 
-export interface WorkflowNode {
   id: string;
   name: string;
   type: string;
   position: [number, number];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parameters?: any;
+  parameters ?: any;
 }
 
 export interface WorkflowLink {

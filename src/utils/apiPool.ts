@@ -12,7 +12,7 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
       key: systemKey,
       label: 'Sistem Gemini',
       provider: 'gemini',
-      modelName: 'gemini-3-flash-preview',
+      modelName: 'gemini-1.5-flash',
       isQuotaExhausted: false
     });
   }

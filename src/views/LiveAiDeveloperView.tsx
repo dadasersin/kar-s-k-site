@@ -20,7 +20,7 @@ const LiveAiDeveloperView: React.FC = () => {
    const [showApprovalModal, setShowApprovalModal] = useState(false);
    const [pendingComponent, setPendingComponent] = useState<BuiltComponent | null>(null);
 
-   const [terminalLogs, setTerminalLogs] = useState<string[]>(['> Live AI Developer Motoru başlatıldı.', '> Gereksinimler bekleniyor...']);
+   const [terminalLogs, setTerminalLogs] = useState<string[]>(['> Live AI Developer Engine initialized.', '> Waiting for requirements...']);
    const [components, setComponents] = useState<BuiltComponent[]>(() => {
       try {
          const saved = localStorage.getItem('live_ai_components');
@@ -87,6 +87,7 @@ const LiveAiDeveloperView: React.FC = () => {
          const aiPrompt = `
         Sen bir React ve Tailwind CSS uzmanısın.
         Kullanıcı şunları istiyor: "${prompt}"
+        ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
 
         Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
         Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
@@ -125,15 +126,15 @@ const LiveAiDeveloperView: React.FC = () => {
       setShowApprovalModal(false);
       setIsProcessing(true);
 
-      addLog('Kullanıcı onayladı. Derleme işlemi başlatılıyor...');
+      addLog('User approved. Starting compilation...');
       const approvedComp = { ...pendingComponent, status: 'compiling' as const };
       setComponents(prev => [approvedComp, ...prev]);
 
       await new Promise(r => setTimeout(r, 2000));
-      addLog('Derleme başarılı. Modüller arası bütünlük testleri çalıştırılıyor...');
-      addLog('Testler Geçti: %100 (Entegre Mantık Doğrulandı)');
+      addLog('Compilation successful. Running cross-module integrity tests...');
+      addLog('Tests passed: 100% (Integrated Logic Validated)');
 
-      addLog('Canlı Portal Ortamına Dağıtılıyor...');
+      addLog('Deploying to Live Portal Environment...');
 
       // SAVE TO PERSISTENT REGISTRY
       try {
@@ -146,16 +147,14 @@ const LiveAiDeveloperView: React.FC = () => {
             timestamp: Date.now()
          });
          localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
-         addLog('Modül sistem veritabanına kaydedildi.');
-         addLog('YAPAY ZEKA NOTU: Bu kodu kalıcı hale getirmek için App.tsx içine entegre edin.');
+         addLog('Module registered in system database.');
       } catch (e) {
          console.error('Failed to save module to registry', e);
       }
 
       setComponents(prev => prev.map(c => c.id === approvedComp.id ? { ...c, status: 'deployed' } : c));
 
-      addLog('BAŞARILI: Yeni modül siteye başarıyla eklendi!');
-      addLog('Sisteme yeni bir modül eklendi. Sol menüdeki "AKTİF MODÜLLER" kısmından erişebilirsiniz.');
+      addLog('SUCCESS: New module added to site successfully!');
       setIsProcessing(false);
       setPendingComponent(null);
       setPrompt('');
@@ -163,7 +162,7 @@ const LiveAiDeveloperView: React.FC = () => {
       // Trigger auto GitHub sync if enabled
       const syncSettings = JSON.parse(localStorage.getItem('sync_settings') || '{}');
       if (syncSettings.autoSync) {
-         addLog('Otomatik GitHub Senkronizasyonu tetiklendi...');
+         addLog('Auto GitHub Sync triggered...');
          // In a real app, we'd call pushToGitHub here
       }
    };

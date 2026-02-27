@@ -29,7 +29,8 @@ export const getFullAppState = () => {
     live_ai_components: loadState('live_ai_components', []),
     sync_settings: loadState('sync_settings', {}),
     prompt_library: loadState('prompt_library', []),
-    api_usage: loadState('api_usage', {})
+    api_usage: loadState('api_usage', {}),
+    neural_brain_memory: loadState('neural_brain_memory', [])
   };
 };
 
@@ -40,4 +41,5 @@ export const restoreFullAppState = (state: any) => {
   if (state.sync_settings) saveState('sync_settings', state.sync_settings);
   if (state.prompt_library) saveState('prompt_library', state.prompt_library);
   if (state.api_usage) saveState('api_usage', state.api_usage);
+  if (state.neural_brain_memory) saveState('neural_brain_memory', state.neural_brain_memory);
 };
