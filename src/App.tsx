@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import VoiceAssistant from './components/VoiceAssistant';
+import QuickChatWidget from './components/QuickChatWidget';
 import { AppView } from './types';
 import type { ChatMessage } from './types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -307,7 +308,7 @@ function App() {
           const cleanTopic = orchestration.target || 'Yeni Araştırma';
           const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
           saveLearnedKnowledge(cleanTopic, cleanInfo);
-          
+
           // Auto GitHub sync if enabled
           const savedSettings = localStorage.getItem('sync_settings');
           if (savedSettings) {
@@ -321,7 +322,7 @@ function App() {
         break;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        console.error(\`API Hatası [\${keyEntry.label}]:\`, error);
+        console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
           markKeyAsExhausted(keyEntry.id);
           continue;
@@ -329,7 +330,7 @@ function App() {
           setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
-            text: \`Hata oluştu (\${keyEntry.label}): \${error.message}\`,
+            text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
             timestamp: Date.now()
           }]);
           break;
@@ -347,7 +348,7 @@ function App() {
             text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
             timestamp: Date.now()
          }]);
-         
+
          // Start background logic chain
          const chain = createReasoningChain(text, true);
          setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
@@ -394,12 +395,12 @@ function App() {
         // Build Logic Chain for successful API flows
         const isBuild = orchestration.intent === 'BUILD';
         const isSearch = orchestration.intent === 'SEARCH_LEARN';
-        
+
         if (isBuild || isSearch) {
           const chain = createReasoningChain(text, false);
            updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-           
+
            setTimeout(() => {
              updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
              updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
@@ -427,7 +428,7 @@ function App() {
             <header className="flex items-center justify-between border-b border-white/5 pb-8">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
-                  <i className={\`fa-solid \${dynamicMod.icon || 'fa-cube'} text-3xl\`}></i>
+                  <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
                 </div>
                 <div>
                   <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>

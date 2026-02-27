@@ -25,14 +25,14 @@ let activeChains: ReasoningChain[] = [];
 
 export const createReasoningChain = (query: string, isFailover: boolean = false): ReasoningChain => {
     const chain: ReasoningChain = {
-        id: \`chain_\${Date.now()}\`,
+        id: `chain_${Date.now()}`,
     topic: extractTopic(query),
     originalQuery: query,
     nodes: generateInitialNodes(query, isFailover),
     startTime: Date.now(),
     isFailoverMode: isFailover
   };
-  
+
   activeChains = [chain, ...activeChains].slice(0, 10); // Keep last 10
   saveChainsToStorage();
   return chain;
@@ -50,7 +50,7 @@ export const updateNodeStatus = (chainId: string, nodeId: string, updates: Parti
     if (chain.id === chainId) {
       return {
         ...chain,
-        nodes: chain.nodes.map(node => 
+        nodes: chain.nodes.map(node =>
           node.id === nodeId ? { ...node, ...updates } : node
         )
       };
@@ -89,7 +89,7 @@ const generateInitialNodes = (query: string, isFailover: boolean): LogicNode[] =
 
   // 1. Always start with Intent Analysis
   nodes.push({
-    id: \`node_\${Date.now()}_1\`,
+    id: `node_${Date.now()}_1`,
     stepName: 'Niyet Analizi',
     description: 'Kullanıcının tam olarak ne istediğini çözümleme',
     status: 'pending'
@@ -98,13 +98,13 @@ const generateInitialNodes = (query: string, isFailover: boolean): LogicNode[] =
   // 2. Context/Data Retrieval
   if (isFailover) {
     nodes.push({
-      id: \`node_\${Date.now()}_2\`,
+      id: `node_${Date.now()}_2`,
       stepName: 'Otonom Veri Taraması',
       description: 'API limitleri aşıldı. Harici kaynaklardan/dahili hafızadan bilgi toplama.',
       status: 'pending'
     });
     nodes.push({
-      id: \`node_\${Date.now()}_3\`,
+      id: `node_${Date.now()}_3`,
       stepName: 'Nöral Öğrenme (Fallback)',
       description: 'Toplanan kısıtlı veriyi sentezleyip mantıksal bir çıkarım oluşturma.',
       status: 'pending'
@@ -113,33 +113,33 @@ const generateInitialNodes = (query: string, isFailover: boolean): LogicNode[] =
     // Normal Mode
     if (lowerQuery.includes('araştır') || lowerQuery.includes('öğren')) {
       nodes.push({
-        id: \`node_\${Date.now()}_2\`,
+        id: `node_${Date.now()}_2`,
         stepName: 'Derin Web Taraması',
         description: 'Belirtilen konu hakkında güncel ve akademik verileri toplama.',
         status: 'pending'
       });
       nodes.push({
-        id: \`node_\${Date.now()}_3\`,
+        id: `node_${Date.now()}_3`,
         stepName: 'Bilgi Sentezi & Hafıza Kaydı',
         description: 'Öğrenilenleri sistemin kalıcı hafızasına kaydetme.',
         status: 'pending'
       });
     } else if (lowerQuery.includes('yap') || lowerQuery.includes('kodla') || lowerQuery.includes('ekle')) {
        nodes.push({
-        id: \`node_\${Date.now()}_2\`,
+        id: `node_${Date.now()}_2`,
         stepName: 'Mimari Planlama',
         description: 'İstenen özellik için en uygun bileşen ve sistem mimarisini tasarlama.',
         status: 'pending'
       });
        nodes.push({
-        id: \`node_\${Date.now()}_3\`,
+        id: `node_${Date.now()}_3`,
         stepName: 'Otonom Kod Üretimi',
         description: 'Live AI Developer motorunu tetikleme ve kodları sisteme enjekte etme.',
         status: 'pending'
       });
     } else {
        nodes.push({
-        id: \`node_\${Date.now()}_2\`,
+        id: `node_${Date.now()}_2`,
         stepName: 'Bilişsel Yanıt Üretimi',
         description: 'Kullanıcıya en tutarlı ve zengin içerikli cevabı hazırlama.',
         status: 'pending'
@@ -149,7 +149,7 @@ const generateInitialNodes = (query: string, isFailover: boolean): LogicNode[] =
 
   // Final Step Configuration
   nodes.push({
-    id: \`node_\${Date.now()}_last\`,
+    id: `node_${Date.now()}_last`,
     stepName: 'Çıktı Optimizasyonu',
     description: 'Sonuçları kullanıcıya sunulabilir, temiz bir formata dönüştürme.',
     status: 'pending'

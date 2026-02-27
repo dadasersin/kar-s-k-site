@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { AppView } from '../types';
-import { getActiveChains, ReasoningChain, LogicNode } from '../utils/neuralLogic';
+import React, { useState, useEffect } from "react";
+import { AppView } from "../types";
+import { getActiveChains } from "../utils/neuralLogic";
+import type { ReasoningChain, LogicNode } from "../utils/neuralLogic";
 
 interface NeuralLogicViewProps {
     onViewChange?: (view: AppView) => void;
 }
-
 const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
     const [chains, setChains] = useState<ReasoningChain[]>([]);
     const [activeChainId, setActiveChainId] = useState<string | null>(null);
@@ -41,14 +41,14 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
         else if (status === 'processing' || status === 'learning') colorClass = 'bg-primary/50 animate-pulse';
 
         return (
-            <div className={\`absolute left-6 top-10 bottom-[-20px] w-0.5 \${colorClass}\`}></div>
+            <div className={`absolute left-6 top-10 bottom-[-20px] w-0.5 ${colorClass}`}></div>
     );
   };
 
   return (
     <div className="p-4 lg:p-12 animate-in fade-in duration-700 min-h-screen pb-32">
       <div className="max-w-6xl mx-auto space-y-8">
-        
+
         {/* Header */}
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-white/5 pb-8">
           <div className="flex items-center gap-6">
@@ -78,16 +78,16 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* History Panel */}
           <div className="lg:col-span-1 space-y-4">
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-2">Aktif Zincirler</h3>
             <div className="space-y-3">
               {chains.map(chain => (
-                <div 
+                <div
                   key={chain.id}
                   onClick={() => setActiveChainId(chain.id)}
-                  className={\`p-4 rounded-2xl border cursor-pointer transition-all duration-300 \${activeChainId === chain.id ? 'bg-purple-500/10 border-purple-500/30 shadow-lg' : 'bg-brandDark/50 border-white/5 hover:bg-white/5'}\`}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${activeChainId === chain.id ? 'bg-purple-500/10 border-purple-500/30 shadow-lg' : 'bg-brandDark/50 border-white/5 hover:bg-white/5'}`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <p className="text-sm font-bold text-white truncate pr-4">{chain.topic}</p>
@@ -116,7 +116,7 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
           {/* Logic Flow Visualization */}
           <div className="lg:col-span-2 space-y-4">
             <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest pl-2">Zihin Haritası</h3>
-            
+
             <div className="bg-brandDark/50 border border-white/5 rounded-3xl p-6 lg:p-8 min-h-[500px] relative overflow-hidden">
               {/* Background Graph Lines */}
               <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
@@ -135,19 +135,19 @@ const NeuralLogicView: React.FC<NeuralLogicViewProps> = ({ onViewChange }) => {
                     {activeChain.nodes.map((node, idx) => (
                       <div key={node.id} className="relative flex items-start gap-6 group">
                         {renderNodeLine(node.status, idx === activeChain.nodes.length - 1)}
-                        
-                        <div className={\`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-500 \${
-                          node.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500/30' : 
+
+                        <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center relative z-10 transition-all duration-500 ${
+                          node.status === 'completed' ? 'bg-emerald-500/20 border-emerald-500/30' :
                           node.status === 'processing' || node.status === 'learning' ? 'bg-primary/20 border-primary/30 shadow-[0_0_20px_rgba(13,89,242,0.3)]' :
                           'bg-slate-800/50 border-slate-700'
-                        } border\`}>
+                        } border`}>
                           {renderNodeIcon(node.status)}
                         </div>
-                        
+
                         <div className="flex-1 pt-2 pb-6">
-                          <h4 className={\`text-lg font-bold mb-1 transition-colors \${node.status === 'processing' ? 'text-primary' : 'text-white'}\`}>{node.stepName}</h4>
+                          <h4 className={`text-lg font-bold mb-1 transition-colors ${node.status === 'processing' ? 'text-primary' : 'text-white'}`}>{node.stepName}</h4>
                           <p className="text-sm text-slate-400 mb-3">{node.description}</p>
-                          
+
                           {node.result && (
                             <div className="p-3 rounded-lg bg-black/40 border border-white/5 text-xs text-slate-300 font-mono">
                               {node.result}
