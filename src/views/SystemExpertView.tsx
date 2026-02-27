@@ -1,3 +1,4 @@
+import { getStorageItem } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
 import { Terminal, Shield, Zap, AlertCircle, CheckCircle2, RefreshCw, Cpu, Activity, Database, Wrench, Bug, FileCode } from 'lucide-react';
 

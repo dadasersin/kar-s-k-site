@@ -1,3 +1,4 @@
+import { getStorageItem } from './storage';
 export interface KnowledgeSource {
   id: string;
   name: string;

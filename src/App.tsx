@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
+import QuickChatWidget from './components/QuickChatWidget';
 import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { ChatMessage } from './types';

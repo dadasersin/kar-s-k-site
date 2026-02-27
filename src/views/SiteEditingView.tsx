@@ -1,3 +1,4 @@
+import { getStorageItem } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout, Palette, Trash2, Edit3, Save, Plus, AlertCircle, CheckCircle2, RefreshCcw } from 'lucide-react';

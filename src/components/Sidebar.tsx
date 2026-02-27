@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppView } from '../types';
+import { getStorageItem } from '../utils/storage';
 
 interface NavigationProps {
   activeView: AppView;

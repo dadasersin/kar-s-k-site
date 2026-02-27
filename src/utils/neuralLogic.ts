@@ -1,3 +1,4 @@
+import { getStorageItem } from './storage';
 export type LogicNodeStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'learning';
 
 export interface LogicNode {
