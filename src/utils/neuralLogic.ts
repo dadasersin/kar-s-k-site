@@ -32,7 +32,7 @@ export const createReasoningChain = (query: string, isFailover: boolean = false)
     startTime: Date.now(),
     isFailoverMode: isFailover
   };
-  
+
   activeChains = [chain, ...activeChains].slice(0, 10); // Keep last 10
   saveChainsToStorage();
   return chain;
@@ -50,7 +50,7 @@ export const updateNodeStatus = (chainId: string, nodeId: string, updates: Parti
     if (chain.id === chainId) {
       return {
         ...chain,
-        nodes: chain.nodes.map(node => 
+        nodes: chain.nodes.map(node =>
           node.id === nodeId ? { ...node, ...updates } : node
         )
       };
@@ -168,9 +168,9 @@ const saveChainsToStorage = () => {
 
 const loadChainsFromStorage = () => {
   try {
-    const saved = localStorage.getItem('neural_logic_chains');
+    const saved = getStorageItem('neural_logic_chains', null);
     if (saved) {
-      activeChains = JSON.parse(saved);
+      activeChains = saved;
     }
   } catch (e) {
     console.warn('Could not load logic chains from storage', e);

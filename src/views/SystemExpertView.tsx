@@ -18,10 +18,8 @@ const SystemExpertView: React.FC = () => {
   useEffect(() => {
     const loadLogs = () => {
       try {
-        const savedLogs = localStorage.getItem('system_error_logs');
-        if (savedLogs) {
-          setLogs(JSON.parse(savedLogs).reverse());
-        }
+        const logs = getStorageItem('system_error_logs', []);
+        setLogs([...logs].reverse());
       } catch (e) {
         console.error("Failed to parse system_error_logs", e);
       }

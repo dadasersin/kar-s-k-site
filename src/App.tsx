@@ -108,8 +108,7 @@ function App() {
   const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
-      const saved = localStorage.getItem('chat_history');
-      return saved ? JSON.parse(saved) : [];
+      return getStorageItem('chat_history', []);
     } catch (e) {
       console.error("Failed to parse chat history", e);
       return [];
@@ -165,8 +164,7 @@ function App() {
       };
 
       try {
-        const savedLogs = localStorage.getItem('system_error_logs');
-        const existingLogs = savedLogs ? JSON.parse(savedLogs) : [];
+        const existingLogs = getStorageItem('system_error_logs', []);
         existingLogs.push(errorLog);
         const trimmedLogs = existingLogs.slice(-50);
         localStorage.setItem('system_error_logs', JSON.stringify(trimmedLogs));

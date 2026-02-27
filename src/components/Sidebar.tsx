@@ -82,7 +82,7 @@ const Navigation: React.FC<NavigationProps> = ({
   // Dynamic Modules from Database/LocalStorage
   const dynamicModules = (() => {
     try {
-      return JSON.parse(localStorage.getItem('active_dynamic_modules') || '[]');
+      return getStorageItem('active_dynamic_modules', []);
     } catch (e) { return []; }
   })();
 
@@ -93,9 +93,8 @@ const Navigation: React.FC<NavigationProps> = ({
     if (envKey && envKey.length > 5) return true;
 
     try {
-      const settingsStr = localStorage.getItem('sync_settings');
-      if (settingsStr) {
-        const settings = JSON.parse(settingsStr);
+      const settings = getStorageItem('sync_settings', null);
+    if (settings) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
       }
