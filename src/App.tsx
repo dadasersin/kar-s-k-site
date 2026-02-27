@@ -321,7 +321,7 @@ function App() {
         break;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
-        console.error(\`API Hatası [\${keyEntry.label}]:\`, error);
+        console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
           markKeyAsExhausted(keyEntry.id);
           continue;
@@ -329,7 +329,7 @@ function App() {
           setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
-            text: \`Hata oluştu (\${keyEntry.label}): \${error.message}\`,
+            text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
             timestamp: Date.now()
           }]);
           break;
@@ -427,7 +427,7 @@ function App() {
             <header className="flex items-center justify-between border-b border-white/5 pb-8">
               <div className="flex items-center gap-6">
                 <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
-                  <i className={\`fa-solid \${dynamicMod.icon || 'fa-cube'} text-3xl\`}></i>
+                  <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
                 </div>
                 <div>
                   <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
