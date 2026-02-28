@@ -62,6 +62,7 @@ import NdkSamplesView from './views/NdkSamplesView';
 import WeatherView from './views/WeatherView';
 import NeuralLogicView from './views/NeuralLogicView';
 import GoogleAiStudioView from './views/GoogleAiStudioView';
+import SkyDriveView from './views/SkyDriveView';
 import { createReasoningChain, updateNodeStatus, completeChain } from './utils/neuralLogic';
 
 const prepareGeminiHistory = (msgs: ChatMessage[]) => {
@@ -185,6 +186,23 @@ function App() {
 
     const orchestration = detectIntent(text);
 
+    // Nexus Admin: Site Title Update Logic
+    if (text.toLowerCase().includes('site başlığını') && text.toLowerCase().includes('yap')) {
+      const match = text.match(/site başlığını ["'‘“](.+)["'”’] (yap|olarak değiştir|güncelle)/i) ||
+        text.match(/site başlığını (.+) (yap|olarak değiştir|güncelle)/i);
+      if (match && match[1]) {
+        localStorage.setItem('site_title', match[1]);
+        const adminMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          text: `✅ Nexus Admin: Site başlığı başarıyla "${match[1]}" olarak güncellendi.`,
+          timestamp: Date.now()
+        };
+        setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, adminMsg]);
+        return;
+      }
+    }
+
     if (orchestration.intent === 'BUILD') {
       const modelMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -192,7 +210,7 @@ function App() {
         text: `Harika! "${orchestration.target}" için yeni bir çözüm hazırlıyorum. Seni Live AI Developer bölümüne yönlendiriyorum.`,
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
       setTimeout(() => setActiveView(AppView.BUILDER), 1500);
       setIsTyping(false);
       return;
@@ -206,7 +224,7 @@ function App() {
         text: `${orchestration.target} için güncel hava durumu: ${weatherInfo}. Başka bir bölgeyi merak ediyor musun?`,
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
       setIsTyping(false);
       return;
     }
@@ -221,7 +239,7 @@ function App() {
         text: `🔍 Web Araştırması ve Nöral Öğrenme Başlatıldı...\n\n"${orchestration.target}" konusunu derinlemesine inceliyorum. Bilgileri analiz edip kalıcı hafızama kaydedeceğim.`,
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, searchInitiatedMsg]);
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, searchInitiatedMsg]);
     } else {
       const userMsg: ChatMessage = {
         id: Date.now().toString(),
@@ -229,14 +247,14 @@ function App() {
         text,
         timestamp: Date.now()
       };
-      setMessages(prev => [...prev, userMsg]);
+      setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
     }
 
     setIsTyping(true);
 
     const availableKeys = getAvailableKeys();
     if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, {
+      setMessages((prev: ChatMessage[]) => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: "Hata: Herhangi bir API anahtarı bulunamadı. Lütfen Ayarlar sayfasından anahtar ekleyin.",
@@ -302,7 +320,7 @@ function App() {
           timestamp: Date.now()
         };
 
-        setMessages(prev => [...prev, modelMsg]);
+        setMessages((prev: ChatMessage[]) => [...prev, modelMsg]);
 
         if (learningMode) {
           const cleanTopic = orchestration.target || 'Yeni Araştırma';
@@ -313,7 +331,7 @@ function App() {
           const settings = getStorageItem('sync_settings', null);
           if (settings) {
             if (settings.autoSync) {
-               setTimeout(() => handleGitHubSync(), 1000);
+              setTimeout(() => handleGitHubSync(), 1000);
             }
           }
         }
@@ -326,7 +344,7 @@ function App() {
           markKeyAsExhausted(keyEntry.id);
           continue;
         } else {
-          setMessages(prev => [...prev, {
+          setMessages((prev: ChatMessage[]) => [...prev, {
             id: (Date.now() + 1).toString(),
             role: 'model',
             text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
@@ -341,49 +359,49 @@ function App() {
       // Autonomous Failover Mode Check
       const allExhausted = availableKeys.every(k => k.isQuotaExhausted);
       if (allExhausted) {
-         setMessages(prev => [...prev, {
+        setMessages((prev: ChatMessage[]) => [...prev, {
+          id: Date.now().toString(),
+          role: 'model',
+          text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
+          timestamp: Date.now()
+        }]);
+
+        // Start background logic chain
+        const chain = createReasoningChain(text, true);
+        setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
+
+        // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
+        }, 4000);
+
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Internal Knowledge Base queried. Extracted relevant logic for ' + orchestration.target });
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'learning' });
+        }, 8000);
+
+        setTimeout(() => {
+          const learned = "Simulated internet scraping complete. The structure of " + orchestration.target + " requires a React component with state management.";
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed', learnedData: learned });
+          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'processing' });
+        }, 14000);
+
+        setTimeout(() => {
+          const conclusion = "Otonom süreç tamamlandı. " + orchestration.target + " için gerekli tüm kodlama ve tasarım mimarisi sentezlendi.";
+          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'completed' });
+          completeChain(chain.id, conclusion);
+
+          setMessages((prev: ChatMessage[]) => [...prev, {
             id: Date.now().toString(),
             role: 'model',
-            text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
+            text: conclusion + " Detayları Nöral Mantık panelinden inceleyebilirsiniz.",
             timestamp: Date.now()
-         }]);
-
-         // Start background logic chain
-         const chain = createReasoningChain(text, true);
-         setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
-
-         // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
-         setTimeout(() => {
-            updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
-            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-         }, 4000);
-
-         setTimeout(() => {
-            updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Internal Knowledge Base queried. Extracted relevant logic for ' + orchestration.target });
-            updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'learning' });
-         }, 8000);
-
-         setTimeout(() => {
-            const learned = "Simulated internet scraping complete. The structure of " + orchestration.target + " requires a React component with state management.";
-            updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed', learnedData: learned });
-            updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'processing' });
-         }, 14000);
-
-         setTimeout(() => {
-            const conclusion = "Otonom süreç tamamlandı. " + orchestration.target + " için gerekli tüm kodlama ve tasarım mimarisi sentezlendi.";
-            updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'completed' });
-            completeChain(chain.id, conclusion);
-
-             setMessages(prev => [...prev, {
-              id: Date.now().toString(),
-              role: 'model',
-              text: conclusion + " Detayları Nöral Mantık panelinden inceleyebilirsiniz.",
-              timestamp: Date.now()
-            }]);
-         }, 18000);
+          }]);
+        }, 18000);
 
       } else {
-        setMessages(prev => [...prev, {
+        setMessages((prev: ChatMessage[]) => [...prev, {
           id: (Date.now() + 1).toString(),
           role: 'model',
           text: "Üzgünüm, şu anda API servisleri ulaşılamaz durumda.",
@@ -391,25 +409,25 @@ function App() {
         }]);
       }
     } else if (success) {
-        // Build Logic Chain for successful API flows
-        const isBuild = orchestration.intent === 'BUILD';
-        const isSearch = orchestration.intent === 'SEARCH_LEARN';
+      // Build Logic Chain for successful API flows
+      const isSearch = orchestration.intent === 'SEARCH_LEARN';
+      const isSkyDrive = orchestration.intent === 'SKYDRIVE';
 
-        if (isBuild || isSearch) {
-          const chain = createReasoningChain(text, false);
-           updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
-           updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
+      if (isSearch || isSkyDrive) {
+        const chain = createReasoningChain(text, false);
+        updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
+        updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
 
-           setTimeout(() => {
-             updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
-             updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
-           }, 2000);
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
+        }, 2000);
 
-           setTimeout(() => {
-             updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed' });
-             completeChain(chain.id, "Analiz ve işlem tamamlandı.");
-           }, 4000);
-        }
+        setTimeout(() => {
+          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed' });
+          completeChain(chain.id, "Analiz ve işlem tamamlandı.");
+        }, 4000);
+      }
     }
 
     setIsTyping(false);
@@ -453,7 +471,7 @@ function App() {
             <div className="flex justify-end gap-3 opacity-30 hover:opacity-100 transition-opacity">
               <p className="text-[10px] font-bold text-slate-600 uppercase">ID: {dynamicMod.id}</p>
               <p className="text-[10px] font-bold text-slate-600 uppercase">•</p>
-              <p className="text-[10px] font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
+              <p className="text-[10px) font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
             </div>
           </div>
         </div>
@@ -517,6 +535,7 @@ function App() {
       case AppView.WEATHER: return <WeatherView />;
       case AppView.NEURAL_LOGIC as any: return <NeuralLogicView onViewChange={setActiveView} />;
       case AppView.GOOGLE_AI_STUDIO: return <GoogleAiStudioView />;
+      case AppView.SKYDRIVE: return <SkyDriveView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };
@@ -574,7 +593,7 @@ function App() {
             else if (target === 'prompt_master' || target.includes('prompt')) setActiveView(AppView.PROMPT_MASTER);
             else if (target === 'dev_tools' || target.includes('araçlar')) setActiveView(AppView.DEV_TOOLS);
             else if (target === 'coder_config' || target.includes('yapılandırma')) setActiveView(AppView.CODER_CONFIG);
-            else if (target === 'agentic_config' || target.includes('akışlar')) setActiveView(AppView.AGENTIC_CONFIG);
+            else if (target === 'agentic_config' || target.includes('akışlar')) setActiveView(AppView.AGENT_SKILLS);
             else if (target === 'transparent_png' || target.includes('png')) setActiveView(AppView.TRANSPARENT_PNG);
             else if (target === 'skillshare' || target.includes('skill')) setActiveView(AppView.SKILLSHARE);
             else if (target === 'seline' || target.includes('seline')) setActiveView(AppView.SELINE);
@@ -595,6 +614,7 @@ function App() {
             else if (target === 'omniview' || target.includes('hub')) setActiveView(AppView.OMNIVIEW);
             else if (target === 'weather' || target.includes('hava')) setActiveView(AppView.WEATHER);
             else if (target.includes('ai studio')) setActiveView(AppView.GOOGLE_AI_STUDIO);
+            else if (target.includes('skydrive') || target.includes('füze') || target.includes('uçan araba')) setActiveView(AppView.SKYDRIVE);
             else if (target.includes('nöral') || target.includes('mantık')) setActiveView(AppView.NEURAL_LOGIC as any);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);

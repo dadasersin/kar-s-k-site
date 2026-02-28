@@ -58,7 +58,10 @@ export enum AppView {
   JULES_AWESOME = 'jules_awesome',
   OMNIVIEW = 'omniview',
   NEURAL_LOGIC = 'neural_logic',
-  GOOGLE_AI_STUDIO = 'google_ai_studio'
+  ANDROID_NDK = 'android_ndk',
+  WEATHER = 'weather',
+  GOOGLE_AI_STUDIO = 'google_ai_studio',
+  SKYDRIVE = 'skydrive'
 }
 
 export interface WorkflowNode {
@@ -67,7 +70,7 @@ export interface WorkflowNode {
   type: string;
   position: [number, number];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  parameters ?: any;
+  parameters?: any;
 }
 
 export interface WorkflowLink {

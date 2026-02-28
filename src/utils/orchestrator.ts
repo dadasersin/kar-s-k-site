@@ -1,4 +1,4 @@
-export type Intent = 'BUILD' | 'WEATHER' | 'SEARCH_LEARN' | 'CHAT';
+export type Intent = 'BUILD' | 'WEATHER' | 'SEARCH_LEARN' | 'CHAT' | 'SKYDRIVE';
 
 interface OrchestrationResult {
     intent: Intent;
@@ -8,6 +8,16 @@ interface OrchestrationResult {
 
 export const detectIntent = (text: string): OrchestrationResult => {
     const lowerText = text.toLowerCase();
+
+    // 0. SkyDrive Intent
+    if (
+        lowerText.includes('skydrive') ||
+        lowerText.includes('uçan araba') ||
+        lowerText.includes('nexus') ||
+        lowerText.includes('aerodinamik')
+    ) {
+        return { intent: 'SKYDRIVE', target: text };
+    }
 
     // 1. Build Intent (Create/Add page)
     if (

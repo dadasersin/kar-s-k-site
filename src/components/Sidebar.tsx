@@ -29,6 +29,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.JULES_STUDIO, label: 'Jules AI Studio', icon: 'fa-wand-sparkles' },
     { id: AppView.CHAT, label: 'AI Sohbet', icon: 'fa-comments' },
     { id: AppView.GOOGLE_AI_STUDIO, label: 'Google AI Studio', icon: 'fa-microchip' },
+    { id: AppView.SKYDRIVE, label: 'SkyDrive AI', icon: 'fa-rocket-launch' },
     { id: AppView.VISUALS, label: 'Görsel Stüdyo', icon: 'fa-image' },
     { id: AppView.RUWIS_AI, label: 'RUWIS AI', icon: 'fa-sparkles' },
     { id: AppView.AGENT_SKILLS, label: 'Ajan Becerileri', icon: 'fa-brain' },
@@ -96,7 +97,7 @@ const Navigation: React.FC<NavigationProps> = ({
 
     try {
       const settings = getStorageItem('sync_settings', null);
-    if (settings) {
+      if (settings) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
       }
