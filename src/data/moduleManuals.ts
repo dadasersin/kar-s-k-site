@@ -15,10 +15,58 @@ export const MODULE_MANUALS: ManualEntry[] = [
     description: 'Portalın merkezi kontrol noktasıdır. Sistem sağlığını ve aktif modülleri buradan izleyebilirsiniz.',
     steps: [
       'Sol menüden "Ana Sayfa" ikonuna tıklayın.',
-      'Stat kartlarından (Gecikme, Aktif Modüller) sistemin güncel durumunu kontrol edin.',
-      'Hızlı erişim kartlarını kullanarak en çok kullandığınız araçlara saniyeler içinde ulaşın.'
+      'Sistem Sağlığı ve Analiz panelinden metrikleri kontrol edin.',
+      'Hızlı arama çubuğunu kullanarak Google araması yapın.'
     ],
     tips: ['Gecikme süresi 2ms üzerine çıkarsa "AG Başlatıcı" kullanarak bellek fix uygulayın.']
+  },
+  {
+    id: 'borsa',
+    title: 'Borsa Takibi',
+    category: 'Finans',
+    description: 'BIST ve global piyasaların canlı takibi ve analizi için kullanılan modül.',
+    steps: [
+      'Hisse senetlerini aratın ve portföyünüze ekleyin.',
+      'Grafikleri teknik analiz araçlarıyla inceleyin.',
+      'Piyasa derinliğini ve aracı kurum dağılımlarını görün.'
+    ],
+    tips: ['Favori listenizi Supabase üzerinden senkronize edebilirsiniz.']
+  },
+  {
+    id: 'neural_logic',
+    title: 'Neural Logic',
+    category: 'YZ Servisleri',
+    description: 'Sistemin bilişsel süreçlerini ve karar verme zincirlerini izlemenizi sağlar.',
+    steps: [
+      'Aktif akıl yürütme zincirlerini sol panelden seçin.',
+      'Zihin haritası üzerinde her adımın nasıl işlendiğini görün.',
+      'Öğrenilen verilerin hafızaya nasıl alındığını takip edin.'
+    ],
+    tips: ['Karar mekanizması multimodal veri analizi ile çalışır.']
+  },
+  {
+    id: 'live_tv',
+    title: 'Live TV / Medya',
+    category: 'Medya',
+    description: 'Dünya genelinden yüzlerce canlı TV kanalına erişim sağlar.',
+    steps: [
+      'Kategori listesinden (Haber, Spor, Sinema vb.) seçim yapın.',
+      'Kanalların yanındaki kalite seçeneklerini kontrol edin.',
+      'Akıllı Proxy ayarları ile donma sorunlarını giderin.'
+    ],
+    tips: ['Video.js tabanlı oynatıcı otomatik olarak en iyi akışı seçer.']
+  },
+  {
+    id: 'weather',
+    title: 'Hava Durumu',
+    category: 'Sistem',
+    description: 'Anlık konum tabanlı hava durumu ve gelecek tahmin raporları.',
+    steps: [
+      'Sistem konumunuzu otomatik algılayacaktır.',
+      'Detaylı tahminler için "5 Günlük" sekmesine geçin.',
+      'Sıcaklık ve nem gibi kritik metrikleri ana ekranda görün.'
+    ],
+    tips: ['OpenWeatherMap API üzerinden gerçek zamanlı veri çekilir.']
   },
   {
     id: 'chat',
@@ -39,9 +87,9 @@ export const MODULE_MANUALS: ManualEntry[] = [
     description: 'Portal için otonom olarak yeni özellikler ve modüller inşa eden gelişmiş motor.',
     steps: [
       'Komut merkezine eklemek istediğiniz özelliği Türkçe olarak yazın.',
-      '"Geliştirmeyi Başlat" butonuna tıklayarak AI\'nın tüm entegre repolardan veri çekmesini bekleyin.',
+      '"Geliştirmeyi Başlat" butonuna tıklayarak AI\'nın veri çekmesini bekleyin.',
       'Üretilen görsel önizlemeyi ve kodu inceleyin.',
-      '"SİTEYE EKLE VE YAYINLA" butonuna basarak yeni modülü kalıcı olarak sol menüye ekleyin.'
+      '"SİTEYE EKLE VE YAYINLA" butonuna basarak yeni modülü kalıcı hale getirin.'
     ],
     tips: ['Yeni modül eklediğinizde sistem otomatik olarak GitHub yedeği oluşturur.']
   },
@@ -52,59 +100,9 @@ export const MODULE_MANUALS: ManualEntry[] = [
     description: 'Google modellerini Cursor IDE içerisine entegre eden köprü.',
     steps: [
       '"PROXY BAŞLAT" butonuna basarak güvenli tüneli aktif edin.',
-      'Ekranda beliren "https://...trycloudflare.com" linkini kopyalayın.',
+      'Ekranda beliren Cloudflare linkini kopyalayın.',
       'Cursor ayarlarında "OpenAI Base URL" kısmına bu linki yapıştırın.'
     ],
-    tips: ['Session hatası alırsanız VS Code üzerinden Google Cloud Code oturumunuzu kontrol edin.']
-  },
-  {
-    id: 'figma_studio',
-    title: 'Figma Stüdyo',
-    category: 'Tasarım',
-    description: 'MCP protokolü üzerinden Figma tasarımlarını analiz edip kod üreten stüdyo.',
-    steps: [
-      'Figma dosya linkini veya MCP Socket kanal ID\'nizi ilgili alana girin.',
-      '"BAĞLANTIYI BAŞLAT" butonuna basarak tasarım verilerini çekin.',
-      '"AKILLI ANALİZ" butonuna basarak tasarım hatalarını ve kod önerilerini görün.'
-    ],
-    tips: ['"Kod Çıktısı" butonunu kullanarak tasarımı doğrudan React bileşenine dönüştürebilirsiniz.']
-  },
-  {
-    id: 'seline',
-    title: 'Seline Asistan',
-    category: 'Gizlilik',
-    description: 'Gizlilik odaklı, yerel verilerinizi vektör veritabanında saklayan özel asistan.',
-    steps: [
-      'Yerel klasörlerinizi "Klasör Senk" butonu ile Seline\'e tanıtın.',
-      'Vektör veritabanı taraması bittiğinde sorularınızı sorun.',
-      'Mesajlaşma kanallarını (WhatsApp/Slack) bağlayarak asistanı 7/24 aktif tutun.'
-    ],
-    tips: ['Tüm veriler sadece yerel sisteminizde tutulur, buluta gönderilmez.']
-  },
-  {
-    id: 'jules_awesome',
-    title: 'Jules Awesome List',
-    category: 'Geliştirici Araçları',
-    description: 'Google Labs Jules Agent için küratörlüğü yapılmış en iyi prompt koleksiyonu.',
-    steps: [
-      'Sol menüden "Jules Awesome" sekmesine geçin.',
-      'Kategoriler arasından (Hata Ayıklama, Dokümantasyon, vb.) ihtiyacınız olanı seçin.',
-      'İstediğiniz promptun yanındaki "Kopyala" ikonuna basarak panonuza alın.',
-      'Jules Agent veya herhangi bir LLM üzerinde bu promptu kullanın.'
-    ],
-    tips: ['Her prompt modern yazılım prensiplerine (SOLID, Design Patterns) uygun olarak optimize edilmiştir.']
-  },
-  {
-    id: 'ag_sync',
-    title: 'AG Senkronize',
-    category: 'Yedekleme',
-    description: 'Projelerinizi anlık olarak Google Drive ile yedekleyen otomasyon aracı.',
-    steps: [
-      'Yedeklenecek yerel proje klasörünü ayarlardan seçin.',
-      '"ŞİMDİ YEDEKLE" butonuna basarak sıkıştırılmış yedeği buluta gönderin.',
-      'Hata durumunda "TEMİZLEME SİHİRBAZI"nı kullanın.'
-    ],
-    tips: ['Planlı yedekleme özelliğini açarak her gün otomatik yedek alabilirsiniz.']
+    tips: ['Session hatası alırsanız Google Cloud Code oturumunuzu kontrol edin.']
   }
-  // Diğer 40+ modül için veriler eklenecek...
 ];
