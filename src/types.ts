@@ -61,7 +61,8 @@ export enum AppView {
   ANDROID_NDK = 'android_ndk',
   WEATHER = 'weather',
   GOOGLE_AI_STUDIO = 'google_ai_studio',
-  SKYDRIVE = 'skydrive'
+  SKYDRIVE = 'skydrive',
+  NEWS = 'news'
 }
 
 export interface WorkflowNode {

@@ -13,22 +13,31 @@ export const getAvailableKeys = (provider?: string): ApiKeyEntry[] => {
 
 export const getAllKeys = (): ApiKeyEntry[] => {
   const allKeys: ApiKeyEntry[] = [];
+  const env = (import.meta as any).env;
 
-  // 1. Get system default key (Gemini)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const systemKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  if (systemKey && systemKey.length > 5) {
-    allKeys.push({
-      id: 'env-default',
-      key: systemKey,
-      label: 'Sistem Gemini',
-      provider: 'gemini',
-      modelName: 'gemini-1.5-flash',
-      isQuotaExhausted: false,
-      usageCount: Number(localStorage.getItem('usage_env_default') || 0),
-      quotaLimit: 1500 // Simulated for free tier
-    });
-  }
+  // 1. Get system keys from environment (Render / .env)
+  const envConfigs = [
+    { key: 'VITE_GEMINI_API_KEY', provider: 'gemini', label: 'Render Gemini', model: 'gemini-1.5-flash' },
+    { key: 'VITE_OPENAI_API_KEY', provider: 'openai', label: 'Render OpenAI', model: 'gpt-4o-mini' },
+    { key: 'VITE_DEEPSEEK_API_KEY', provider: 'deepseek', label: 'Render DeepSeek', model: 'deepseek-chat' },
+    { key: 'VITE_GROK_API_KEY', provider: 'grok', label: 'Render Grok', model: 'grok-beta' }
+  ];
+
+  envConfigs.forEach(conf => {
+    const val = env?.[conf.key];
+    if (val && val.length > 5) {
+      allKeys.push({
+        id: `env-${conf.provider}`,
+        key: val,
+        label: conf.label,
+        provider: conf.provider as any,
+        modelName: conf.model,
+        isQuotaExhausted: false,
+        usageCount: Number(localStorage.getItem(`usage_env_${conf.provider}`) || 0),
+        quotaLimit: conf.provider === 'gemini' ? 1500 : 500
+      });
+    }
+  });
 
   // 2. Get keys from local storage
   try {
@@ -51,9 +60,10 @@ export const getAllKeys = (): ApiKeyEntry[] => {
 };
 
 export const recordUsage = (id: string) => {
-  if (id === 'env-default') {
-    const current = Number(localStorage.getItem('usage_env_default') || 0);
-    localStorage.setItem('usage_env_default', (current + 1).toString());
+  if (id.startsWith('env-')) {
+    const provider = id.replace('env-', '');
+    const current = Number(localStorage.getItem(`usage_env_${provider}`) || 0);
+    localStorage.setItem(`usage_env_${provider}`, (current + 1).toString());
     return;
   }
 
@@ -72,7 +82,7 @@ export const recordUsage = (id: string) => {
 };
 
 export const markKeyAsExhausted = (id: string) => {
-  if (id === 'env-default') return;
+  if (id.startsWith('env-')) return;
 
   try {
     const settingsStr = localStorage.getItem('sync_settings');

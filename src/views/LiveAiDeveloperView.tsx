@@ -75,7 +75,7 @@ const LiveAiDeveloperView: React.FC = () => {
     // Step 2: ACTUAL CODE GENERATION VIA AI WITH FAILOVER
     const availableKeys = getAvailableKeys('gemini');
     if (availableKeys.length === 0) {
-      addLog('HATA: API Anahtarı bulunamadı.', 'error');
+      addLog('HATA: API Anahtarı bulunamadı. Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin veya Render çevre değişkenlerini kontrol edin.', 'error');
       setIsProcessing(false);
       return;
     }

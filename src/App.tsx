@@ -11,6 +11,7 @@ import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
 import { getStorageItem } from './utils/storage';
 import { saveLearnedKnowledge, getQuickWeather } from './utils/knowledgeBase';
+import NewsView from './views/NewsView';
 
 import OmniView from './views/OmniView';
 
@@ -538,6 +539,7 @@ function App() {
       case AppView.NEURAL_LOGIC as any: return <NeuralLogicView onViewChange={setActiveView} />;
       case AppView.GOOGLE_AI_STUDIO: return <GoogleAiStudioView />;
       case AppView.SKYDRIVE: return <SkyDriveView />;
+      case AppView.NEWS: return <NewsView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };

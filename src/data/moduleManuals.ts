@@ -21,6 +21,18 @@ export const MODULE_MANUALS: ManualEntry[] = [
     tips: ['Gecikme süresi 2ms üzerine çıkarsa "AG Başlatıcı" kullanarak bellek fix uygulayın.']
   },
   {
+    id: 'news',
+    title: 'Haber Merkezi',
+    category: 'Bilgi Servisleri',
+    description: 'Dünya ve teknoloji gündemini anlık olarak takip edebileceğiniz merkezi haber portalı.',
+    steps: [
+      'Haber Merkezi sekmesine geçiş yapın.',
+      'Kategori butonlarını kullanarak ilgi alanınızı daraltın.',
+      'Arama çubuğu ile belirli bir konu hakkındaki haberlere ulaşın.'
+    ],
+    tips: ['Trend başlıklar, sosyal medya ve piyasa hareketlerine göre otomatik güncellenir.']
+  },
+  {
     id: 'borsa',
     title: 'Borsa Takibi',
     category: 'Finans',
