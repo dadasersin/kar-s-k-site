@@ -17,6 +17,7 @@ export const getAllKeys = (): ApiKeyEntry[] => {
 
   // 1. Get system keys from environment (Render / .env)
   const envConfigs = [
+    // Updated default Gemini model to 2.0-flash
     { key: 'VITE_GEMINI_API_KEY', provider: 'gemini', label: 'Render Gemini', model: 'gemini-2.0-flash' },
     { key: 'VITE_OPENAI_API_KEY', provider: 'openai', label: 'Render OpenAI', model: 'gpt-4o-mini' },
     { key: 'VITE_DEEPSEEK_API_KEY', provider: 'deepseek', label: 'Render DeepSeek', model: 'deepseek-chat' },
@@ -39,7 +40,7 @@ export const getAllKeys = (): ApiKeyEntry[] => {
     }
   });
 
-  // 2. Get keys from local storage
+  // 2. Get keys from local storage (Sync Settings)
   try {
     const settingsStr = localStorage.getItem('sync_settings');
     if (settingsStr) {

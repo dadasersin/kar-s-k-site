@@ -1,41 +1,22 @@
 import React, { useState, useEffect } from 'react';
+import type { ChatMessage } from "./types";
+import { AppView } from './types';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
-import QuickChatWidget from './components/QuickChatWidget';
-import VoiceAssistant from './components/VoiceAssistant';
-import { AppView } from './types';
-import type { ChatMessage } from './types';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, getAllKeys, recordUsage, markKeyAsExhausted } from './utils/apiPool';
-import { pushToGitHub } from './utils/githubSync';
-import { detectIntent } from './utils/orchestrator';
-import { getStorageItem } from './utils/storage';
-import { saveLearnedKnowledge, getQuickWeather } from './utils/knowledgeBase';
-import { buildModuleAutomatically, integrateLinkAutomatically } from './utils/moduleBuilder';
-import NewsView from './views/NewsView';
-
-import OmniView from './views/OmniView';
-
-// Views
+import ChatView from './views/ChatView';
 import HomeView from './views/HomeView';
-import BorsaView from './views/BorsaView';
-import CryptoView from './views/CryptoView';
-import YouTubeView from './views/YouTubeView';
-import LiveTvView from './views/LiveTvView';
-import LiveAiDeveloperView from './views/LiveAiDeveloperView';
-import SystemExpertView from './views/SystemExpertView';
-import RuwisAiView from './views/RuwisAiView';
 import ToolsView from './views/ToolsView';
 import Dashboard from './views/Dashboard';
-import JulesStudioView from './views/JulesStudioView';
-import ChatView from './views/ChatView';
 import VisualsView from './views/VisualsView';
 import AudioView from './views/AudioView';
 import LiveView from './views/LiveView';
 import ArtStudioView from './views/ArtStudioView';
 import GameDevView from './views/GameDevView';
 import WorkflowView from './views/WorkflowView';
+import LiveAiDeveloperView from './views/LiveAiDeveloperView';
 import DockerConfigView from './views/DockerConfigView';
+import BorsaView from './views/BorsaView';
+import CryptoView from './views/CryptoView';
 import AutomationView from './views/AutomationView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
 import GoogleAppsView from './views/GoogleAppsView';
@@ -65,228 +46,137 @@ import WeatherView from './views/WeatherView';
 import NeuralLogicView from './views/NeuralLogicView';
 import GoogleAiStudioView from './views/GoogleAiStudioView';
 import SkyDriveView from './views/SkyDriveView';
-import { createReasoningChain, updateNodeStatus, completeChain } from './utils/neuralLogic';
+import NewsView from './views/NewsView';
+import YouTubeView from './views/YouTubeView';
+import LiveTvView from './views/LiveTvView';
+import SystemExpertView from './views/SystemExpertView';
+import JulesStudioView from './views/JulesStudioView';
+import PythonLibraryView from "./views/PythonLibraryView";
+import RuwisAiView from './views/RuwisAiView';
 
-const prepareGeminiHistory = (msgs: ChatMessage[]) => {
-  const filtered = msgs.filter(m => {
-    const t = m.text.toLowerCase();
-    const isError = t.startsWith("hata:") ||
-      t.startsWith("hata oluştu") ||
-      t.startsWith("üzgünüm,") ||
-      t.includes("[googlegenerativeai error]") ||
-      t.includes("api hatası") ||
-      t.includes("kota aşımı");
-    return !isError;
-  });
+import QuickChatWidget from './components/QuickChatWidget';
+import VoiceAssistant from './components/VoiceAssistant';
 
-  const history: { role: "user" | "model"; parts: { text: string }[] }[] = [];
-
-  for (const m of filtered) {
-    const role = m.role === "user" ? "user" : "model";
-    if (history.length === 0) {
-      if (role === "user") {
-        history.push({ role, parts: [{ text: m.text }] });
-      }
-    } else {
-      const prev = history[history.length - 1];
-      if (prev.role === role) {
-        prev.parts[0].text += "\n\n" + m.text;
-      } else {
-        history.push({ role, parts: [{ text: m.text }] });
-      }
-    }
-  }
-
-  if (history.length > 0 && history[history.length - 1].role === "user") {
-    history.push({ role: "model", parts: [{ text: "Anladım, devam edebiliriz." }] });
-  }
-
-  return history;
-};
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAvailableKeys, recordUsage, markKeyAsExhausted } from './utils/apiPool';
+import { getStorageItem, setStorageItem } from './utils/storage';
+import { detectIntent } from './utils/orchestrator';
+import { buildModuleAutomatically, integrateLinkAutomatically } from './utils/moduleBuilder';
+import { saveLearnedKnowledge } from './utils/knowledgeBase';
+import { pushToGitHub } from './utils/githubSync';
+import { recordAction } from './utils/history';
 
 function App() {
   const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
   const [messages, setMessages] = useState<ChatMessage[]>(getStorageItem('chat_history', []));
   const [isTyping, setIsTyping] = useState(false);
-  const [activeModel, setActiveModel] = useState<string>('');
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
-
-  const handleGitHubSync = async () => {
-    const settings = getStorageItem('sync_settings', null);
-    if (!settings || !settings.token || !settings.repo) {
-      alert("Lütfen Ayarlar sayfasından GitHub bilgilerinizi yapılandırın.");
-      setActiveView(AppView.SETTINGS);
-      return;
-    }
-
-    setSyncStatus('syncing');
-    try {
-      const stateToSync = {
-        chat_history: getStorageItem('chat_history', []),
-        active_dynamic_modules: getStorageItem('active_dynamic_modules', []),
-        prompt_library: getStorageItem('prompt_library', []),
-        bist_favorites: getStorageItem('bist_favorites', []),
-        crypto_watchlist: getStorageItem('crypto_watchlist', []),
-        binance_config: getStorageItem('binance_config', {}),
-        sync_settings: settings
-      };
-
-      const result = await pushToGitHub(
-        settings.token,
-        settings.repo,
-        settings.path || 'nexus_backup.json',
-        stateToSync,
-        'Portal State Sync: ' + new Date().toLocaleString('tr-TR')
-      );
-
-      if (result.success) setSyncStatus('success');
-      else setSyncStatus('error');
-    } catch (e) {
-      alert("Beklenmedik bir hata oluştu.");
-      setSyncStatus('error');
-    }
-    setTimeout(() => setSyncStatus('idle'), 3000);
-  };
+  const [activeModel, setActiveModel] = useState<string>('Gemini-2.0-Flash');
 
   useEffect(() => {
-    localStorage.setItem('chat_history', JSON.stringify(messages));
+    setStorageItem('chat_history', messages);
   }, [messages]);
 
+  // Automatic GitHub Backup Every 2 Minutes
   useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      const errorLog = {
-        id: Date.now().toString(),
-        timestamp: new Date().toLocaleTimeString('tr-TR'),
-        type: 'error',
-        message: event.message,
-        source: event.filename
-      };
+    const backupInterval = setInterval(async () => {
+        const settings = getStorageItem('sync_settings', { enabled: false, token: '', repo: '' });
+        if (settings.enabled && settings.token && settings.repo) {
+            console.log("Otonom GitHub yedeklemesi başlatılıyor...");
+            const result = await pushToGitHub({
+                token: settings.token,
+                repo: settings.repo,
+                path: 'portal-state.json'
+            });
+            if (result.success) {
+                const now = new Date().toLocaleString('tr-TR');
+                localStorage.setItem('last_github_backup', now);
+                recordAction('Sistem', `Otonom GitHub yedeklemesi tamamlandı: ${now}`);
+            }
+        }
+    }, 120000); // 2 minutes
 
-      try {
-        const existingLogs = getStorageItem('system_error_logs', []);
-        existingLogs.push(errorLog);
-        const trimmedLogs = existingLogs.slice(-50);
-        localStorage.setItem('system_error_logs', JSON.stringify(trimmedLogs));
-      } catch (e) {
-        console.error('Failed to save error log to localStorage', e);
-      }
-    };
-
-    window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    return () => clearInterval(backupInterval);
   }, []);
 
-  const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
-    let learningMode = false;
-    let customInstruction = options?.systemInstruction || "";
+  const handleGitHubSync = async () => {
+    setSyncStatus('syncing');
+    const settings = getStorageItem('sync_settings', { token: '', repo: '' });
+    const result = await pushToGitHub({
+      token: settings.token,
+      repo: settings.repo,
+      path: 'portal-state.json'
+    });
+
+    if (result.success) {
+      setSyncStatus('synced');
+      const now = new Date().toLocaleString('tr-TR');
+      localStorage.setItem('last_github_backup', now);
+      recordAction('Sistem', `Manuel GitHub yedeklemesi tamamlandı: ${now}`);
+      alert(result.message);
+    } else {
+      setSyncStatus('error');
+      alert(result.message);
+    }
+  };
+
+  const prepareGeminiHistory = (msgs: ChatMessage[]) => {
+    return msgs
+      .filter(m => !m.text.includes('Hata:'))
+      .map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }],
+      }));
+  };
+
+  const handleSendMessage = async (text: string) => {
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      text,
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+    recordAction('Chat', `Mesaj gönderildi: ${text.substring(0, 30)}...`);
 
     const orchestration = detectIntent(text);
 
-    if (text.toLowerCase().includes('site başlığını') && text.toLowerCase().includes('yap')) {
-      const match = text.match(/site başlığını ["'‘“](.+)["'”’] (yap|olarak değiştir|güncelle)/i) ||
-        text.match(/site başlığını (.+) (yap|olarak değiştir|güncelle)/i);
-      if (match && match[1]) {
-        localStorage.setItem('site_title', match[1]);
-        const adminMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: `✅ Nexus Admin: Site başlığı başarıyla "${match[1]}" olarak güncellendi.`,
-          timestamp: Date.now()
-        };
-        setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, adminMsg]);
-        return;
-      }
+    if (orchestration.intent === 'BUILD' && orchestration.target) {
+        const res = await buildModuleAutomatically(orchestration.target);
+        if (res.success && res.moduleId) {
+            setMessages(prev => [...prev, {
+                id: (Date.now() + 1).toString(),
+                role: 'model',
+                text: `Harika! "${res.label}" modülünü senin için inşa ettim ve portala ekledim. Navigasyon menüsünden erişebilirsin.`,
+                timestamp: Date.now()
+            }]);
+            setActiveView(res.moduleId);
+            setIsTyping(false);
+            return;
+        }
     }
 
-    if (orchestration.intent === "BUILD") {
-      const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text, timestamp: Date.now() };
-      const buildingMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "model", text: `🛠️ "${orchestration.target}" için otonom geliştirme süreci başlatıldı. Kaynaklar taranıyor ve kod sentezleniyor...`, timestamp: Date.now() + 1 };
-      setMessages((prev: ChatMessage[]) => [...prev, userMsg, buildingMsg]);
-      setIsTyping(true);
-      const result = await buildModuleAutomatically(orchestration.target || text);
-      if (result.success) {
-        const successMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `✅ İşlem Tamamlandı! "${result.label}" modülü başarıyla inşa edildi ve portala entegre edildi. Seni şimdi yeni sayfaya yönlendiriyorum.`, timestamp: Date.now() + 2 };
-        setMessages((prev: ChatMessage[]) => [...prev, successMsg]);
-        setTimeout(() => setActiveView(result.moduleId as any), 2500);
-      } else {
-        const errorMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `❌ Hata: Modül oluşturulurken bir sorun oluştu: ${result.error}`, timestamp: Date.now() + 2 };
-        setMessages((prev: ChatMessage[]) => [...prev, errorMsg]);
-      }
-      setIsTyping(false);
-      return;
+    if (orchestration.intent === 'INTEGRATE_LINK' && orchestration.target) {
+        const res = await integrateLinkAutomatically(orchestration.target, orchestration.payload.originalText);
+        if (res.success && res.moduleId) {
+            setMessages(prev => [...prev, {
+                id: (Date.now() + 1).toString(),
+                role: 'model',
+                text: `Link başarıyla entegre edildi: "${res.label}". Modülü açıyorum.`,
+                timestamp: Date.now()
+            }]);
+            setActiveView(res.moduleId);
+            setIsTyping(false);
+            return;
+        }
     }
-
-    if (orchestration.intent === "INTEGRATE_LINK") {
-      const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text, timestamp: Date.now() };
-      const integratingMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "model", text: `🔗 "${orchestration.target}" linki portalın yeni bir modülüne entegre ediliyor. Lütfen bekleyin...`, timestamp: Date.now() + 1 };
-      setMessages((prev: ChatMessage[]) => [...prev, userMsg, integratingMsg]);
-      setIsTyping(true);
-      const result = await integrateLinkAutomatically(orchestration.target || "", orchestration.payload?.originalText || "");
-      if (result.success) {
-        const successMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `✅ Bağlantı başarıyla entegre edildi! "${result.label}" modülü aktif. Seni şimdi oraya yönlendiriyorum.`, timestamp: Date.now() + 2 };
-        setMessages((prev: ChatMessage[]) => [...prev, successMsg]);
-        setTimeout(() => setActiveView(result.moduleId as any), 2000);
-      } else {
-        const errorMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `❌ Entegrasyon hatası: ${result.error}`, timestamp: Date.now() + 2 };
-        setMessages((prev: ChatMessage[]) => [...prev, errorMsg]);
-      }
-      setIsTyping(false);
-      return;
-    }
-
-    if (orchestration.intent === 'WEATHER') {
-      const weatherInfo = getQuickWeather(orchestration.target || 'Sakarya');
-      const modelMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: `${orchestration.target} için güncel hava durumu: ${weatherInfo}. Başka bir bölgeyi merak ediyor musun?`,
-        timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
-      setIsTyping(false);
-      return;
-    }
-
-    if (orchestration.intent === 'NEWS') {
-      const modelMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: 'Harika! Güncel haberleri takip edebileceğin Haber Merkezi modülüne seni yönlendiriyorum.',
-          timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
-      setTimeout(() => setActiveView(AppView.NEWS), 1000);
-      setIsTyping(false);
-      return;
-    }
-
-    if (orchestration.intent === 'SEARCH_LEARN') {
-      learningMode = true;
-      customInstruction += "\n\nKRİTİK: Kullanıcı bu bilgiyi ÖĞRENMEMİ ve HAFIZAMA KAYDETMEMİ istiyor. Lütfen konu hakkında detaylı, ansiklopedik ve gelecekte kullanılabilecek bir özet hazırlayın. Yanıtınızın başına 'ÖĞRENİLEN BİLGİ:' ifadesini ekleyin.";
-
-      const searchInitiatedMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'model',
-        text: `🔍 Web Araştırması ve Nöral Öğrenme Başlatıldı...\n\n"${orchestration.target}" konusunu derinlemesine inceliyorum. Bilgileri analiz edip kalıcı hafızama kaydedeceğim.`,
-        timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, searchInitiatedMsg]);
-    } else {
-      const userMsg: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'user',
-        text,
-        timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, userMsg]);
-    }
-
-    setIsTyping(true);
 
     const availableKeys = getAvailableKeys();
     if (availableKeys.length === 0) {
-      setMessages((prev: ChatMessage[]) => [...prev, {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
         text: "Hata: Herhangi bir API anahtarı bulunamadı. Lütfen Ayarlar sayfasından anahtar ekleyin.",
@@ -305,8 +195,7 @@ function App() {
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName || 'gemini-2.0-flash',
-            systemInstruction: customInstruction
+            model: keyEntry.modelName || 'gemini-2.0-flash'
           });
 
           const chat = model.startChat({
@@ -326,7 +215,6 @@ function App() {
             body: JSON.stringify({
               model: keyEntry.modelName,
               messages: [
-                ...(customInstruction ? [{ role: 'system', content: customInstruction }] : []),
                 ...messages.slice(-10).map(m => ({
                   role: m.role === 'user' ? 'user' : 'assistant',
                   content: m.text
@@ -354,12 +242,6 @@ function App() {
         };
 
         setMessages((prev: ChatMessage[]) => [...prev, modelMsg]);
-
-        if (learningMode) {
-          const cleanTopic = orchestration.target || 'Yeni Araştırma';
-          const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
-          saveLearnedKnowledge(cleanTopic, cleanInfo);
-        }
         success = true;
         break;
       } catch (error: any) {
@@ -378,7 +260,6 @@ function App() {
         }
       }
     }
-
     setIsTyping(false);
   };
 
@@ -403,7 +284,6 @@ function App() {
                 </div>
               </div>
             </header>
-
             <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[600px] flex">
               <div className="bg-brandDark/50 rounded-[2.8rem] flex-1 overflow-hidden">
                 <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
@@ -415,11 +295,9 @@ function App() {
     }
 
     switch (activeView) {
-      case AppView.OMNIVIEW: return <OmniView onViewChange={setActiveView} />;
       case AppView.HOME: return <HomeView onViewChange={setActiveView} />;
       case AppView.TOOLS: return <ToolsView onViewChange={setActiveView} />;
       case AppView.DASHBOARD: return <Dashboard onViewChange={setActiveView} />;
-      case AppView.JULES_STUDIO: return <JulesStudioView />;
       case AppView.CHAT: return (
         <ChatView
           messages={messages}
@@ -473,6 +351,7 @@ function App() {
       case AppView.GOOGLE_AI_STUDIO: return <GoogleAiStudioView />;
       case AppView.SKYDRIVE: return <SkyDriveView />;
       case AppView.NEWS: return <NewsView />;
+      case AppView.PYTHON_LIB: return <PythonLibraryView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };
@@ -492,21 +371,16 @@ function App() {
         <div className="h-full overflow-y-auto">
           {renderView()}
         </div>
-
         <QuickChatWidget
           messages={messages.slice(-10).map(m => ({ role: m.role as 'user' | 'model', text: m.text }))}
           onSendMessage={handleSendMessage}
           isTyping={isTyping}
         />
-
         <VoiceAssistant onCommand={(command, action, payload) => {
           if (command === 'nav' && action === 'nav') {
             const target = payload.toLowerCase();
             if (target === 'home' || target.includes('ana sayfa')) setActiveView(AppView.HOME);
             else if (target === 'chat' || target.includes('sohbet')) setActiveView(AppView.CHAT);
-            else if (target.includes('haber')) setActiveView(AppView.NEWS);
-            else if (target.includes('kripto')) setActiveView(AppView.CRYPTO);
-            else if (target.includes('borsa')) setActiveView(AppView.BORSA);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);

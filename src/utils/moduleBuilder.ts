@@ -11,7 +11,6 @@ export interface BuildResult {
 }
 
 const cleanCode = (code: string): string => {
-    // Remove markdown code blocks if present
     let cleaned = code.trim();
     if (cleaned.startsWith('```')) {
         const firstLineEnd = cleaned.indexOf('\n');
@@ -19,7 +18,6 @@ const cleanCode = (code: string): string => {
         if (firstLineEnd !== -1 && lastLineStart !== -1) {
             cleaned = cleaned.substring(firstLineEnd + 1, lastLineStart).trim();
         } else {
-            // Fallback: just strip the backticks
             cleaned = cleaned.replace(/```(html|javascript|typescript|jsx|tsx)?/gi, '').replace(/```/g, '').trim();
         }
     }
@@ -40,8 +38,12 @@ export const buildModuleAutomatically = async (prompt: string): Promise<BuildRes
     let usedKeyId = '';
 
     for (const keyEntry of availableKeys) {
-        // Models to try in sequence if one fails
-        const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+        // Try the user-specified model, or fall back to high-end versions
+        const modelsToTry = [
+            keyEntry.modelName || "gemini-3.0",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro"
+        ];
 
         for (const modelId of modelsToTry) {
             try {
@@ -66,15 +68,13 @@ export const buildModuleAutomatically = async (prompt: string): Promise<BuildRes
                 generatedCode = cleanCode(result.response.text());
                 usedKeyId = keyEntry.id;
                 success = true;
-                break; // Model success
+                break;
             } catch (err: any) {
                 console.warn(`Model ${modelId} failed with key ${keyEntry.label}: `, err.message);
-                if (err.message?.includes('429')) break;
-                if (modelId === modelsToTry[modelsToTry.length - 1]) {
-                }
+                if (err.message?.includes('429')) break; // Try next key on quota
             }
         }
-        if (success) break; // Key success
+        if (success) break;
         markKeyAsExhausted(keyEntry.id);
     }
 

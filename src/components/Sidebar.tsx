@@ -48,6 +48,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.AUTOMATION, label: 'Otomasyon Hub', icon: 'fa-robot' },
     { id: AppView.SOCIAL_MEDIA, label: 'Sosyal Medya', icon: 'fa-share-nodes' },
     { id: AppView.NEWS, label: 'Haber Merkezi', icon: 'fa-newspaper' },
+    { id: AppView.PYTHON_LIB, label: 'Python Kitaplığı', icon: 'fa-brands fa-python' },
     { id: AppView.GOOGLE_APPS, label: 'Google Ekosistemi', icon: 'fa-brands fa-google' },
     { id: AppView.INTEGRATIONS, label: 'Entegrasyonlar', icon: 'fa-link' },
     { id: AppView.SECURITY, label: 'Güvenlik Merkezi', icon: 'fa-shield-halved' },
