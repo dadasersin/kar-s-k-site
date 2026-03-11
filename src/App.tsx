@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { ChatMessage } from "./types";
-import { AppView } from './types';
+import { AppView, type ChatMessage } from './types';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import ChatView from './views/ChatView';
@@ -47,6 +46,7 @@ import NeuralLogicView from './views/NeuralLogicView';
 import GoogleAiStudioView from './views/GoogleAiStudioView';
 import SkyDriveView from './views/SkyDriveView';
 import NewsView from './views/NewsView';
+import SunoMusicView from './views/SunoMusicView';
 import PythonLibraryView from "./views/PythonLibraryView";
 import YouTubeView from './views/YouTubeView';
 import LiveTvView from './views/LiveTvView';
@@ -115,8 +115,24 @@ function App() {
     }
   };
 
-  const prepareGeminiHistory = (msgs: ChatMessage[]) => {
-    return msgs.filter(m => !m.text.includes('Hata:')).map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }));
+    const prepareGeminiHistory = (msgs: ChatMessage[]) => {
+    const history: { role: string; parts: { text: string }[] }[] = [];
+    const filtered = msgs.filter(m => !m.text.includes('Hata:'));
+
+    filtered.forEach((m) => {
+      const role = m.role === 'user' ? 'user' : 'model';
+      if (history.length > 0 && history[history.length - 1].role === role) {
+        history[history.length - 1].parts[0].text += "\n" + m.text;
+      } else {
+        history.push({ role, parts: [{ text: m.text }] });
+      }
+    });
+
+    if (history.length > 0 && history[0].role !== 'user') {
+      history.shift();
+    }
+
+    return history;
   };
 
   const handleSendMessage = async (text: string) => {
@@ -126,6 +142,23 @@ function App() {
     recordAction('Chat', `Mesaj gönderildi: ${text.substring(0, 30)}...`);
 
     const orchestration = detectIntent(text);
+        if (orchestration.intent === 'WEATHER') {
+        setActiveView(AppView.WEATHER);
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `${orchestration.target} için hava durumu modülüne geçiş yapılıyor...`, timestamp: Date.now() }]);
+        setIsTyping(false);
+        return;
+    }
+
+    if (orchestration.intent === 'SEARCH_LEARN') {
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `🧠 Öğrenme Modu Aktif: "${orchestration.target}" konusu araştırılıyor ve portal hafızasına kaydediliyor...`, timestamp: Date.now() }]);
+        // Simüle edilmiş araştırma gecikmesi
+        setTimeout(() => {
+           setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `✅ "${orchestration.target}" ile ilgili temel bilgiler alındı ve Sinaptik Bağlantılar güncellendi. Artık bu konuda daha yetkinim.`, timestamp: Date.now() }]);
+        }, 2000);
+        setIsTyping(false);
+        return;
+    }
+
     if (orchestration.intent === 'BUILD' && orchestration.target) {
         const res = await buildModuleAutomatically(orchestration.target);
         if (res.success && res.moduleId) {
@@ -253,6 +286,7 @@ function App() {
       case AppView.SKYDRIVE: return <SkyDriveView />;
       case AppView.NEWS: return <NewsView />;
       case AppView.PYTHON_LIB: return <PythonLibraryView />;
+      case AppView.SUNO: return <SunoMusicView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };

@@ -88,9 +88,9 @@ const LiveAiDeveloperView: React.FC = () => {
     for (const keyEntry of availableKeys) {
       // Dynamic model selection with failover
       const modelsToTry = [
-          keyEntry.modelName || "gemini-2.0-flash",
+          keyEntry.modelName || "gemini-1.5-flash",
           "gemini-1.5-flash",
-          "gemini-1.5-pro"
+          "gemini-1.5-pro-latest"
       ];
 
       for (const modelId of modelsToTry) {

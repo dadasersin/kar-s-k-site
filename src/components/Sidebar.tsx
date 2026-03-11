@@ -57,6 +57,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.REQUESTS, label: 'Görev Yönetimi', icon: 'fa-list-check' },
     { id: AppView.GALLERY, label: 'Galeri', icon: 'fa-images' },
     { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
+    { id: AppView.SUNO, label: 'Suno Müzik AI', icon: 'fa-microphone-lines' },
     { id: AppView.FIGMA_STUDIO, label: 'Figma Stüdyo', icon: 'fa-brands fa-figma' },
     { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
     { id: AppView.PROMPT_MASTER, label: 'Prompt Mühendisliği', icon: 'fa-book-sparkles' },

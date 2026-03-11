@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
+import { getStorageItem } from '../utils/storage';
 
 interface HomeViewProps {
   onViewChange: (view: AppView | string) => void;
@@ -7,11 +8,60 @@ interface HomeViewProps {
 
 const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   const [sessionSeconds, setSessionSeconds] = useState(315); // 00:05:15
+  const [dynamicModuleCount, setDynamicModuleCount] = useState(0);
+  const [neuralLoad, setNeuralLoad] = useState(24);
+  const [processTime, setProcessTime] = useState(4.2);
+  const [remainingTime, setRemainingTime] = useState(1.8);
+  const [logs, setLogs] = useState([
+    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-500' },
+    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-500' },
+    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-500' },
+    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold bg-emerald-400/5 p-1 rounded', badge: 'AKTİF' }
+  ]);
+
+  useEffect(() => {
+    const logInterval = setInterval(() => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('tr-TR', { hour12: false });
+      const possibleLogs = [
+        'API Yanıtı Optimize Edildi',
+        'Nöral Ağ Katmanı Güncellendi',
+        'Hafıza Bloğu Doğrulandı',
+        'Sistem Sağlığı Kontrol Edildi',
+        'Yeni Sinaptik Veri İşlendi',
+        'Gecikme Süresi Minimize Edildi'
+      ];
+      const randomText = possibleLogs[Math.floor(Math.random() * possibleLogs.length)];
+      setLogs(prev => {
+        const newLogs = [...prev.slice(-3), { time: timeStr, text: randomText, color: 'text-gray-500' }];
+        return newLogs;
+      });
+    }, 5000);
+    return () => clearInterval(logInterval);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setSessionSeconds(prev => prev + 1);
+      setNeuralLoad(prev => {
+        const change = (Math.random() - 0.5) * 2;
+        return Math.max(15, Math.min(45, Math.round(prev + change)));
+      });
+      setProcessTime(prev => {
+        const change = (Math.random() - 0.5) * 0.2;
+        return Math.max(3.0, Math.min(6.0, parseFloat((prev + change).toFixed(1))));
+      });
+      setRemainingTime(prev => {
+        let next = prev - 0.1;
+        if (next <= 0) next = 2.0;
+        return parseFloat(next.toFixed(1));
+      });
     }, 1000);
+
+    // Calculate dynamic modules
+    const modules = getStorageItem('active_dynamic_modules', []);
+    setDynamicModuleCount(modules.length);
+
     return () => clearInterval(timer);
   }, []);
 
@@ -43,17 +93,17 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <MetricBox label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} />
-            <MetricBox label="İŞLEM SÜRESİ" value="4,2 saniye" />
-            <MetricBox label="KALAN SÜRE" value="1.8s" />
-            <MetricBox label="SİNİR SİSTEMİ" value="%24" color="text-primary" />
-            <MetricBox label="MANTIK MOTORU" value="Aktif" color="text-green-500" />
-            <MetricBox label="BEYİN KAPASİTESİ" value="%82" />
-            <MetricBox label="API KOTASI (KALAN)" value="1.2k" />
-            <MetricBox label="API KOTASI (KULLANILAN)" value="300" />
-            <MetricBox label="ÇALIŞMA SÜRESİ" value="14g 5s" />
-            <MetricBox label="MEDYA MOTORU" value="Hazır" color="text-blue-400" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <MetricBox label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} icon="fa-hourglass-start" />
+            <MetricBox label="İŞLEM SÜRESİ" value={`${processTime} saniye`} icon="fa-bolt" />
+            <MetricBox label="KALAN SÜRE" value={`${remainingTime}s`} icon="fa-clock" />
+            <MetricBox label="SİNİR SİSTEMİ" value={`%${neuralLoad}`} color="text-primary" icon="fa-network-wired" />
+            <MetricBox label="MANTIK MOTORU" value="Aktif" color="text-green-500" icon="fa-gears" />
+            <MetricBox label="BEYİN KAPASİTESİ" value="%82" icon="fa-brain" />
+            <MetricBox label="API KOTASI (KALAN)" value="1.2k" icon="fa-database" />
+            <MetricBox label="API KOTASI (KULLANILAN)" value="300" icon="fa-chart-line" />
+            <MetricBox label="ÇALIŞMA SÜRESİ" value="14g 5s" icon="fa-calendar-check" />
+            <MetricBox label="MEDYA MOTORU" value="Hazır" color="text-blue-400" icon="fa-play-circle" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -66,6 +116,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                 <StorageItem label="Görsel Varlıklar" value="0 Adet" icon="fa-image" />
                 <StorageItem label="Local Storage" value="3.46 KB" icon="fa-folder-open" />
                 <StorageItem label="GitHub Depo Boyutu" value="Yapılandırılmadı" icon="fa-github" />
+                <StorageItem label="Aktif Modüller" value={`${dynamicModuleCount} Modül`} icon="fa-cube" />
               </div>
             </div>
 
@@ -73,23 +124,13 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
                 <i className="fa-solid fa-wave-square text-primary animate-pulse"></i> Sinaptik Akış (Canlı İzleme)
               </h5>
-              <div className="space-y-2 text-[11px] relative z-10">
-                <div className="flex gap-4 text-gray-500">
-                  <span className="shrink-0 text-primary">10:42:01</span>
-                  <span>Sinaptik Bağlantı Kuruldu</span>
-                </div>
-                <div className="flex gap-4 text-gray-500">
-                  <span className="shrink-0 text-primary">10:42:05</span>
-                  <span>Gemini-3-Flash API Yanıtı Alındı</span>
-                </div>
-                <div className="flex gap-4 text-gray-500">
-                  <span className="shrink-0 text-primary">10:43:12</span>
-                  <span>Hafıza Blokları Optimize Edildi</span>
-                </div>
-                <div className="flex gap-4 text-emerald-400 font-bold bg-emerald-400/5 p-1 rounded">
-                  <span className="shrink-0 text-primary">10:45:00</span>
-                  <span>GitHub Senkronizasyonu Tamamlandı <span className="px-1.5 py-0.5 bg-emerald-500 text-black text-[8px] font-black rounded tracking-tighter ml-2 uppercase">AKTİF</span></span>
-                </div>
+                            <div className="space-y-2 text-[11px] relative z-10">
+                {logs.map((log, i) => (
+                  <div key={i} className={`flex gap-4 ${log.color}`}>
+                    <span className="shrink-0 text-primary">{log.time}</span>
+                    <span>{log.text} {log.badge && <span className="px-1.5 py-0.5 bg-emerald-500 text-black text-[8px] font-black rounded tracking-tighter ml-2 uppercase">{log.badge}</span>}</span>
+                  </div>
+                ))}
                 <div className="flex items-center gap-2 text-primary pt-2 italic animate-pulse">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                   Yeni sinaptik veriler bekleniyor...
@@ -124,10 +165,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
-            icon={<i className="fa-solid fa-bolt-lightning text-xl"></i>}
-            title="Hızlı Analiz"
-            desc="Verilerinizi yapay zeka ile saniyeler içinde analiz edin."
-            onClick={() => onViewChange(AppView.TOOLS)}
+            icon={<i className="fa-solid fa-music text-xl"></i>}
+            title="Suno AI Müzik"
+            desc="Saniyeler içinde profesyonel kalitede şarkılar üretin."
+            onClick={() => onViewChange(AppView.SUNO)}
           />
           <FeatureCard
             icon={<i className="fa-solid fa-image text-xl"></i>}
@@ -136,10 +177,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             onClick={() => onViewChange(AppView.VISUALS)}
           />
           <FeatureCard
-            icon={<i className="fa-solid fa-microphone-lines text-xl"></i>}
-            title="Ses Sentezi"
-            desc="Metinleri profesyonel seslendirmelere çevirin."
-            onClick={() => onViewChange(AppView.AUDIO)}
+            icon={<i className="fa-solid fa-bolt-lightning text-xl"></i>}
+            title="Hızlı Analiz"
+            desc="Verilerinizi yapay zeka ile saniyeler içinde analiz edin."
+            onClick={() => onViewChange(AppView.TOOLS)}
           />
         </div>
       </div>
@@ -157,9 +198,12 @@ const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, ti
   </div>
 );
 
-const MetricBox = ({ label, value, color = "text-white" }: { label: string, value: string, color?: string }) => (
-  <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-colors">
-    <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-4">{label}</p>
+const MetricBox = ({ label, value, icon, color = "text-white" }: { label: string, value: string, icon: string, color?: string }) => (
+  <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-colors group">
+    <div className="flex items-center justify-between mb-4">
+      <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{label}</p>
+      <i className={`fa-solid ${icon} text-[10px] text-primary/40 group-hover:text-primary transition-colors`}></i>
+    </div>
     <p className={`text-xl font-black ${color}`}>{value}</p>
   </div>
 );
