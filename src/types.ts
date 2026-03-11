@@ -119,6 +119,8 @@ export interface ApiKeyEntry {
   modelName: string;
   baseUrl?: string;
   isQuotaExhausted: boolean;
+  usageCount?: number;
+  quotaLimit?: number;
   lastUsed?: number;
 }
 

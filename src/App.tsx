@@ -6,7 +6,7 @@ import VoiceAssistant from './components/VoiceAssistant';
 import { AppView } from './types';
 import type { ChatMessage } from './types';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, markKeyAsExhausted } from './utils/apiPool';
+import { getAvailableKeys, getAllKeys, recordUsage, markKeyAsExhausted } from './utils/apiPool';
 import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
 import { getStorageItem } from './utils/storage';
@@ -283,6 +283,7 @@ function App() {
 
           const result = await chat.sendMessage(text);
           responseText = result.response.text();
+          recordUsage(keyEntry.id);
         } else {
           // OpenAI, DeepSeek, Grok, vb.
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
@@ -311,6 +312,7 @@ function App() {
 
           const data = await response.json();
           responseText = data.choices[0].message.content;
+          recordUsage(keyEntry.id);
         }
 
         const modelMsg: ChatMessage = {

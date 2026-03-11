@@ -1,53 +1,49 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { SyncSettings, ApiKeyEntry, ApiProvider } from '../types';
+import { getStorageItem } from '../utils/storage';
 
-interface SettingsProps {
+interface SettingsViewProps {
   onSyncNow: () => void;
 }
 
-const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
-  const [settings, setSettings] = useState<SyncSettings>({
+const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
+  const [settings, setSettings] = useState<SyncSettings>(getStorageItem('sync_settings', {
     enabled: false,
     token: '',
     repo: '',
-    path: 'moduler-ai-backup.json',
+    path: 'nexus_backup.json',
     customApiKeys: []
+  }));
+
+  const [supabaseSettings, setSupabaseSettings] = useState({
+    url: localStorage.getItem('VITE_SUPABASE_URL') || '',
+    anonKey: localStorage.getItem('VITE_SUPABASE_ANON_KEY') || ''
   });
 
   const [newKey, setNewKey] = useState('');
   const [keyLabel, setKeyLabel] = useState('');
   const [provider, setProvider] = useState<ApiProvider>('gemini');
-  const [modelName, setModelName] = useState('gemini-3-flash-preview');
+  const [modelName, setModelName] = useState('gemini-1.5-flash');
   const [customUrl, setCustomUrl] = useState('');
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('sync_settings');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setSettings(prev => ({ ...prev, ...parsed }));
-      }
-    } catch (e) {
-      console.error("Failed to parse sync_settings", e);
-    }
-  }, []);
 
   const handleProviderChange = (p: ApiProvider) => {
     setProvider(p);
-    if (p === 'gemini') {
-      setModelName('gemini-3-flash-preview');
-      setCustomUrl('');
-    } else if (p === 'deepseek') {
-      setModelName('deepseek-chat');
-      setCustomUrl('https://api.deepseek.com/v1');
-    } else if (p === 'grok') {
-      setModelName('grok-2-latest');
-      setCustomUrl('https://api.x.ai/v1');
-    } else if (p === 'openai') {
-      setModelName('gpt-4o-mini');
-      setCustomUrl('https://api.openai.com/v1');
-    }
+    if (p === 'gemini') setModelName('gemini-1.5-flash');
+    else if (p === 'deepseek') setModelName('deepseek-chat');
+    else if (p === 'grok') setModelName('grok-beta');
+    else if (p === 'openai') setModelName('gpt-4o-mini');
+  };
+
+  const saveSyncSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('sync_settings', JSON.stringify(settings));
+    alert('GitHub senkronizasyon ayarları kaydedildi.');
+  };
+
+  const saveSupabase = () => {
+    localStorage.setItem('VITE_SUPABASE_URL', supabaseSettings.url);
+    localStorage.setItem('VITE_SUPABASE_ANON_KEY', supabaseSettings.anonKey);
+    alert('Supabase bağlantı bilgileri kaydedildi.');
   };
 
   const addApiKey = () => {
@@ -59,7 +55,9 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
       provider: provider,
       modelName: modelName,
       baseUrl: customUrl,
-      isQuotaExhausted: false
+      isQuotaExhausted: false,
+      usageCount: 0,
+      quotaLimit: provider === 'gemini' ? 1500 : 500
     };
     const updated = { ...settings, customApiKeys: [...settings.customApiKeys, entry] };
     setSettings(updated);
@@ -77,59 +75,40 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
   const resetQuotas = () => {
     const updated = {
       ...settings,
-      customApiKeys: settings.customApiKeys.map(k => ({ ...k, isQuotaExhausted: false }))
+      customApiKeys: settings.customApiKeys.map(k => ({
+        ...k,
+        isQuotaExhausted: false,
+        usageCount: 0
+      }))
     };
+    localStorage.removeItem('usage_env_default');
     setSettings(updated);
     localStorage.setItem('sync_settings', JSON.stringify(updated));
     alert('Tüm kotalar sıfırlandı.');
   };
 
-  const saveSyncSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('sync_settings', JSON.stringify(settings));
-    alert('Senkronizasyon ayarları kaydedildi.');
-  };
-
-  const [supabaseSettings, setSupabaseSettings] = useState({
-    url: '',
-    anonKey: ''
-  });
-
-  useEffect(() => {
-    const saved = localStorage.getItem('supabase_config');
-    if (saved) setSupabaseSettings(JSON.parse(saved));
-  }, []);
-
-  const saveSupabase = () => {
-    localStorage.setItem('supabase_config', JSON.stringify(supabaseSettings));
-    alert('Veritabanı bağlantısı kaydedildi.');
-  };
-
   return (
-    <div className="flex-1 p-4 md:p-8 overflow-y-auto bg-brandDark pb-32">
-      <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
+      <div className="max-w-4xl mx-auto space-y-12">
         <header>
-          <h1 className="text-3xl font-black mb-2 flex items-center gap-3 text-white">
-             <i className="fa-solid fa-sliders text-primary"></i>
-             Sistem Yapılandırması
-          </h1>
-          <p className="text-slate-400 text-sm">API havuzunu yönetin ve verilerinizi GitHub ile senkronize edin.</p>
+          <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase mb-2">Ayarlar</h1>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Sistem Konfigürasyonu ve API Yönetimi</p>
         </header>
 
-        <section className="glass-panel p-6 rounded-[2.5rem] border border-slate-800 shadow-2xl space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2 text-white">
-              <i className="fa-solid fa-key text-amber-500"></i>
-              Aktif Anahtarlar
-            </h3>
+        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-8">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+            <div className="flex items-center gap-4">
+              <i className="fa-solid fa-key text-3xl text-primary"></i>
+              <h3 className="text-lg font-bold text-white">API Anahtar Havuzu</h3>
+            </div>
             <button onClick={resetQuotas} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-blue-400 transition-colors">Kotaları Yenile</button>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {settings.customApiKeys.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-3xl opacity-30">
-                <i className="fa-solid fa-vault text-3xl mb-3 text-white"></i>
-                <p className="text-xs uppercase font-bold tracking-widest text-white">Henüz bir anahtar eklemediniz</p>
+              <div className="col-span-full py-12 text-center bg-slate-900/50 rounded-3xl border border-dashed border-slate-800">
+                <i className="fa-solid fa-vault text-4xl text-slate-800 mb-4 block"></i>
+                <p className="text-xs text-slate-600 font-bold uppercase">Henüz özel anahtar eklenmemiş</p>
               </div>
             ) : (
               settings.customApiKeys.map(k => (
@@ -140,7 +119,9 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-100">{k.label}</p>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">{k.provider} • {k.modelName}</p>
+                      <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">
+                        {k.provider} • {k.modelName} • {k.usageCount || 0}/{k.quotaLimit || 500}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -154,7 +135,6 @@ const SettingsView: React.FC<SettingsProps> = ({ onSyncNow }) => {
             )}
           </div>
 
-          {/* YENİ ANAHTAR EKLEME FORMU */}
           <div className="pt-6 border-t border-slate-800 space-y-4">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-2">
