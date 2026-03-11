@@ -11,6 +11,7 @@ import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
 import { getStorageItem } from './utils/storage';
 import { saveLearnedKnowledge, getQuickWeather } from './utils/knowledgeBase';
+import { buildModuleAutomatically } from './utils/moduleBuilder';
 import NewsView from './views/NewsView';
 
 import OmniView from './views/OmniView';
@@ -69,7 +70,6 @@ import { createReasoningChain, updateNodeStatus, completeChain } from './utils/n
 const prepareGeminiHistory = (msgs: ChatMessage[]) => {
   const filtered = msgs.filter(m => {
     const t = m.text.toLowerCase();
-    // Filter out technical errors and common error prefixes
     const isError = t.startsWith("hata:") ||
       t.startsWith("hata oluştu") ||
       t.startsWith("üzgünüm,") ||
@@ -97,55 +97,51 @@ const prepareGeminiHistory = (msgs: ChatMessage[]) => {
     }
   }
 
-  // Ensure we start with user and end with model (so next is user)
-  let result = history.slice(-10);
-  while (result.length > 0 && result[0].role !== "user") {
-    result.shift();
+  if (history.length > 0 && history[history.length - 1].role === "user") {
+    history.push({ role: "model", parts: [{ text: "Anladım, devam edebiliriz." }] });
   }
-  while (result.length > 0 && result[result.length - 1].role !== "model") {
-    result.pop();
-  }
-  return result;
+
+  return history;
 };
 
 function App() {
-  const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      return getStorageItem('chat_history', []);
-    } catch (e) {
-      console.error("Failed to parse chat history", e);
-      return [];
-    }
-  });
+  const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
+  const [messages, setMessages] = useState<ChatMessage[]>(getStorageItem('chat_history', []));
   const [isTyping, setIsTyping] = useState(false);
-  const [activeModel, setActiveModel] = useState('Gemini 1.5 Flash');
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [activeModel, setActiveModel] = useState<string>('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
 
   const handleGitHubSync = async () => {
+    const settings = getStorageItem('sync_settings', null);
+    if (!settings || !settings.token || !settings.repo) {
+      alert("Lütfen Ayarlar sayfasından GitHub bilgilerinizi yapılandırın.");
+      setActiveView(AppView.SETTINGS);
+      return;
+    }
+
     setSyncStatus('syncing');
     try {
-      const savedSettings = localStorage.getItem('sync_settings');
-      if (!savedSettings) {
-        alert("Lütfen önce Ayarlar sayfasından GitHub bilgilerinizi girin.");
-        setSyncStatus('error');
-        return;
-      }
-      const settings = JSON.parse(savedSettings);
-      const result = await pushToGitHub({
-        token: settings.token,
-        repo: settings.repo,
-        path: settings.path
-      });
+      const stateToSync = {
+        chat_history: getStorageItem('chat_history', []),
+        active_dynamic_modules: getStorageItem('active_dynamic_modules', []),
+        prompt_library: getStorageItem('prompt_library', []),
+        bist_favorites: getStorageItem('bist_favorites', []),
+        crypto_watchlist: getStorageItem('crypto_watchlist', []),
+        binance_config: getStorageItem('binance_config', {}),
+        sync_settings: settings
+      };
 
-      if (result.success) {
-        alert("GitHub senkronizasyonu başarılı!");
-        setSyncStatus('success');
-      } else {
-        alert(`Hata: ${result.message}`);
-        setSyncStatus('error');
-      }
+      const result = await pushToGitHub(
+        settings.token,
+        settings.repo,
+        settings.path || 'nexus_backup.json',
+        stateToSync,
+        'Portal State Sync: ' + new Date().toLocaleString('tr-TR')
+      );
+
+      if (result.success) setSyncStatus('success');
+      else setSyncStatus('error');
     } catch (e) {
       alert("Beklenmedik bir hata oluştu.");
       setSyncStatus('error');
@@ -187,7 +183,6 @@ function App() {
 
     const orchestration = detectIntent(text);
 
-    // Nexus Admin: Site Title Update Logic
     if (text.toLowerCase().includes('site başlığını') && text.toLowerCase().includes('yap')) {
       const match = text.match(/site başlığını ["'‘“](.+)["'”’] (yap|olarak değiştir|güncelle)/i) ||
         text.match(/site başlığını (.+) (yap|olarak değiştir|güncelle)/i);
@@ -204,15 +199,20 @@ function App() {
       }
     }
 
-    if (orchestration.intent === 'BUILD') {
-      const modelMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: `Harika! "${orchestration.target}" için yeni bir çözüm hazırlıyorum. Seni Live AI Developer bölümüne yönlendiriyorum.`,
-        timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
-      setTimeout(() => setActiveView(AppView.BUILDER), 1500);
+    if (orchestration.intent === "BUILD") {
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text, timestamp: Date.now() };
+      const buildingMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "model", text: `🛠️ "${orchestration.target}" için otonom geliştirme süreci başlatıldı. Kaynaklar taranıyor ve kod sentezleniyor...`, timestamp: Date.now() + 1 };
+      setMessages((prev: ChatMessage[]) => [...prev, userMsg, buildingMsg]);
+      setIsTyping(true);
+      const result = await buildModuleAutomatically(orchestration.target || text);
+      if (result.success) {
+        const successMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `✅ İşlem Tamamlandı! "${result.label}" modülü başarıyla inşa edildi ve portala entegre edildi. Seni şimdi yeni sayfaya yönlendiriyorum.`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, successMsg]);
+        setTimeout(() => setActiveView(result.moduleId as any), 2500);
+      } else {
+        const errorMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `❌ Hata: Modül oluşturulurken bir sorun oluştu: ${result.error}`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, errorMsg]);
+      }
       setIsTyping(false);
       return;
     }
@@ -226,6 +226,19 @@ function App() {
         timestamp: Date.now()
       };
       setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setIsTyping(false);
+      return;
+    }
+
+    if (orchestration.intent === 'NEWS') {
+      const modelMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          text: 'Harika! Güncel haberleri takip edebileceğin Haber Merkezi modülüne seni yönlendiriyorum.',
+          timestamp: Date.now()
+      };
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setTimeout(() => setActiveView(AppView.NEWS), 1000);
       setIsTyping(false);
       return;
     }
@@ -286,7 +299,6 @@ function App() {
           responseText = result.response.text();
           recordUsage(keyEntry.id);
         } else {
-          // OpenAI, DeepSeek, Grok, vb.
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -330,7 +342,6 @@ function App() {
           const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
           saveLearnedKnowledge(cleanTopic, cleanInfo);
 
-          // Auto GitHub sync if enabled
           const settings = getStorageItem('sync_settings', null);
           if (settings) {
             if (settings.autoSync) {
@@ -340,7 +351,6 @@ function App() {
         }
         success = true;
         break;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
@@ -359,7 +369,6 @@ function App() {
     }
 
     if (!success && availableKeys.length > 0) {
-      // Autonomous Failover Mode Check
       const allExhausted = availableKeys.every(k => k.isQuotaExhausted);
       if (allExhausted) {
         setMessages((prev: ChatMessage[]) => [...prev, {
@@ -369,11 +378,9 @@ function App() {
           timestamp: Date.now()
         }]);
 
-        // Start background logic chain
         const chain = createReasoningChain(text, true);
         setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
 
-        // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
         setTimeout(() => {
           updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
           updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
@@ -412,7 +419,6 @@ function App() {
         }]);
       }
     } else if (success) {
-      // Build Logic Chain for successful API flows
       const isSearch = orchestration.intent === 'SEARCH_LEARN';
       const isSkyDrive = orchestration.intent === 'SKYDRIVE';
 
@@ -437,9 +443,7 @@ function App() {
   };
 
   const renderView = () => {
-    // Check for dynamic module first
     const dynamicModules = getStorageItem('active_dynamic_modules', []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dynamicMod = dynamicModules.find((m: any) => m.id === activeView);
     if (dynamicMod) {
       return (
@@ -465,7 +469,6 @@ function App() {
             </header>
 
             <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[500px]">
-              {/* Live Execution Layer */}
               <div className="bg-brandDark/50 rounded-[2.8rem] h-full p-8 lg:p-12">
                 <div dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
               </div>
@@ -474,7 +477,7 @@ function App() {
             <div className="flex justify-end gap-3 opacity-30 hover:opacity-100 transition-opacity">
               <p className="text-[10px] font-bold text-slate-600 uppercase">ID: {dynamicMod.id}</p>
               <p className="text-[10px] font-bold text-slate-600 uppercase">•</p>
-              <p className="text-[10px) font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
+              <p className="text-[10px] font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
             </div>
           </div>
         </div>
@@ -620,6 +623,7 @@ function App() {
             else if (target.includes('ai studio')) setActiveView(AppView.GOOGLE_AI_STUDIO);
             else if (target.includes('skydrive') || target.includes('füze') || target.includes('uçan araba')) setActiveView(AppView.SKYDRIVE);
             else if (target.includes('nöral') || target.includes('mantık')) setActiveView(AppView.NEURAL_LOGIC as any);
+            else if (target.includes('haber') || target.includes('gündem')) setActiveView(AppView.NEWS);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);
