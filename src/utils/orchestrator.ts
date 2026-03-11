@@ -1,4 +1,4 @@
-export type Intent = 'BUILD' | 'WEATHER' | 'SEARCH_LEARN' | 'CHAT' | 'SKYDRIVE' | 'NEWS';
+export type Intent = 'BUILD' | 'WEATHER' | 'SEARCH_LEARN' | 'CHAT' | 'SKYDRIVE' | 'NEWS' | 'INTEGRATE_LINK';
 
 interface OrchestrationResult {
     intent: Intent;
@@ -9,12 +9,23 @@ interface OrchestrationResult {
 export const detectIntent = (text: string): OrchestrationResult => {
     const lowerText = text.toLowerCase();
 
-    // 0. News Intent
+    // 0. Link Integration Intent
+    const urlPattern = /(https?:\/\/[^\s]+)/i;
+    const urlMatch = text.match(urlPattern);
+    if (urlMatch && (lowerText.includes('entegre') || lowerText.includes('ekle') || lowerText.includes('bağla') || lowerText.includes('link'))) {
+        return {
+            intent: 'INTEGRATE_LINK',
+            target: urlMatch[0],
+            payload: { originalText: text }
+        };
+    }
+
+    // 1. News Intent
     if (lowerText.includes('haber') || lowerText.includes('gündem') || lowerText.includes('news')) {
         return { intent: 'NEWS', target: text };
     }
 
-    // 1. SkyDrive Intent
+    // 2. SkyDrive Intent
     if (
         lowerText.includes('skydrive') ||
         lowerText.includes('uçan araba') ||
@@ -24,7 +35,7 @@ export const detectIntent = (text: string): OrchestrationResult => {
         return { intent: 'SKYDRIVE', target: text };
     }
 
-    // 2. Build Intent (Create/Add page/module)
+    // 3. Build Intent (Create/Add page/module)
     if (
         lowerText.includes('ekle') ||
         lowerText.includes('yap') ||
@@ -36,9 +47,7 @@ export const detectIntent = (text: string): OrchestrationResult => {
         lowerText.includes('add page') ||
         lowerText.includes('build')
     ) {
-        // Exclude generic "what to do" (ne yapmalı)
         if (!lowerText.includes('neyap') && !lowerText.includes('nasıl yapılır') && !lowerText.includes('neler yapabilirsin')) {
-            // Try to extract the subject: "bana haber sayfası yap" -> "haber sayfası"
             const buildMatch = text.match(/(?:bana\s+)?(.+?)\s+(?:hazırla|yap|oluştur|ekle)/i);
             return {
                 intent: 'BUILD',
@@ -47,7 +56,7 @@ export const detectIntent = (text: string): OrchestrationResult => {
         }
     }
 
-    // 3. Weather Intent
+    // 4. Weather Intent
     if (
         lowerText.includes('hava durumu') ||
         lowerText.includes('weather') ||
@@ -61,7 +70,7 @@ export const detectIntent = (text: string): OrchestrationResult => {
         };
     }
 
-    // 4. Search & Learn Intent
+    // 5. Search & Learn Intent
     if (
         lowerText.includes('araştır') ||
         lowerText.includes('öğren') ||
@@ -73,6 +82,6 @@ export const detectIntent = (text: string): OrchestrationResult => {
         return { intent: 'SEARCH_LEARN', target: text };
     }
 
-    // 5. Default to Chat
+    // 6. Default to Chat
     return { intent: 'CHAT' };
 };
