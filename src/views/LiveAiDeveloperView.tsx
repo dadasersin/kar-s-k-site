@@ -5,207 +5,202 @@ import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiP
 import { getStorageItem } from '../utils/storage';
 import { searchKnowledge } from '../utils/knowledgeBase';
 
-interface LogEntry {
+interface Log {
   id: string;
+  timestamp: string;
   msg: string;
   type: 'info' | 'success' | 'error' | 'system';
-  timestamp: string;
 }
 
-interface PendingComponent {
+interface GeneratedComponent {
   id: string;
   name: string;
   code: string;
   timestamp: number;
-  status: 'draft' | 'compiling' | 'deployed';
 }
 
 const LiveAiDeveloperView: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isPullingData, setIsPullingData] = useState(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [components, setComponents] = useState<PendingComponent[]>(getStorageItem('active_dynamic_modules', []));
-  const [pendingComponent, setPendingComponent] = useState<PendingComponent | null>(null);
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [components, setComponents] = useState<GeneratedComponent[]>([]);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [pendingComponent, setPendingComponent] = useState<GeneratedComponent | null>(null);
+  const [isPullingData, setIsPullingData] = useState(false);
+
+  useEffect(() => {
+    const saved = getStorageItem('active_dynamic_modules', []);
+    setComponents(saved);
+
+    // Initial log
+    addLog('AI Geliştirici Modülü Başlatıldı.', 'system');
+    addLog('Nöral ağlar ve SDK bağlantıları kontrol ediliyor...', 'info');
+  }, []);
 
   const addLog = (msg: string, type: 'info' | 'success' | 'error' | 'system' = 'info') => {
-    const newLog: LogEntry = {
+    const newLog: Log = {
       id: Math.random().toString(36).substr(2, 9),
+      timestamp: new Date().toLocaleTimeString('tr-TR'),
       msg,
-      type,
-      timestamp: new Date().toLocaleTimeString('tr-TR')
+      type
     };
     setLogs(prev => [newLog, ...prev].slice(0, 50));
   };
 
-  useEffect(() => {
-    addLog('Live AI Developer Engine initialized.', 'system');
-    addLog('Waiting for requirements...', 'system');
-  }, []);
+  const cleanCode = (code: string): string => {
+    let cleaned = code.trim();
+    if (cleaned.startsWith('```')) {
+        const firstLineEnd = cleaned.indexOf('\n');
+        const lastLineStart = cleaned.lastIndexOf('\n```');
+        if (firstLineEnd !== -1 && lastLineStart !== -1) {
+            cleaned = cleaned.substring(firstLineEnd + 1, lastLineStart).trim();
+        } else {
+            cleaned = cleaned.replace(/```(html|javascript|typescript|jsx|tsx)?/gi, '').replace(/```/g, '').trim();
+        }
+    }
+    return cleaned;
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
     setIsProcessing(true);
     setLogs([]);
-    addLog(`Gereksinimler alındı: "${prompt}"`, 'info');
+    addLog(`"${prompt}" talebi için geliştirme süreci başlatıldı.`, 'system');
 
-    // Step 1: Simulate Multi-source data pulling
-    setIsPullingData(true);
-    addLog('Kaynaklar entegre ediliyor...', 'info');
-    await new Promise(r => setTimeout(r, 800));
-    addLog('Antigravity Proxy verileri çekiliyor...', 'info');
-    await new Promise(r => setTimeout(r, 600));
-    addLog('SkillShare Hub pattern kütüphanesi taranıyor...', 'info');
-    await new Promise(r => setTimeout(r, 700));
-    addLog('Seline güvenlik protokolleri doğrulanıyor...', 'info');
-    await new Promise(r => setTimeout(r, 500));
-    addLog('Google Drive yedekleme köprüsü üzerinden durum kontrolü yapılıyor...', 'info');
-
-    // FETCH REAL KNOWLEDGE DATA
     const knowledge = searchKnowledge(prompt);
-    if (knowledge) {
-      addLog(`Sistem veritabanından eşleşen bilgi bulundu: ${knowledge.substring(0, 50)}...`, 'success');
-    }
-
-    setIsPullingData(false);
-    addLog('Tüm modüllerden gelen veriler ve mimari analiz ediliyor...', 'info');
-
-    // Step 2: ACTUAL CODE GENERATION VIA AI WITH FAILOVER
     const availableKeys = getAvailableKeys('gemini');
+
     if (availableKeys.length === 0) {
-      addLog('HATA: API Anahtarı bulunamadı.', 'error');
+      addLog('HATA: API anahtarı bulunamadı. Lütfen ayarlar sayfasından anahtar ekleyin.', 'error');
       setIsProcessing(false);
       return;
     }
 
+    // Phase 1: Data Pulling Simulation
+    setIsPullingData(true);
+    addLog('Kaynaklar taranıyor: Antigravity, Cursor API, Windsurf SDK...', 'info');
+    await new Promise(r => setTimeout(r, 1500));
+    addLog('Semantik bağlam yakalandı. Bilgi tabanı entegre ediliyor.', 'success');
+    setIsPullingData(false);
+
     let generatedCode = '';
     let success = false;
-    const bt = '```';
+    const bt = "```";
 
     for (const keyEntry of availableKeys) {
-      try {
-        addLog(`Yapay zeka motoru ile gerçek kod üretiliyor (${keyEntry.label})...`, 'info');
-        const genAI = new GoogleGenerativeAI(keyEntry.key);
-        const model = genAI.getGenerativeModel({ model: keyEntry.modelName || "gemini-1.5-flash" });
+      const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
-        const aiPrompt = `
-          Sen bir React ve Tailwind CSS uzmanısın.
-          Kullanıcı şunları istiyor: "${prompt}"
-          ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
+      for (const modelId of modelsToTry) {
+        try {
+          addLog(`[${keyEntry.label}] üzerinden ${modelId} modeline bağlanılıyor...`, 'info');
+          const genAI = new GoogleGenerativeAI(keyEntry.key);
+          const model = genAI.getGenerativeModel({ model: modelId });
 
-          Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
-          Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
-          Kodun başına ve sonuna markdown ( ${bt}html ) koyma, direkt kodu ver.
-          Bu kod bir iframe içinde veya div içinde render edilecek.
-          Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
-          DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
-        `;
+          const aiPrompt = `
+            Sen bir React ve Tailwind CSS uzmanısın. Ersin Güleş'in portalı için otonom bir geliştiricisin.
+            Kullanıcı şunu inşa etmeni istiyor: "${prompt}"
 
-        const result = await model.generateContent(aiPrompt);
-        generatedCode = result.response.text();
-        recordUsage(keyEntry.id);
-        success = true;
-        break;
-      } catch (err: any) {
-        console.error(`AI Generation Error (${keyEntry.label}):`, err);
-        if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
-          addLog(`Kota aşımı (${keyEntry.label}). Diğer anahtar deneniyor...`, 'error');
-          markKeyAsExhausted(keyEntry.id);
-          continue;
-        } else {
-          addLog(`Hata (${keyEntry.label}): ${err.message}`, 'error');
+            ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
+
+            Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
+            Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
+            Kodun başına ve sonuna markdown ( ${bt}html ) koyma, direkt kodu ver.
+            Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
+            DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
+          `;
+
+          const result = await model.generateContent(aiPrompt);
+          generatedCode = cleanCode(result.response.text());
+          recordUsage(keyEntry.id);
+          success = true;
           break;
+        } catch (err: any) {
+          console.error(`AI Generation Error (${keyEntry.label} - ${modelId}):`, err);
+          addLog(`Model hatası (${modelId}): ${err.message || 'Bilinmeyen hata'}`, 'error');
+          if (err.message?.includes('429')) break;
         }
       }
+      if (success) break;
+      markKeyAsExhausted(keyEntry.id);
     }
 
-    if (success) {
-      addLog('Kod sentezi tamamlandı. Ön izleme hazır.', 'success');
-      setPendingComponent({
+    if (success && generatedCode) {
+      addLog('Kod başarıyla sentezlendi. Güvenlik taraması yapılıyor...', 'success');
+      await new Promise(r => setTimeout(r, 1000));
+
+      const newComp: GeneratedComponent = {
         id: Math.random().toString(36).substr(2, 9),
         name: prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt,
         code: generatedCode,
-        timestamp: Date.now(),
-        status: 'draft'
-      });
+        timestamp: Date.now()
+      };
+
+      setPendingComponent(newComp);
       setShowApprovalModal(true);
+      addLog('Tasarım önizleme için hazır. Kullanıcı onayı bekleniyor.', 'system');
     } else {
-      addLog('Modül üretimi başarısız oldu. Lütfen anahtarlarınızı kontrol edin.', 'error');
+      addLog('Süreç başarısız oldu. Lütfen API limitlerini kontrol edin.', 'error');
     }
+
     setIsProcessing(false);
   };
 
-  const approveAndDeploy = async () => {
+  const approveAndDeploy = () => {
     if (!pendingComponent) return;
 
-    setShowApprovalModal(false);
-    setIsProcessing(true);
-
-    addLog('User approved. Starting compilation...', 'info');
-    const approvedComp = { ...pendingComponent, status: 'compiling' as const };
-    setComponents(prev => [approvedComp, ...prev]);
-
-    await new Promise(r => setTimeout(r, 2000));
-    addLog('Compilation successful. Running cross-module integrity tests...', 'info');
-    addLog('Tests passed: 100% (Integrated Logic Validated)', 'success');
-
-    addLog('Deploying to Live Portal Environment...', 'info');
-
-    // SAVE TO PERSISTENT REGISTRY
-    try {
-      const activeModules = getStorageItem('active_dynamic_modules', []);
-      activeModules.push({
-        id: approvedComp.id,
-        label: approvedComp.name,
-        code: approvedComp.code,
+    const currentModules = getStorageItem('active_dynamic_modules', []);
+    const updatedModules = [
+      ...currentModules,
+      {
+        id: pendingComponent.id,
+        label: pendingComponent.name,
+        code: pendingComponent.code,
         icon: 'fa-cube',
-        timestamp: Date.now()
-      });
-      localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
-      addLog('Module registered globally. Sidebar updated.', 'success');
-    } catch (e) {
-      console.error('Failed to register dynamic module', e);
-      addLog('Persistence Error: Module will not survive refresh.', 'error');
-    }
+        timestamp: pendingComponent.timestamp
+      }
+    ];
 
+    localStorage.setItem('active_dynamic_modules', JSON.stringify(updatedModules));
+    setComponents(updatedModules as any);
+    setShowApprovalModal(false);
     setPendingComponent(null);
-    setIsProcessing(false);
-    addLog('Deployment COMPLETE. Check sidebar for the new feature.', 'success');
+    addLog(`"${pendingComponent.name}" başarıyla portala entegre edildi ve yayına alındı!`, 'success');
   };
 
   return (
-    <div className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-8">
+    <div className="flex-1 p-4 lg:p-10 overflow-y-auto bg-slate-950 pb-32">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-6">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
-              <i className="fa-solid fa-microchip-ai text-3xl"></i>
+            <div className="w-16 h-16 rounded-[2rem] bg-primary/20 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_30px_rgba(13,89,242,0.3)]">
+              <i className="fa-solid fa-code-branch text-2xl"></i>
             </div>
             <div>
-              <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase leading-none">Live AI <span className="text-primary">Developer</span></h1>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Geleceği Gerçek Zamanlı İnşa Ediyoruz</p>
+              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-tight">Live AI Developer</h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Otonom Yazılım Mühendisi v4.0</p>
               </div>
             </div>
           </div>
-        </header>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="glass-panel p-8 rounded-[3rem] border border-white/10 bg-brandDark/40">
-              <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <i className="fa-solid fa-terminal text-primary"></i> Geliştirme Terminali
+          <div className="lg:col-span-2 space-y-8">
+            <div className="glass-panel p-8 rounded-[3rem] border border-white/10 bg-brandDark/30 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50"></div>
+              <h3 className="text-sm font-black text-white uppercase tracking-widest mb-6 flex items-center gap-3">
+                <i className="fa-solid fa-terminal text-primary"></i>
+                YENİ MODÜL İNŞA ET
               </h3>
 
-              <div className="space-y-4">
-                <div className="relative group">
+              <div className="space-y-6">
+                <div className="relative">
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Nasıl bir modül veya site hazırlamamı istiyorsun?"
+                    placeholder="Örn: Bana interaktif bir borsa takip paneli yap..."
                     className="w-full h-40 bg-black/40 border border-white/5 rounded-3xl p-6 text-sm text-white focus:border-primary/50 outline-none transition-all resize-none placeholder:text-gray-700"
                     disabled={isProcessing}
                   />

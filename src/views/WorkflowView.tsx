@@ -71,7 +71,7 @@ const WorkflowView: React.FC = () => {
         for (const keyEntry of availableKeys) {
           try {
             const genAI = new GoogleGenerativeAI(keyEntry.key);
-            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
             const prompt = `Aşağıdaki tanıma göre bir n8n benzeri iş akışı JSON'u oluştur. JSON şu yapıda olmalı:
               { "nodes": [ { "id": "1", "name": "Node Adı", "type": "node.type", "position": [x, y], "parameters": {} } ],
                 "links": [ { "fromNode": "1", "toNode": "2" } ] }

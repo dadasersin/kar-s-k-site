@@ -11,6 +11,8 @@ import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
 import { getStorageItem } from './utils/storage';
 import { saveLearnedKnowledge, getQuickWeather } from './utils/knowledgeBase';
+import { buildModuleAutomatically, integrateLinkAutomatically } from './utils/moduleBuilder';
+import NewsView from './views/NewsView';
 
 import OmniView from './views/OmniView';
 
@@ -68,7 +70,6 @@ import { createReasoningChain, updateNodeStatus, completeChain } from './utils/n
 const prepareGeminiHistory = (msgs: ChatMessage[]) => {
   const filtered = msgs.filter(m => {
     const t = m.text.toLowerCase();
-    // Filter out technical errors and common error prefixes
     const isError = t.startsWith("hata:") ||
       t.startsWith("hata oluştu") ||
       t.startsWith("üzgünüm,") ||
@@ -96,55 +97,51 @@ const prepareGeminiHistory = (msgs: ChatMessage[]) => {
     }
   }
 
-  // Ensure we start with user and end with model (so next is user)
-  let result = history.slice(-10);
-  while (result.length > 0 && result[0].role !== "user") {
-    result.shift();
+  if (history.length > 0 && history[history.length - 1].role === "user") {
+    history.push({ role: "model", parts: [{ text: "Anladım, devam edebiliriz." }] });
   }
-  while (result.length > 0 && result[result.length - 1].role !== "model") {
-    result.pop();
-  }
-  return result;
+
+  return history;
 };
 
 function App() {
-  const [activeView, setActiveView] = useState<AppView>(AppView.HOME);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      return getStorageItem('chat_history', []);
-    } catch (e) {
-      console.error("Failed to parse chat history", e);
-      return [];
-    }
-  });
+  const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
+  const [messages, setMessages] = useState<ChatMessage[]>(getStorageItem('chat_history', []));
   const [isTyping, setIsTyping] = useState(false);
-  const [activeModel, setActiveModel] = useState('Gemini 1.5 Flash');
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [activeModel, setActiveModel] = useState<string>('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
 
   const handleGitHubSync = async () => {
+    const settings = getStorageItem('sync_settings', null);
+    if (!settings || !settings.token || !settings.repo) {
+      alert("Lütfen Ayarlar sayfasından GitHub bilgilerinizi yapılandırın.");
+      setActiveView(AppView.SETTINGS);
+      return;
+    }
+
     setSyncStatus('syncing');
     try {
-      const savedSettings = localStorage.getItem('sync_settings');
-      if (!savedSettings) {
-        alert("Lütfen önce Ayarlar sayfasından GitHub bilgilerinizi girin.");
-        setSyncStatus('error');
-        return;
-      }
-      const settings = JSON.parse(savedSettings);
-      const result = await pushToGitHub({
-        token: settings.token,
-        repo: settings.repo,
-        path: settings.path
-      });
+      const stateToSync = {
+        chat_history: getStorageItem('chat_history', []),
+        active_dynamic_modules: getStorageItem('active_dynamic_modules', []),
+        prompt_library: getStorageItem('prompt_library', []),
+        bist_favorites: getStorageItem('bist_favorites', []),
+        crypto_watchlist: getStorageItem('crypto_watchlist', []),
+        binance_config: getStorageItem('binance_config', {}),
+        sync_settings: settings
+      };
 
-      if (result.success) {
-        alert("GitHub senkronizasyonu başarılı!");
-        setSyncStatus('success');
-      } else {
-        alert(`Hata: ${result.message}`);
-        setSyncStatus('error');
-      }
+      const result = await pushToGitHub(
+        settings.token,
+        settings.repo,
+        settings.path || 'nexus_backup.json',
+        stateToSync,
+        'Portal State Sync: ' + new Date().toLocaleString('tr-TR')
+      );
+
+      if (result.success) setSyncStatus('success');
+      else setSyncStatus('error');
     } catch (e) {
       alert("Beklenmedik bir hata oluştu.");
       setSyncStatus('error');
@@ -186,7 +183,6 @@ function App() {
 
     const orchestration = detectIntent(text);
 
-    // Nexus Admin: Site Title Update Logic
     if (text.toLowerCase().includes('site başlığını') && text.toLowerCase().includes('yap')) {
       const match = text.match(/site başlığını ["'‘“](.+)["'”’] (yap|olarak değiştir|güncelle)/i) ||
         text.match(/site başlığını (.+) (yap|olarak değiştir|güncelle)/i);
@@ -203,15 +199,38 @@ function App() {
       }
     }
 
-    if (orchestration.intent === 'BUILD') {
-      const modelMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: `Harika! "${orchestration.target}" için yeni bir çözüm hazırlıyorum. Seni Live AI Developer bölümüne yönlendiriyorum.`,
-        timestamp: Date.now()
-      };
-      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
-      setTimeout(() => setActiveView(AppView.BUILDER), 1500);
+    if (orchestration.intent === "BUILD") {
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text, timestamp: Date.now() };
+      const buildingMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "model", text: `🛠️ "${orchestration.target}" için otonom geliştirme süreci başlatıldı. Kaynaklar taranıyor ve kod sentezleniyor...`, timestamp: Date.now() + 1 };
+      setMessages((prev: ChatMessage[]) => [...prev, userMsg, buildingMsg]);
+      setIsTyping(true);
+      const result = await buildModuleAutomatically(orchestration.target || text);
+      if (result.success) {
+        const successMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `✅ İşlem Tamamlandı! "${result.label}" modülü başarıyla inşa edildi ve portala entegre edildi. Seni şimdi yeni sayfaya yönlendiriyorum.`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, successMsg]);
+        setTimeout(() => setActiveView(result.moduleId as any), 2500);
+      } else {
+        const errorMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `❌ Hata: Modül oluşturulurken bir sorun oluştu: ${result.error}`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, errorMsg]);
+      }
+      setIsTyping(false);
+      return;
+    }
+
+    if (orchestration.intent === "INTEGRATE_LINK") {
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", text, timestamp: Date.now() };
+      const integratingMsg: ChatMessage = { id: (Date.now() + 1).toString(), role: "model", text: `🔗 "${orchestration.target}" linki portalın yeni bir modülüne entegre ediliyor. Lütfen bekleyin...`, timestamp: Date.now() + 1 };
+      setMessages((prev: ChatMessage[]) => [...prev, userMsg, integratingMsg]);
+      setIsTyping(true);
+      const result = await integrateLinkAutomatically(orchestration.target || "", orchestration.payload?.originalText || "");
+      if (result.success) {
+        const successMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `✅ Bağlantı başarıyla entegre edildi! "${result.label}" modülü aktif. Seni şimdi oraya yönlendiriyorum.`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, successMsg]);
+        setTimeout(() => setActiveView(result.moduleId as any), 2000);
+      } else {
+        const errorMsg: ChatMessage = { id: (Date.now() + 2).toString(), role: "model", text: `❌ Entegrasyon hatası: ${result.error}`, timestamp: Date.now() + 2 };
+        setMessages((prev: ChatMessage[]) => [...prev, errorMsg]);
+      }
       setIsTyping(false);
       return;
     }
@@ -225,6 +244,19 @@ function App() {
         timestamp: Date.now()
       };
       setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setIsTyping(false);
+      return;
+    }
+
+    if (orchestration.intent === 'NEWS') {
+      const modelMsg: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'model',
+          text: 'Harika! Güncel haberleri takip edebileceğin Haber Merkezi modülüne seni yönlendiriyorum.',
+          timestamp: Date.now()
+      };
+      setMessages((prev: ChatMessage[]) => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
+      setTimeout(() => setActiveView(AppView.NEWS), 1000);
       setIsTyping(false);
       return;
     }
@@ -273,7 +305,7 @@ function App() {
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName || 'gemini-1.5-flash',
+            model: keyEntry.modelName || 'gemini-2.0-flash',
             systemInstruction: customInstruction
           });
 
@@ -285,7 +317,6 @@ function App() {
           responseText = result.response.text();
           recordUsage(keyEntry.id);
         } else {
-          // OpenAI, DeepSeek, Grok, vb.
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -328,18 +359,9 @@ function App() {
           const cleanTopic = orchestration.target || 'Yeni Araştırma';
           const cleanInfo = responseText.replace('ÖĞRENİLEN BİLGİ:', '').trim();
           saveLearnedKnowledge(cleanTopic, cleanInfo);
-
-          // Auto GitHub sync if enabled
-          const settings = getStorageItem('sync_settings', null);
-          if (settings) {
-            if (settings.autoSync) {
-              setTimeout(() => handleGitHubSync(), 1000);
-            }
-          }
         }
         success = true;
         break;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         console.error(`API Hatası [${keyEntry.label}]:`, error);
         if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
@@ -357,88 +379,11 @@ function App() {
       }
     }
 
-    if (!success && availableKeys.length > 0) {
-      // Autonomous Failover Mode Check
-      const allExhausted = availableKeys.every(k => k.isQuotaExhausted);
-      if (allExhausted) {
-        setMessages((prev: ChatMessage[]) => [...prev, {
-          id: Date.now().toString(),
-          role: 'model',
-          text: "⚠️ Tüm API sistemleri devre dışı (Kota/Hata). Ancak durmuyorum; Otonom Nöral Mod'a geçiyorum. Lütfen süreci Nöral Mantık panelinden izleyin. 🧠✨",
-          timestamp: Date.now()
-        }]);
-
-        // Start background logic chain
-        const chain = createReasoningChain(text, true);
-        setTimeout(() => setActiveView(AppView.NEURAL_LOGIC as any), 1500);
-
-        // Simulate Autonomous Brain Work (Since internet fetch without proxy is tricky in browser, we simulate the logic)
-        setTimeout(() => {
-          updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'Intent is properly parsed using local N-Gram matches.' });
-          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-        }, 4000);
-
-        setTimeout(() => {
-          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Internal Knowledge Base queried. Extracted relevant logic for ' + orchestration.target });
-          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'learning' });
-        }, 8000);
-
-        setTimeout(() => {
-          const learned = "Simulated internet scraping complete. The structure of " + orchestration.target + " requires a React component with state management.";
-          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed', learnedData: learned });
-          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'processing' });
-        }, 14000);
-
-        setTimeout(() => {
-          const conclusion = "Otonom süreç tamamlandı. " + orchestration.target + " için gerekli tüm kodlama ve tasarım mimarisi sentezlendi.";
-          updateNodeStatus(chain.id, chain.nodes[3].id, { status: 'completed' });
-          completeChain(chain.id, conclusion);
-
-          setMessages((prev: ChatMessage[]) => [...prev, {
-            id: Date.now().toString(),
-            role: 'model',
-            text: conclusion + " Detayları Nöral Mantık panelinden inceleyebilirsiniz.",
-            timestamp: Date.now()
-          }]);
-        }, 18000);
-
-      } else {
-        setMessages((prev: ChatMessage[]) => [...prev, {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: "Üzgünüm, şu anda API servisleri ulaşılamaz durumda.",
-          timestamp: Date.now()
-        }]);
-      }
-    } else if (success) {
-      // Build Logic Chain for successful API flows
-      const isSearch = orchestration.intent === 'SEARCH_LEARN';
-      const isSkyDrive = orchestration.intent === 'SKYDRIVE';
-
-      if (isSearch || isSkyDrive) {
-        const chain = createReasoningChain(text, false);
-        updateNodeStatus(chain.id, chain.nodes[0].id, { status: 'completed', result: 'İstem algılandı: ' + orchestration.intent });
-        updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'processing' });
-
-        setTimeout(() => {
-          updateNodeStatus(chain.id, chain.nodes[1].id, { status: 'completed', result: 'Süreç başarıyla işletildi.' });
-          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'processing' });
-        }, 2000);
-
-        setTimeout(() => {
-          updateNodeStatus(chain.id, chain.nodes[2].id, { status: 'completed' });
-          completeChain(chain.id, "Analiz ve işlem tamamlandı.");
-        }, 4000);
-      }
-    }
-
     setIsTyping(false);
   };
 
   const renderView = () => {
-    // Check for dynamic module first
     const dynamicModules = getStorageItem('active_dynamic_modules', []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const dynamicMod = dynamicModules.find((m: any) => m.id === activeView);
     if (dynamicMod) {
       return (
@@ -450,30 +395,19 @@ function App() {
                   <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
                 </div>
                 <div>
-                  <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase">{dynamicMod.label}</h1>
+                  <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">{dynamicMod.label}</h1>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Otonom Çalışan Aktif Modül</p>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Otonom Entegre Modül</p>
                   </div>
                 </div>
               </div>
-              <div className="hidden md:flex gap-4">
-                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold text-slate-500 uppercase">Entegrasyon: TAMAMLANDI</div>
-                <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 text-[10px] font-bold text-slate-500 uppercase">Güvenlik: DOĞRULANDI</div>
-              </div>
             </header>
 
-            <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[500px]">
-              {/* Live Execution Layer */}
-              <div className="bg-brandDark/50 rounded-[2.8rem] h-full p-8 lg:p-12">
-                <div dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
+            <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[600px] flex">
+              <div className="bg-brandDark/50 rounded-[2.8rem] flex-1 overflow-hidden">
+                <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
               </div>
-            </div>
-
-            <div className="flex justify-end gap-3 opacity-30 hover:opacity-100 transition-opacity">
-              <p className="text-[10px] font-bold text-slate-600 uppercase">ID: {dynamicMod.id}</p>
-              <p className="text-[10px] font-bold text-slate-600 uppercase">•</p>
-              <p className="text-[10px) font-bold text-slate-600 uppercase">Yayın Tarihi: {new Date(dynamicMod.timestamp).toLocaleString('tr-TR')}</p>
             </div>
           </div>
         </div>
@@ -538,6 +472,7 @@ function App() {
       case AppView.NEURAL_LOGIC as any: return <NeuralLogicView onViewChange={setActiveView} />;
       case AppView.GOOGLE_AI_STUDIO: return <GoogleAiStudioView />;
       case AppView.SKYDRIVE: return <SkyDriveView />;
+      case AppView.NEWS: return <NewsView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };
@@ -568,56 +503,10 @@ function App() {
           if (command === 'nav' && action === 'nav') {
             const target = payload.toLowerCase();
             if (target === 'home' || target.includes('ana sayfa')) setActiveView(AppView.HOME);
-            else if (target === 'tools' || target.includes('araçlar')) setActiveView(AppView.TOOLS);
-            else if (target === 'creative' || target.includes('sahne')) setActiveView(AppView.CREATIVE);
-            else if (target === 'dashboard' || target.includes('panel')) setActiveView(AppView.DASHBOARD);
             else if (target === 'chat' || target.includes('sohbet')) setActiveView(AppView.CHAT);
-            else if (target === 'visuals' || target.includes('stüdyo')) setActiveView(AppView.VISUALS);
-            else if (target === 'ruwis_ai' || target.includes('görsel')) setActiveView(AppView.RUWIS_AI);
-            else if (target === 'audio' || target.includes('ses')) setActiveView(AppView.AUDIO);
-            else if (target === 'music' || target.includes('müzik')) setActiveView(AppView.MUSIC);
-            else if (target === 'gallery' || target.includes('galeri')) setActiveView(AppView.GALLERY);
-            else if (target === 'workflow' || target.includes('akışı')) setActiveView(AppView.WORKFLOW);
-            else if (target === 'builder' || target.includes('inşa')) setActiveView(AppView.BUILDER);
-            else if (target === 'crypto' || target.includes('kripto')) setActiveView(AppView.CRYPTO);
-            else if (target === 'google_apps' || target.includes('google')) setActiveView(AppView.GOOGLE_APPS);
-            else if (target === 'docker_ai' || target.includes('docker')) setActiveView(AppView.DOCKER_AI);
-            else if (target === 'requests' || target.includes('görev')) setActiveView(AppView.REQUESTS);
-            else if (target === 'system' || target.includes('sistem')) setActiveView(AppView.SYSTEM);
-            else if (target === 'settings' || target.includes('ayar')) setActiveView(AppView.SETTINGS);
-            else if (target === 'borsa') setActiveView(AppView.BORSA);
-            else if (target === 'youtube') setActiveView(AppView.YOUTUBE);
-            else if (target === 'live_tv' || target.includes('tv') || target.includes('televizyon')) setActiveView(AppView.LIVE_TV);
-            else if (target === 'system_expert' || target.includes('uzman')) setActiveView(AppView.SYSTEM_EXPERT);
-            else if (target === 'agent_skills' || target.includes('beceri')) setActiveView(AppView.AGENT_SKILLS);
-            else if (target === 'ag_toolkit' || target.includes('araçlar')) setActiveView(AppView.AG_TOOLKIT);
-            else if (target === 'quotio' || target.includes('failover')) setActiveView(AppView.QUOTIO);
-            else if (target === 'prompt_master' || target.includes('prompt')) setActiveView(AppView.PROMPT_MASTER);
-            else if (target === 'dev_tools' || target.includes('araçlar')) setActiveView(AppView.DEV_TOOLS);
-            else if (target === 'coder_config' || target.includes('yapılandırma')) setActiveView(AppView.CODER_CONFIG);
-            else if (target === 'agentic_config' || target.includes('akışlar')) setActiveView(AppView.AGENT_SKILLS);
-            else if (target === 'transparent_png' || target.includes('png')) setActiveView(AppView.TRANSPARENT_PNG);
-            else if (target === 'skillshare' || target.includes('skill')) setActiveView(AppView.SKILLSHARE);
-            else if (target === 'seline' || target.includes('seline')) setActiveView(AppView.SELINE);
-            else if (target === 'ag2api' || target.includes('proxy')) setActiveView(AppView.AG2API);
-            else if (target === 'cursor_bridge' || target.includes('köprü')) setActiveView(AppView.CURSOR_BRIDGE);
-            else if (target === 'khoata_tool' || target.includes('güvenlik')) setActiveView(AppView.KHOATA_TOOL);
-            else if (target === 'codex_switcher' || target.includes('değiştirici')) setActiveView(AppView.CODEX_SWITCHER);
-            else if (target === 'ag_copilot' || target.includes('copilot')) setActiveView(AppView.AG_COPILOT);
-            else if (target === 'ag_usage_checker' || target.includes('denetleyici')) setActiveView(AppView.AG_USAGE_CHECKER);
-            else if (target === 'prompt_expert' || target.includes('uzmanı')) setActiveView(AppView.PROMPT_EXPERT);
-            else if (target === 'cursor_proxy' || target.includes('köprü')) setActiveView(AppView.CURSOR_PROXY);
-            else if (target === 'ag_sync' || target.includes('yedek')) setActiveView(AppView.AG_SYNC);
-            else if (target === 'ag_launcher' || target.includes('başlatıcı')) setActiveView(AppView.AG_LAUNCHER);
-            else if (target === 'user_manual' || target.includes('kılavuz')) setActiveView(AppView.USER_MANUAL);
-            else if (target === 'site_edit' || target.includes('düzenleme')) setActiveView(AppView.SITE_EDIT);
-            else if (target === 'jules_awesome' || target.includes('awesome')) setActiveView(AppView.JULES_AWESOME);
-            else if (target === 'android_ndk' || target.includes('ndk') || target.includes('android')) setActiveView(AppView.ANDROID_NDK);
-            else if (target === 'omniview' || target.includes('hub')) setActiveView(AppView.OMNIVIEW);
-            else if (target === 'weather' || target.includes('hava')) setActiveView(AppView.WEATHER);
-            else if (target.includes('ai studio')) setActiveView(AppView.GOOGLE_AI_STUDIO);
-            else if (target.includes('skydrive') || target.includes('füze') || target.includes('uçan araba')) setActiveView(AppView.SKYDRIVE);
-            else if (target.includes('nöral') || target.includes('mantık')) setActiveView(AppView.NEURAL_LOGIC as any);
+            else if (target.includes('haber')) setActiveView(AppView.NEWS);
+            else if (target.includes('kripto')) setActiveView(AppView.CRYPTO);
+            else if (target.includes('borsa')) setActiveView(AppView.BORSA);
           } else if (command === 'chat') {
             setActiveView(AppView.CHAT);
             handleSendMessage(payload);
