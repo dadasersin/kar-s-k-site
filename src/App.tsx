@@ -305,7 +305,7 @@ function App() {
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName || 'gemini-1.5-flash',
+            model: keyEntry.modelName || 'gemini-2.0-flash',
             systemInstruction: customInstruction
           });
 

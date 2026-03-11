@@ -10,6 +10,22 @@ export interface BuildResult {
     error?: string;
 }
 
+const cleanCode = (code: string): string => {
+    // Remove markdown code blocks if present
+    let cleaned = code.trim();
+    if (cleaned.startsWith('```')) {
+        const firstLineEnd = cleaned.indexOf('\n');
+        const lastLineStart = cleaned.lastIndexOf('\n```');
+        if (firstLineEnd !== -1 && lastLineStart !== -1) {
+            cleaned = cleaned.substring(firstLineEnd + 1, lastLineStart).trim();
+        } else {
+            // Fallback: just strip the backticks
+            cleaned = cleaned.replace(/```(html|javascript|typescript|jsx|tsx)?/gi, '').replace(/```/g, '').trim();
+        }
+    }
+    return cleaned;
+};
+
 export const buildModuleAutomatically = async (prompt: string): Promise<BuildResult> => {
     const knowledge = searchKnowledge(prompt);
     const availableKeys = getAvailableKeys('gemini');
@@ -24,38 +40,42 @@ export const buildModuleAutomatically = async (prompt: string): Promise<BuildRes
     let usedKeyId = '';
 
     for (const keyEntry of availableKeys) {
-        try {
-            const genAI = new GoogleGenerativeAI(keyEntry.key);
-            const model = genAI.getGenerativeModel({ model: keyEntry.modelName || "gemini-1.5-flash" });
+        // Models to try in sequence if one fails
+        const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
 
-            const aiPrompt = `
-          Sen bir React ve Tailwind CSS uzmanısın. Ersin Güleş'in portalı için otonom bir geliştiricisin.
-          Kullanıcı şunu inşa etmeni istiyor: "${prompt}"
+        for (const modelId of modelsToTry) {
+            try {
+                const genAI = new GoogleGenerativeAI(keyEntry.key);
+                const model = genAI.getGenerativeModel({ model: modelId });
 
-          ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
+                const aiPrompt = `
+              Sen bir React ve Tailwind CSS uzmanısın. Ersin Güleş'in portalı için otonom bir geliştiricisin.
+              Kullanıcı şunu inşa etmeni istiyor: "${prompt}"
 
-          Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
-          Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
-          Kodun başına ve sonuna markdown ( ${bt}html ) koyma, direkt kodu ver.
-          Bu kod bir iframe içinde veya div içinde render edilecek.
-          Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
-          DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
-        `;
+              ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
 
-            const result = await model.generateContent(aiPrompt);
-            generatedCode = result.response.text();
-            usedKeyId = keyEntry.id;
-            success = true;
-            break;
-        } catch (err: any) {
-            console.error(`Auto Build Error (${keyEntry.label}):`, err);
-            if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
-                markKeyAsExhausted(keyEntry.id);
-                continue;
-            } else {
-                return { success: false, error: err.message };
+              Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
+              Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
+              Kodun başına ve sonuna markdown ( ${bt}html ) koyma, direkt kodu ver.
+              Bu kod bir iframe içinde veya div içinde render edilecek.
+              Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
+              DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
+            `;
+
+                const result = await model.generateContent(aiPrompt);
+                generatedCode = cleanCode(result.response.text());
+                usedKeyId = keyEntry.id;
+                success = true;
+                break; // Model success
+            } catch (err: any) {
+                console.warn(`Model ${modelId} failed with key ${keyEntry.label}: `, err.message);
+                if (err.message?.includes('429')) break;
+                if (modelId === modelsToTry[modelsToTry.length - 1]) {
+                }
             }
         }
+        if (success) break; // Key success
+        markKeyAsExhausted(keyEntry.id);
     }
 
     if (success && generatedCode) {
@@ -64,7 +84,7 @@ export const buildModuleAutomatically = async (prompt: string): Promise<BuildRes
         return registerDynamicModule(id, label, generatedCode, usedKeyId);
     }
 
-    return { success: false, error: 'Kod üretilemedi.' };
+    return { success: false, error: 'Kod üretilemedi. Lütfen API anahtarlarınızı ve model limitlerini kontrol edin.' };
 };
 
 export const integrateLinkAutomatically = async (url: string, originalText: string): Promise<BuildResult> => {

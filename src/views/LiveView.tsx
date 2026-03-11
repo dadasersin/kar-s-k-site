@@ -113,7 +113,7 @@ const LiveView: React.FC = () => {
 
           // Note: The live feature is simulated here
           console.log(`Starting Live Session with ${keyEntry.label} (Simulated)...`);
-          console.log("Using model: gemini-1.5-flash-live");
+          console.log("Using model: gemini-2.0-flash-live");
           await new Promise(r => setTimeout(r, 1500));
 
           setIsActive(true);

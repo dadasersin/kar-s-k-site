@@ -1,34 +1,37 @@
-import React, { useState } from 'react';
-import type { SyncSettings, ApiKeyEntry, ApiProvider } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ApiKeyEntry, ApiProvider, SyncSettings } from '../types';
+import { getAllKeys } from '../utils/apiPool';
 import { getStorageItem } from '../utils/storage';
 
-interface SettingsViewProps {
-  onSyncNow: () => void;
-}
-
-const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
-  const [settings, setSettings] = useState<SyncSettings>(getStorageItem('sync_settings', {
+const SettingsView: React.FC = () => {
+  const [settings, setSettings] = useState<SyncSettings>({
     enabled: false,
     token: '',
     repo: '',
-    path: 'nexus_backup.json',
     customApiKeys: []
-  }));
+  });
+
+  const [provider, setProvider] = useState<ApiProvider>('gemini');
+  const [modelName, setModelName] = useState('gemini-2.0-flash');
+  const [newKey, setNewKey] = useState('');
+  const [keyLabel, setKeyLabel] = useState('');
+  const [customUrl, setCustomUrl] = useState('');
+  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
 
   const [supabaseSettings, setSupabaseSettings] = useState({
     url: localStorage.getItem('VITE_SUPABASE_URL') || '',
     anonKey: localStorage.getItem('VITE_SUPABASE_ANON_KEY') || ''
   });
 
-  const [newKey, setNewKey] = useState('');
-  const [keyLabel, setKeyLabel] = useState('');
-  const [provider, setProvider] = useState<ApiProvider>('gemini');
-  const [modelName, setModelName] = useState('gemini-1.5-flash');
-  const [customUrl, setCustomUrl] = useState('');
+  useEffect(() => {
+    const saved = getStorageItem('sync_settings', { enabled: false, token: '', repo: '', customApiKeys: [] });
+    setSettings(saved);
+    setApiKeys(getAllKeys());
+  }, []);
 
   const handleProviderChange = (p: ApiProvider) => {
     setProvider(p);
-    if (p === 'gemini') setModelName('gemini-1.5-flash');
+    if (p === 'gemini') setModelName('gemini-2.0-flash');
     else if (p === 'deepseek') setModelName('deepseek-chat');
     else if (p === 'grok') setModelName('grok-beta');
     else if (p === 'openai') setModelName('gpt-4o-mini');
@@ -64,54 +67,43 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
     localStorage.setItem('sync_settings', JSON.stringify(updated));
     setNewKey('');
     setKeyLabel('');
+    setApiKeys(getAllKeys());
   };
 
   const removeKey = (id: string) => {
+    if (id.startsWith('env-')) {
+        alert("Sistem (Environment) anahtarları silinemez.");
+        return;
+    }
     const updated = { ...settings, customApiKeys: settings.customApiKeys.filter(k => k.id !== id) };
     setSettings(updated);
     localStorage.setItem('sync_settings', JSON.stringify(updated));
+    setApiKeys(getAllKeys());
   };
 
-  const resetQuotas = () => {
-    const updated = {
-      ...settings,
-      customApiKeys: settings.customApiKeys.map(k => ({
-        ...k,
-        isQuotaExhausted: false,
-        usageCount: 0
-      }))
-    };
-    localStorage.removeItem('usage_env_default');
-    setSettings(updated);
-    localStorage.setItem('sync_settings', JSON.stringify(updated));
-    alert('Tüm kotalar sıfırlandı.');
+  const onSyncNow = async () => {
+    alert("GitHub senkronizasyonu başlatıldı...");
   };
 
   return (
-    <div className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
+    <div className="flex-1 p-4 lg:p-10 overflow-y-auto bg-slate-950 pb-32">
       <div className="max-w-4xl mx-auto space-y-12">
         <header>
-          <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase mb-2">Ayarlar</h1>
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Sistem Konfigürasyonu ve API Yönetimi</p>
+          <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-tight">Ayarlar ve API Yönetimi</h2>
+          <p className="text-xs text-gray-500 font-black uppercase tracking-widest mt-2">Portal çekirdek yapılandırması</p>
         </header>
 
-        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-8">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-6">
-            <div className="flex items-center gap-4">
-              <i className="fa-solid fa-key text-3xl text-primary"></i>
-              <h3 className="text-lg font-bold text-white">API Anahtar Havuzu</h3>
-            </div>
-            <button onClick={resetQuotas} className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-blue-400 transition-colors">Kotaları Yenile</button>
+        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
+          <div className="flex items-center gap-4">
+             <i className="fa-solid fa-key text-3xl text-primary"></i>
+             <h3 className="text-lg font-bold text-white">API Havuzu</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {settings.customApiKeys.length === 0 ? (
-              <div className="col-span-full py-12 text-center bg-slate-900/50 rounded-3xl border border-dashed border-slate-800">
-                <i className="fa-solid fa-vault text-4xl text-slate-800 mb-4 block"></i>
-                <p className="text-xs text-slate-600 font-bold uppercase">Henüz özel anahtar eklenmemiş</p>
-              </div>
+          <div className="space-y-4">
+            {apiKeys.length === 0 ? (
+              <p className="text-slate-600 italic text-sm">Henüz bir anahtar eklenmemiş.</p>
             ) : (
-              settings.customApiKeys.map(k => (
+              apiKeys.map(k => (
                 <div key={k.id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${k.isQuotaExhausted ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-900 border-slate-800'}`}>
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.isQuotaExhausted ? 'bg-slate-800' : 'bg-primary/20 text-primary'}`}>
@@ -153,13 +145,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onSyncNow }) => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Model Adı</label>
-                  <input
-                    type="text"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="örn: deepseek-chat"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
-                  />
+                  {provider === 'gemini' ? (
+                    <select
+                        value={modelName}
+                        onChange={(e) => setModelName(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
+                    >
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Hızlı)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Zeki)</option>
+                        <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                    </select>
+                  ) : (
+                    <input
+                        type="text"
+                        value={modelName}
+                        onChange={(e) => setModelName(e.target.value)}
+                        placeholder="örn: deepseek-chat"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
+                    />
+                  )}
                 </div>
              </div>
 

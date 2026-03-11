@@ -32,7 +32,7 @@ error: failed to solve: failed to read dockerfile: open Dockerfile: no such file
     for (const keyEntry of availableKeys) {
       try {
         const genAI = new GoogleGenerativeAI(keyEntry.key);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
         const prompt = `
         Analyze the following Docker build error and provide a detailed explanation, a solution, and the necessary configuration files (Dockerfile, docker-compose.yml, etc.).

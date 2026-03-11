@@ -141,7 +141,7 @@ const AudioView: React.FC = () => {
         const ai = new GoogleGenerativeAI(keyEntry.key);
 
         if (mode === 'tts' || (currentText && currentText.length > 0)) {
-          await ai.getGenerativeModel({ model: "gemini-2.0-flash-exp" }).generateContent([
+          await ai.getGenerativeModel({ model: "gemini-2.0-flash" }).generateContent([
             currentText || text
           ]);
         } else {
@@ -150,7 +150,7 @@ const AudioView: React.FC = () => {
             setIsSynthesizing(false);
             return;
           }
-          await ai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }).generateContent([
+          await ai.getGenerativeModel({ model: 'gemini-2.0-flash' }).generateContent([
             { inlineData: { mimeType: selectedAudio.mimeType, data: selectedAudio.data } },
             { text: `Bu ses dosyasını şu talimata göre remiksle ve değiştir: ${remixPrompt}` }
           ]);
