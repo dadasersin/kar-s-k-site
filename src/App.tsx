@@ -47,12 +47,13 @@ import NeuralLogicView from './views/NeuralLogicView';
 import GoogleAiStudioView from './views/GoogleAiStudioView';
 import SkyDriveView from './views/SkyDriveView';
 import NewsView from './views/NewsView';
+import PythonLibraryView from "./views/PythonLibraryView";
 import YouTubeView from './views/YouTubeView';
 import LiveTvView from './views/LiveTvView';
 import SystemExpertView from './views/SystemExpertView';
 import JulesStudioView from './views/JulesStudioView';
-import PythonLibraryView from "./views/PythonLibraryView";
 import RuwisAiView from './views/RuwisAiView';
+import LoginView from './views/LoginView';
 
 import QuickChatWidget from './components/QuickChatWidget';
 import VoiceAssistant from './components/VoiceAssistant';
@@ -62,11 +63,14 @@ import { getAvailableKeys, recordUsage, markKeyAsExhausted } from './utils/apiPo
 import { getStorageItem, setStorageItem } from './utils/storage';
 import { detectIntent } from './utils/orchestrator';
 import { buildModuleAutomatically, integrateLinkAutomatically } from './utils/moduleBuilder';
-import { saveLearnedKnowledge } from './utils/knowledgeBase';
 import { pushToGitHub } from './utils/githubSync';
 import { recordAction } from './utils/history';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('portal_auth_token') === 'true';
+  });
+
   const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
   const [messages, setMessages] = useState<ChatMessage[]>(getStorageItem('chat_history', []));
   const [isTyping, setIsTyping] = useState(false);
@@ -78,42 +82,32 @@ function App() {
     setStorageItem('chat_history', messages);
   }, [messages]);
 
-  // Automatic GitHub Backup Every 2 Minutes
   useEffect(() => {
     const backupInterval = setInterval(async () => {
         const settings = getStorageItem('sync_settings', { enabled: false, token: '', repo: '' });
         if (settings.enabled && settings.token && settings.repo) {
-            console.log("Otonom GitHub yedeklemesi başlatılıyor...");
-            const result = await pushToGitHub({
-                token: settings.token,
-                repo: settings.repo,
-                path: 'portal-state.json'
-            });
+            const result = await pushToGitHub({ token: settings.token, repo: settings.repo, path: 'portal-state.json' });
             if (result.success) {
-                const now = new Date().toLocaleString('tr-TR');
-                localStorage.setItem('last_github_backup', now);
-                recordAction('Sistem', `Otonom GitHub yedeklemesi tamamlandı: ${now}`);
+                localStorage.setItem('last_github_backup', new Date().toLocaleString('tr-TR'));
             }
         }
-    }, 120000); // 2 minutes
-
+    }, 120000);
     return () => clearInterval(backupInterval);
   }, []);
+
+  const handleLogin = () => {
+    sessionStorage.setItem('portal_auth_token', 'true');
+    setIsAuthenticated(true);
+    recordAction('Sistem', 'Güvenli giriş yapıldı.');
+  };
 
   const handleGitHubSync = async () => {
     setSyncStatus('syncing');
     const settings = getStorageItem('sync_settings', { token: '', repo: '' });
-    const result = await pushToGitHub({
-      token: settings.token,
-      repo: settings.repo,
-      path: 'portal-state.json'
-    });
-
+    const result = await pushToGitHub({ token: settings.token, repo: settings.repo, path: 'portal-state.json' });
     if (result.success) {
       setSyncStatus('synced');
-      const now = new Date().toLocaleString('tr-TR');
-      localStorage.setItem('last_github_backup', now);
-      recordAction('Sistem', `Manuel GitHub yedeklemesi tamamlandı: ${now}`);
+      localStorage.setItem('last_github_backup', new Date().toLocaleString('tr-TR'));
       alert(result.message);
     } else {
       setSyncStatus('error');
@@ -122,37 +116,20 @@ function App() {
   };
 
   const prepareGeminiHistory = (msgs: ChatMessage[]) => {
-    return msgs
-      .filter(m => !m.text.includes('Hata:'))
-      .map(m => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.text }],
-      }));
+    return msgs.filter(m => !m.text.includes('Hata:')).map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }));
   };
 
   const handleSendMessage = async (text: string) => {
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      text,
-      timestamp: Date.now()
-    };
-
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
     recordAction('Chat', `Mesaj gönderildi: ${text.substring(0, 30)}...`);
 
     const orchestration = detectIntent(text);
-
     if (orchestration.intent === 'BUILD' && orchestration.target) {
         const res = await buildModuleAutomatically(orchestration.target);
         if (res.success && res.moduleId) {
-            setMessages(prev => [...prev, {
-                id: (Date.now() + 1).toString(),
-                role: 'model',
-                text: `Harika! "${res.label}" modülünü senin için inşa ettim ve portala ekledim. Navigasyon menüsünden erişebilirsin.`,
-                timestamp: Date.now()
-            }]);
+            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `Modül inşa edildi: ${res.label}`, timestamp: Date.now() }]);
             setActiveView(res.moduleId);
             setIsTyping(false);
             return;
@@ -162,12 +139,7 @@ function App() {
     if (orchestration.intent === 'INTEGRATE_LINK' && orchestration.target) {
         const res = await integrateLinkAutomatically(orchestration.target, orchestration.payload.originalText);
         if (res.success && res.moduleId) {
-            setMessages(prev => [...prev, {
-                id: (Date.now() + 1).toString(),
-                role: 'model',
-                text: `Link başarıyla entegre edildi: "${res.label}". Modülü açıyorum.`,
-                timestamp: Date.now()
-            }]);
+            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `Link entegre edildi: ${res.label}`, timestamp: Date.now() }]);
             setActiveView(res.moduleId);
             setIsTyping(false);
             return;
@@ -176,88 +148,37 @@ function App() {
 
     const availableKeys = getAvailableKeys();
     if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        role: 'model',
-        text: "Hata: Herhangi bir API anahtarı bulunamadı. Lütfen Ayarlar sayfasından anahtar ekleyin.",
-        timestamp: Date.now()
-      }]);
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: "API anahtarı bulunamadı.", timestamp: Date.now() }]);
       setIsTyping(false);
       return;
     }
 
-    let success = false;
     for (const keyEntry of availableKeys) {
       try {
         setActiveModel(keyEntry.label);
         let responseText = '';
-
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({
-            model: keyEntry.modelName || 'gemini-2.0-flash'
-          });
-
-          const chat = model.startChat({
-            history: prepareGeminiHistory(messages)
-          });
-
+          const model = genAI.getGenerativeModel({ model: keyEntry.modelName || 'gemini-2.0-flash' });
+          const chat = model.startChat({ history: prepareGeminiHistory(messages) });
           const result = await chat.sendMessage(text);
           responseText = result.response.text();
           recordUsage(keyEntry.id);
         } else {
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${keyEntry.key}`
-            },
-            body: JSON.stringify({
-              model: keyEntry.modelName,
-              messages: [
-                ...messages.slice(-10).map(m => ({
-                  role: m.role === 'user' ? 'user' : 'assistant',
-                  content: m.text
-                })),
-                { role: 'user', content: text }
-              ]
-            })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyEntry.key}` },
+            body: JSON.stringify({ model: keyEntry.modelName, messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }] })
           });
-
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || `API Hatası: ${response.status}`);
-          }
-
           const data = await response.json();
           responseText = data.choices[0].message.content;
           recordUsage(keyEntry.id);
         }
-
-        const modelMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'model',
-          text: responseText,
-          timestamp: Date.now()
-        };
-
-        setMessages((prev: ChatMessage[]) => [...prev, modelMsg]);
-        success = true;
+        setMessages((prev: ChatMessage[]) => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: Date.now() }]);
         break;
       } catch (error: any) {
-        console.error(`API Hatası [${keyEntry.label}]:`, error);
-        if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota')) {
-          markKeyAsExhausted(keyEntry.id);
-          continue;
-        } else {
-          setMessages((prev: ChatMessage[]) => [...prev, {
-            id: (Date.now() + 1).toString(),
-            role: 'model',
-            text: `Hata oluştu (${keyEntry.label}): ${error.message}`,
-            timestamp: Date.now()
-          }]);
-          break;
-        }
+        if (error.message?.includes('429')) { markKeyAsExhausted(keyEntry.id); continue; }
+        break;
       }
     }
     setIsTyping(false);
@@ -270,24 +191,12 @@ function App() {
       return (
         <div className="p-4 lg:p-12 animate-in fade-in duration-700 min-h-screen pb-32">
           <div className="max-w-6xl mx-auto space-y-8">
-            <header className="flex items-center justify-between border-b border-white/5 pb-8">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-2xl shadow-primary/10">
-                  <i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i>
-                </div>
-                <div>
-                  <h1 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">{dynamicMod.label}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Otonom Entegre Modül</p>
-                  </div>
-                </div>
-              </div>
+            <header className="flex items-center gap-6 border-b border-white/5 pb-8">
+                <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30"><i className={`fa-solid ${dynamicMod.icon || 'fa-cube'} text-3xl`}></i></div>
+                <div><h1 className="text-4xl font-black text-white italic tracking-tighter uppercase leading-none">{dynamicMod.label}</h1></div>
             </header>
             <div className="glass-panel p-1 rounded-[3rem] border border-white/10 bg-white/5 shadow-2xl overflow-hidden min-h-[600px] flex">
-              <div className="bg-brandDark/50 rounded-[2.8rem] flex-1 overflow-hidden">
-                <div className="h-full w-full" dangerouslySetInnerHTML={{ __html: dynamicMod.code }} />
-              </div>
+              <div className="bg-brandDark/50 rounded-[2.8rem] flex-1 overflow-hidden"><div className="h-full w-full" dangerouslySetInnerHTML={{ __html: dynamicMod.code }} /></div>
             </div>
           </div>
         </div>
@@ -298,15 +207,7 @@ function App() {
       case AppView.HOME: return <HomeView onViewChange={setActiveView} />;
       case AppView.TOOLS: return <ToolsView onViewChange={setActiveView} />;
       case AppView.DASHBOARD: return <Dashboard onViewChange={setActiveView} />;
-      case AppView.CHAT: return (
-        <ChatView
-          messages={messages}
-          setMessages={setMessages}
-          onSendMessage={handleSendMessage}
-          isTyping={isTyping}
-          activeModelInfo={activeModel}
-        />
-      );
+      case AppView.CHAT: return <ChatView messages={messages} setMessages={setMessages} onSendMessage={handleSendMessage} isTyping={isTyping} activeModelInfo={activeModel} />;
       case AppView.VISUALS: return <VisualsView />;
       case AppView.RUWIS_AI: return <RuwisAiView />;
       case AppView.AUDIO: return <AudioView />;
@@ -356,42 +257,25 @@ function App() {
     }
   };
 
+  if (!isAuthenticated) {
+    return <LoginView onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans neural-brain-bg">
-      <Sidebar
-        activeView={activeView}
-        onViewChange={setActiveView}
-        syncStatus={syncStatus}
-        onManualSync={() => console.log('Manual Status Check...')}
-        onGitHubSync={handleGitHubSync}
-        isMobileOpen={isSidebarOpen}
-        onCloseMobile={() => setIsSidebarOpen(false)}
-      />
+      <Sidebar activeView={activeView} onViewChange={setActiveView} syncStatus={syncStatus} onManualSync={() => {}} onGitHubSync={handleGitHubSync} isMobileOpen={isSidebarOpen} onCloseMobile={() => setIsSidebarOpen(false)} />
       <main className="flex-1 overflow-hidden relative lg:ml-64">
-        <div className="h-full overflow-y-auto">
-          {renderView()}
-        </div>
-        <QuickChatWidget
-          messages={messages.slice(-10).map(m => ({ role: m.role as 'user' | 'model', text: m.text }))}
-          onSendMessage={handleSendMessage}
-          isTyping={isTyping}
-        />
+        <div className="h-full overflow-y-auto">{renderView()}</div>
+        <QuickChatWidget messages={messages.slice(-10).map(m => ({ role: m.role as 'user' | 'model', text: m.text }))} onSendMessage={handleSendMessage} isTyping={isTyping} />
         <VoiceAssistant onCommand={(command, action, payload) => {
           if (command === 'nav' && action === 'nav') {
             const target = payload.toLowerCase();
             if (target === 'home' || target.includes('ana sayfa')) setActiveView(AppView.HOME);
             else if (target === 'chat' || target.includes('sohbet')) setActiveView(AppView.CHAT);
-          } else if (command === 'chat') {
-            setActiveView(AppView.CHAT);
-            handleSendMessage(payload);
-          }
+          } else if (command === 'chat') { setActiveView(AppView.CHAT); handleSendMessage(payload); }
         }} />
       </main>
-      <BottomNav
-        activeView={activeView}
-        onViewChange={setActiveView}
-        onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
+      <BottomNav activeView={activeView} onViewChange={setActiveView} onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
     </div>
   );
 }
