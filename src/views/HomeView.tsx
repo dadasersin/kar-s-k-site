@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppView } from '../types';
+import { getAllKeys } from '../utils/apiPool';
 
 interface HomeViewProps {
   onViewChange: (view: AppView) => void;
@@ -7,87 +8,151 @@ interface HomeViewProps {
 
 const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [apiKeys, setApiKeys] = useState(getAllKeys());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setApiKeys(getAllKeys());
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.open(`https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`, '_blank');
+      onViewChange(AppView.CHAT);
     }
   };
 
+  const maskKey = (key: string) => {
+    if (!key) return '---';
+    if (key.length <= 8) return '********';
+    return `${key.substring(0, 4)}...${key.substring(key.length - 4)}`;
+  };
+
   return (
-    <section className="section-transition p-8 lg:p-12 relative animate-in fade-in duration-700 h-full overflow-y-auto pb-32" id="home">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full orb-glow -z-10"></div>
-      <div className="max-w-6xl mx-auto pt-20">
-        <header className="mb-16">
-          <h2 className="text-primary font-bold tracking-[0.3em] uppercase mb-4">Sistem Operasyon Merkezi</h2>
-          <h3 className="text-5xl lg:text-7xl font-bold mb-8 leading-tight">
-            Geleceği<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Yeniden Kurgula.</span>
-          </h3>
-          <div className="flex flex-wrap gap-8 mb-12">
-            <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-6 rounded-custom w-40">
-              <p className="text-xs text-gray-500 uppercase font-bold mb-1">Durum</p>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
-                <p className="text-lg font-bold">Aktif</p>
-              </div>
-            </div>
-            <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-6 rounded-custom w-40 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => onViewChange(AppView.DASHBOARD)}>
-              <p className="text-xs text-gray-500 uppercase font-bold mb-1">Modüller</p>
-              <p className="text-lg font-bold">55 Birim</p>
-            </div>
-            <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-6 rounded-custom w-40">
-              <p className="text-xs text-gray-500 uppercase font-bold mb-1">Gecikme</p>
-              <p className="text-lg font-bold text-primary">1.2ms</p>
-            </div>
+    <section id="home" className="min-h-screen p-4 lg:p-12 animate-in fade-in duration-700 pb-32 overflow-y-auto">
+      <div className="max-w-6xl mx-auto space-y-12">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 py-8">
+          <div className="space-y-2">
+            <h1 className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">
+              Nexus <span className="text-primary">Portal</span>
+            </h1>
+            <p className="text-xs lg:text-sm text-slate-500 font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+              <span className="w-8 h-px bg-primary"></span> Ersin Güleş • Dijital Mimari
+            </p>
           </div>
 
-          {/* Global Google Search Bar on Home */}
-          <div className="max-w-2xl mb-16 animate-in slide-in-from-left-8 duration-1000">
+          <div className="w-full lg:w-96">
             <form onSubmit={handleSearch} className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                <i className="fa-solid fa-magnifying-glass text-primary group-focus-within:scale-110 transition-transform"></i>
-              </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full bg-surface/50 backdrop-blur-md border border-white/10 rounded-2xl py-5 pl-14 pr-32 text-white placeholder-gray-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-2xl"
-                placeholder="Google'da hızlı arama yapın..."
+                placeholder="Evrende bir şeyler ara..."
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:border-primary/50 outline-none transition-all"
               />
+              <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors"></i>
               <button
                 type="submit"
-                className="absolute right-3 top-2.5 bottom-2.5 px-6 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:brightness-110 transition-all shadow-lg"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-primary text-white text-[10px] font-black rounded-xl uppercase tracking-widest hover:brightness-110 transition-all"
               >
                 ARA
               </button>
             </form>
           </div>
         </header>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           <FeatureCard
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>}
+            icon={<i className="fa-solid fa-bolt text-2xl"></i>}
             title="Hızlı Analiz"
             desc="Verilerinizi yapay zeka ile saniyeler içinde analiz edin."
             onClick={() => onViewChange(AppView.CHAT)}
           />
           <FeatureCard
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>}
+            icon={<i className="fa-solid fa-image text-2xl"></i>}
             title="Görsel Üretimi"
             desc="Hayallerinizi fotorealistik görsellere dönüştürün."
             onClick={() => onViewChange(AppView.VISUALS)}
           />
           <FeatureCard
-            icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path></svg>}
+            icon={<i className="fa-solid fa-microphone text-2xl"></i>}
             title="Ses Sentezi"
             desc="Metinleri profesyonel seslendirmelere çevirin."
             onClick={() => onViewChange(AppView.AUDIO)}
           />
         </div>
 
+        {/* API Pool Section */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                <i className="fa-solid fa-key text-lg"></i>
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white">API Anahtar Havuzu (Canlı)</h4>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Aktif rotasyon ve kota yönetimi</p>
+              </div>
+            </div>
+            <button
+               onClick={() => onViewChange(AppView.SETTINGS)}
+               className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black text-slate-400 uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+               YÖNET
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {apiKeys.map((key) => {
+              const remaining = Math.max(0, (key.quotaLimit || 0) - (key.usageCount || 0));
+              const progress = Math.min(100, ((key.usageCount || 0) / (key.quotaLimit || 1)) * 100);
+
+              return (
+                <div key={key.id} className="bg-surface/50 backdrop-blur-md border border-white/5 p-5 rounded-[2rem] group hover:border-primary/20 transition-all">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${key.isQuotaExhausted ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'}`}>
+                        <i className={`fa-solid ${key.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-xs`}></i>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-white uppercase truncate max-w-[100px]">{key.label}</p>
+                        <p className="text-[8px] text-gray-500 font-bold uppercase">{key.provider}</p>
+                      </div>
+                    </div>
+                    <div className={`px-2 py-0.5 rounded text-[7px] font-black uppercase ${key.isQuotaExhausted ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'}`}>
+                      {key.isQuotaExhausted ? 'DOLU' : 'AKTİF'}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-[9px]">
+                      <span className="text-gray-500 font-bold">ANAHTAR</span>
+                      <span className="text-white font-mono">{maskKey(key.key)}</span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[9px]">
+                        <span className="text-gray-500 font-bold">KALAN KOTA</span>
+                        <span className={`font-black ${remaining < 100 ? 'text-red-400' : 'text-primary'}`}>{remaining} İŞLEM</span>
+                      </div>
+                      <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-500 ${key.isQuotaExhausted ? 'bg-red-500' : 'bg-primary'}`}
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* System Health & Analysis Section */}
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+        <div className="space-y-8">
           <div className="flex items-center gap-4 mb-2">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
               <i className="fa-solid fa-microchip text-lg"></i>
@@ -105,14 +170,13 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             <MetricBox label="SİNİR SİSTEMİ" value="%24" icon="fa-brain" color="text-primary" />
             <MetricBox label="MANTIK MOTORU" value="Aktif" icon="fa-gears" color="text-green-500" />
             <MetricBox label="BEYİN KAPASİTESİ" value="%82" icon="fa-bolt-lightning" />
-            <MetricBox label="API KOTASI (KALAN)" value="1.2k" icon="fa-database" />
-            <MetricBox label="API KOTASI (KULLANILAN)" value="300" icon="fa-chart-pie" />
+            <MetricBox label="API KOTASI (TOPLAM)" value={`${apiKeys.reduce((acc, k) => acc + (k.quotaLimit || 0), 0)}`} icon="fa-database" />
+            <MetricBox label="API KOTASI (KULLANILAN)" value={`${apiKeys.reduce((acc, k) => acc + (k.usageCount || 0), 0)}`} icon="fa-chart-pie" />
             <MetricBox label="ÇALIŞMA SÜRESİ" value="14g 5s" icon="fa-server" />
             <MetricBox label="MEDYA MOTORU" value="Hazır" icon="fa-play" color="text-blue-400" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Storage Info */}
             <div className="bg-surface/30 backdrop-blur-md border border-white/5 rounded-3xl p-6">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <i className="fa-solid fa-hard-drive text-primary"></i> Hafıza (Storage)
@@ -125,7 +189,6 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               </div>
             </div>
 
-            {/* Synaptic Flow (Live Monitor) */}
             <div className="lg:col-span-2 bg-brandDark/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 font-mono relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <i className="fa-solid fa-network-wired text-6xl"></i>
@@ -157,7 +220,6 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               </div>
             </div>
 
-            {/* Logic Layer */}
             <div className="lg:col-span-3 bg-gradient-to-br from-surface/50 to-brandDark/50 backdrop-blur-md border border-white/5 rounded-3xl p-8">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
                 <i className="fa-solid fa-brain text-primary"></i> Mantık Katmanı (Logic Processing)
