@@ -132,7 +132,7 @@ function App() {
     }
   };
 
-    const prepareGeminiHistory = (msgs: ChatMessage[]) => {
+  const prepareGeminiHistory = (msgs: ChatMessage[]) => {
     const history: { role: string; parts: { text: string }[] }[] = [];
     const filtered = msgs.filter(m => !m.text.includes('Hata:'));
 
@@ -149,17 +149,20 @@ function App() {
       history.shift();
     }
 
+    // Ensure alternating roles and correct end role for startChat
+    // Gemini startChat history MUST NOT end with 'model' if you're about to call sendMessage
     return history;
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, options?: { systemInstruction?: string, webSearch?: boolean }) => {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setIsTyping(true);
     recordAction('Chat', `Mesaj gönderildi: ${text.substring(0, 30)}...`);
 
     const orchestration = detectIntent(text);
-        if (orchestration.intent === 'WEATHER') {
+    if (orchestration.intent === 'WEATHER') {
         setActiveView(AppView.WEATHER);
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `${orchestration.target} için hava durumu modülüne geçiş yapılıyor...`, timestamp: Date.now() }]);
         setIsTyping(false);
@@ -197,24 +200,27 @@ function App() {
 
     const availableKeys = getAvailableKeys();
     if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: "API anahtarı bulunamadı.", timestamp: Date.now() }]);
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: "Hata: Aktif API anahtarı bulunamadı. Lütfen Ayarlar kısmından yeni bir anahtar ekleyin.", timestamp: Date.now() }]);
       setIsTyping(false);
       return;
     }
 
+    let success = false;
     for (const keyEntry of availableKeys) {
       try {
         setActiveModel(keyEntry.label);
         let responseText = '';
         if (keyEntry.provider === 'gemini') {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({ model: keyEntry.modelName || 'gemini-2.0-flash' });
+          const model = genAI.getGenerativeModel({
+            model: keyEntry.modelName || 'gemini-2.0-flash',
+            systemInstruction: options?.systemInstruction
+          });
           const chat = model.startChat({ history: prepareGeminiHistory(messages) });
           const result = await chat.sendMessage(text);
           responseText = result.response.text();
           recordUsage(keyEntry.id);
         } else if (keyEntry.provider === 'anthropic') {
-           // Anthropic via proxy to avoid CORS
            const response = await fetch('https://api.anthropic.com/v1/messages', {
              method: 'POST',
              headers: {
@@ -226,6 +232,7 @@ function App() {
              body: JSON.stringify({
                model: keyEntry.modelName || 'claude-3-5-sonnet-latest',
                max_tokens: 2048,
+               system: options?.systemInstruction,
                messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }]
              })
            });
@@ -236,8 +243,18 @@ function App() {
         } else {
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyEntry.key}` },
-            body: JSON.stringify({ model: keyEntry.modelName, messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }] })
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${keyEntry.key}`
+            },
+            body: JSON.stringify({
+              model: keyEntry.modelName,
+              messages: [
+                ...(options?.systemInstruction ? [{ role: 'system', content: options.systemInstruction }] : []),
+                ...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })),
+                { role: 'user', content: text }
+              ]
+            })
           });
           const data = await response.json();
           if (data.error) throw new Error(data.error.message || 'API Hatası');
@@ -245,13 +262,20 @@ function App() {
           recordUsage(keyEntry.id);
         }
         setMessages((prev: ChatMessage[]) => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: Date.now() }]);
+        success = true;
         break;
       } catch (error: any) {
         console.error(`Error with key ${keyEntry.label}:`, error);
-        if (error.message?.includes('429')) { markKeyAsExhausted(keyEntry.id); continue; }
-        // Fallback to next key if error
+        if (error.message?.includes('429') || error.message?.includes('limit')) {
+          markKeyAsExhausted(keyEntry.id);
+          continue;
+        }
         continue;
       }
+    }
+
+    if (!success) {
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: "Hata: Tüm denemeler başarısız oldu. Lütfen internet bağlantınızı veya API kotalarınızı kontrol edin.", timestamp: Date.now() }]);
     }
     setIsTyping(false);
   };
