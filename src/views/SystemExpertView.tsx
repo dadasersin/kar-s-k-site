@@ -1,6 +1,8 @@
 import { getStorageItem } from '../utils/storage';
 import React, { useState, useEffect } from 'react';
-import { Terminal, Shield, Zap, AlertCircle, CheckCircle2, RefreshCw, Cpu, Activity, Database, Wrench, Bug, FileCode } from 'lucide-react';
+import { Terminal, Shield, Zap, AlertCircle, CheckCircle2, RefreshCw, Cpu, Activity, Database, Wrench, Bug, FileCode, History, Loader2 } from 'lucide-react';
+import type { ActionRecord } from "../utils/history";
+import { getGlobalHistory } from '../utils/history';
 
 interface LogEntry {
   id: string;
@@ -10,24 +12,40 @@ interface LogEntry {
   source: string;
 }
 
+interface Patch {
+    id: string;
+    title: string;
+    desc: string;
+    status: 'Aktif' | 'Beklemede' | 'Güncelleme Hazır' | 'Uygulanıyor';
+}
+
 const SystemExpertView: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [systemHealth, setSystemHealth] = useState(98);
-  const [activeTab, setActiveTab] = useState<'logs' | 'patches' | 'security'>('logs');
+  const [activeTab, setActiveTab] = useState<'logs' | 'patches' | 'security' | 'history'>('logs');
+  const [history, setHistory] = useState<ActionRecord[]>([]);
+
+  const [patches, setPatches] = useState<Patch[]>([
+    { id: 'p1', title: 'CORS Media Resolver', desc: 'TV yayınlarındaki erişim engellerini aşmak için proxy rotasyonunu optimize eder.', status: 'Aktif' },
+    { id: 'p2', title: 'API Failover Engine', desc: 'Borsa ve Kripto verileri için yedek veri kaynaklarını devreye sokar.', status: 'Beklemede' },
+    { id: 'p3', title: 'Memory Leak Patch', desc: 'Uzun süreli oturumlarda RAM kullanımını optimize eder.', status: 'Aktif' },
+    { id: 'p4', title: 'Turkish Voice Assistant Fix', desc: 'Sesli komutlardaki aksan algılama hassasiyetini artırır.', status: 'Güncelleme Hazır' }
+  ]);
 
   useEffect(() => {
-    const loadLogs = () => {
+    const loadData = () => {
       try {
         const logs = getStorageItem('system_error_logs', []);
         setLogs([...logs].reverse());
+        setHistory(getGlobalHistory());
       } catch (e) {
-        console.error("Failed to parse system_error_logs", e);
+        console.error("Failed to load system data", e);
       }
     };
 
-    loadLogs();
-    const interval = setInterval(loadLogs, 2000);
+    loadData();
+    const interval = setInterval(loadData, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -41,12 +59,14 @@ const SystemExpertView: React.FC = () => {
     }, 3000);
   };
 
-  const commonPatches = [
-    { id: 'p1', title: 'CORS Media Resolver', desc: 'TV yayınlarındaki erişim engellerini aşmak için proxy rotasyonunu optimize eder.', status: 'Aktif' },
-    { id: 'p2', title: 'API Failover Engine', desc: 'Borsa ve Kripto verileri için yedek veri kaynaklarını devreye sokar.', status: 'Beklemede' },
-    { id: 'p3', title: 'Memory Leak Patch', desc: 'Uzun süreli oturumlarda RAM kullanımını optimize eder.', status: 'Aktif' },
-    { id: 'p4', title: 'Turkish Voice Assistant Fix', desc: 'Sesli komutlardaki aksan algılama hassasiyetini artırır.', status: 'Güncelleme Hazır' }
-  ];
+  const applyPatch = (id: string) => {
+    setPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'Uygulanıyor' } : p));
+
+    setTimeout(() => {
+        setPatches(prev => prev.map(p => p.id === id ? { ...p, status: 'Aktif' } : p));
+        alert("Yama başarıyla uygulandı ve sistem çekirdeğine entegre edildi.");
+    }, 2500);
+  };
 
   return (
     <div className="p-4 lg:p-8 h-full overflow-y-auto pb-32 bg-brandDark">
@@ -121,14 +141,14 @@ const SystemExpertView: React.FC = () => {
 
            {/* Console & Analysis Panel */}
            <div className="lg:col-span-3 space-y-6">
-              <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit border border-white/10 mb-2">
-                 {(['logs', 'patches', 'security'] as const).map(tab => (
+              <div className="flex flex-wrap gap-2 p-1 bg-white/5 rounded-2xl w-fit border border-white/10 mb-2">
+                 {(['logs', 'patches', 'history', 'security'] as const).map(tab => (
                    <button
                      key={tab}
                      onClick={() => setActiveTab(tab)}
                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
                    >
-                     {tab === 'logs' ? 'HATA GÜNLÜĞÜ' : tab === 'patches' ? 'HOTFIX MERKEZİ' : 'GÜVENLİK DUVARI'}
+                     {tab === 'logs' ? 'HATA GÜNLÜĞÜ' : tab === 'patches' ? 'HOTFIX MERKEZİ' : tab === 'history' ? 'SİSTEM GEÇMİŞİ' : 'GÜVENLİK DUVARI'}
                    </button>
                  ))}
               </div>
@@ -169,24 +189,62 @@ const SystemExpertView: React.FC = () => {
                    </>
                  ) : activeTab === 'patches' ? (
                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {commonPatches.map(patch => (
+                      {patches.map(patch => (
                         <div key={patch.id} className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:border-indigo-500/50 transition-all group">
                            <div className="flex justify-between items-start mb-4">
                               <div className="p-3 bg-indigo-600/10 rounded-2xl">
                                  <Zap className="w-5 h-5 text-indigo-500" />
                               </div>
-                               <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${patch.status === 'Aktif' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : 'text-blue-500 border-blue-500/20 bg-blue-500/5'}`}>
+                               <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full border ${patch.status === 'Aktif' ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : patch.status === 'Uygulanıyor' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5 animate-pulse' : 'text-blue-500 border-blue-500/20 bg-blue-500/5'}`}>
                                  {patch.status}
                               </span>
                            </div>
                            <h4 className="text-sm font-black text-white uppercase mb-2">{patch.title}</h4>
                            <p className="text-[10px] text-slate-500 leading-relaxed mb-6 font-bold">{patch.desc}</p>
-                           <button className="w-full py-3 bg-white/5 group-hover:bg-indigo-600 text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest rounded-xl transition-all border border-white/5">
-                              YAMAYI UYGULA
+                           <button
+                             disabled={patch.status === 'Aktif' || patch.status === 'Uygulanıyor'}
+                             onClick={() => applyPatch(patch.id)}
+                             className="w-full py-3 bg-white/5 group-hover:bg-indigo-600 text-[9px] font-black text-slate-400 group-hover:text-white uppercase tracking-widest rounded-xl transition-all border border-white/5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                           >
+                              {patch.status === 'Uygulanıyor' ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                              {patch.status === 'Aktif' ? 'UYGULANDI' : patch.status === 'Uygulanıyor' ? 'YÜKLENİYOR...' : 'YAMAYI UYGULA'}
                            </button>
                         </div>
                       ))}
                    </div>
+                 ) : activeTab === 'history' ? (
+                    <div className="p-6 overflow-y-auto max-h-[500px] custom-scrollbar">
+                        <div className="flex items-center gap-3 mb-8 px-2">
+                            <History className="w-5 h-5 text-indigo-500" />
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest">Son 15 Sistem İşlemi</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {history.length === 0 ? (
+                                <p className="text-slate-600 italic text-center py-10 uppercase tracking-widest text-[10px]">Henüz bir işlem kaydı bulunmuyor.</p>
+                            ) : (
+                                history.map(item => (
+                                    <div key={item.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-white/10 transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-bold text-[10px]">
+                                                {item.module.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] font-bold text-white uppercase">{item.module}</p>
+                                                <p className="text-[10px] text-slate-400 mt-0.5">{item.action}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] text-slate-600 font-black">{item.timestamp}</p>
+                                            <div className="flex items-center gap-1 mt-1 justify-end">
+                                                <div className="w-1 h-1 bg-indigo-500 rounded-full"></div>
+                                                <span className="text-[8px] text-indigo-500 font-black uppercase">BAŞARILI</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                  ) : (
                    <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
                       <Shield className="w-20 h-20 text-indigo-600 mb-8 animate-pulse" />

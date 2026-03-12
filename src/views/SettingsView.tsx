@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ApiKeyEntry, ApiProvider, SyncSettings } from '../types';
+import type { ApiKeyEntry, ApiProvider, SyncSettings } from '../types';
 import { getAllKeys } from '../utils/apiPool';
 import { getStorageItem } from '../utils/storage';
 

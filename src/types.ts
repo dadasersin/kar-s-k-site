@@ -62,7 +62,9 @@ export enum AppView {
   WEATHER = 'weather',
   GOOGLE_AI_STUDIO = 'google_ai_studio',
   SKYDRIVE = 'skydrive',
-  NEWS = 'news'
+  NEWS = 'news',
+  PYTHON_LIB = "python_lib",
+  SUNO = "suno"
 }
 
 export interface WorkflowNode {
