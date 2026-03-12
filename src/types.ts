@@ -112,7 +112,7 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-export type ApiProvider = 'gemini' | 'openai' | 'deepseek' | 'grok' | 'custom';
+export type ApiProvider = 'gemini' | 'openai' | 'deepseek' | 'grok' | 'anthropic' | 'custom';
 
 export interface ApiKeyEntry {
   id: string;

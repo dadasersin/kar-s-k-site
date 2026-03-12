@@ -9,11 +9,13 @@ const SettingsView: React.FC = () => {
     token: '',
     repo: '',
     customApiKeys: []
-  });
+  } as SyncSettings);
 
   const [provider, setProvider] = useState<ApiProvider>('gemini');
   const [modelName, setModelName] = useState('gemini-2.0-flash');
+  const [isCustomModel, setIsCustomModel] = useState(false);
   const [newKey, setNewKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
   const [keyLabel, setKeyLabel] = useState('');
   const [customUrl, setCustomUrl] = useState('');
   const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
@@ -31,10 +33,22 @@ const SettingsView: React.FC = () => {
 
   const handleProviderChange = (p: ApiProvider) => {
     setProvider(p);
+    setIsCustomModel(false);
     if (p === 'gemini') setModelName('gemini-2.0-flash');
     else if (p === 'deepseek') setModelName('deepseek-chat');
     else if (p === 'grok') setModelName('grok-beta');
     else if (p === 'openai') setModelName('gpt-4o-mini');
+    else if (p === 'anthropic') setModelName('claude-3-5-sonnet-latest');
+  };
+
+  const handleGeminiModelChange = (val: string) => {
+    if (val === 'custom') {
+        setIsCustomModel(true);
+        setModelName('');
+    } else {
+        setIsCustomModel(false);
+        setModelName(val);
+    }
   };
 
   const saveSyncSettings = (e: React.FormEvent) => {
@@ -81,6 +95,15 @@ const SettingsView: React.FC = () => {
     setApiKeys(getAllKeys());
   };
 
+  const resetQuotas = () => {
+    if(!confirm('Tüm kotalar sıfırlansın mı?')) return;
+    const updatedKeys = settings.customApiKeys.map(k => ({ ...k, usageCount: 0, isQuotaExhausted: false }));
+    const updated = { ...settings, customApiKeys: updatedKeys };
+    setSettings(updated);
+    localStorage.setItem('sync_settings', JSON.stringify(updated));
+    setApiKeys(getAllKeys());
+  };
+
   const onSyncNow = async () => {
     alert("GitHub senkronizasyonu başlatıldı...");
   };
@@ -94,9 +117,12 @@ const SettingsView: React.FC = () => {
         </header>
 
         <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-          <div className="flex items-center gap-4">
-             <i className="fa-solid fa-key text-3xl text-primary"></i>
-             <h3 className="text-lg font-bold text-white">API Havuzu</h3>
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-4">
+                <i className="fa-solid fa-key text-3xl text-primary"></i>
+                <h3 className="text-lg font-bold text-white">API Havuzu</h3>
+             </div>
+             <button onClick={resetQuotas} className="text-[9px] font-black text-primary uppercase border border-primary/30 px-3 py-1.5 rounded-xl hover:bg-primary/10 transition-all">Kotaları Yenile</button>
           </div>
 
           <div className="space-y-4">
@@ -114,6 +140,7 @@ const SettingsView: React.FC = () => {
                       <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">
                         {k.provider} • {k.modelName} • {k.usageCount || 0}/{k.quotaLimit || 500}
                       </p>
+                      <p className="text-[8px] text-slate-700 font-mono mt-1">Key: ****{k.key.slice(-4)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -137,6 +164,7 @@ const SettingsView: React.FC = () => {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                   >
                     <option value="gemini">Google Gemini</option>
+                    <option value="anthropic">Anthropic (Claude)</option>
                     <option value="deepseek">DeepSeek AI</option>
                     <option value="grok">xAI Grok</option>
                     <option value="openai">OpenAI</option>
@@ -145,30 +173,43 @@ const SettingsView: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Model Adı</label>
-                  {provider === 'gemini' ? (
+                  {provider === 'gemini' && !isCustomModel ? (
                     <select
                         value={modelName}
-                        onChange={(e) => setModelName(e.target.value)}
+                        onChange={(e) => handleGeminiModelChange(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                     >
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Hızlı)</option>
+                        <option value="gemini-3.1-experimental">Gemini 3.1 Experimental</option>
+                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                         <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Zeki)</option>
-                        <option value="gemini-1.0-pro">Gemini 1.0 Pro</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                        <option value="gemini-exp-1206">Gemini Experimental 1206</option>
+                        <option value="custom">Özel Model...</option>
                     </select>
                   ) : (
-                    <input
-                        type="text"
-                        value={modelName}
-                        onChange={(e) => setModelName(e.target.value)}
-                        placeholder="örn: deepseek-chat"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
-                    />
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={modelName}
+                            onChange={(e) => setModelName(e.target.value)}
+                            placeholder={provider === 'gemini' ? "örn: gemini-3.1" : "örn: claude-3-5-sonnet-latest"}
+                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
+                        />
+                        {isCustomModel && provider === 'gemini' && (
+                            <button
+                                onClick={() => setIsCustomModel(false)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-primary font-bold"
+                            >
+                                LİSTEYE DÖN
+                            </button>
+                        )}
+                    </div>
                   )}
                 </div>
              </div>
 
-             {provider !== 'gemini' && (
+             {(provider !== 'gemini' && provider !== 'anthropic' && provider !== 'openai') && (
                <div className="space-y-2">
                  <label className="text-[10px] font-bold text-slate-500 uppercase px-1">API Base URL</label>
                  <input
@@ -189,13 +230,21 @@ const SettingsView: React.FC = () => {
                   placeholder="Etiket (örn: Gemini Anahtarı)"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                 />
-                <input
-                  type="password"
-                  value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
-                  placeholder="API Key"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
-                />
+                <div className="relative">
+                    <input
+                      type={showKey ? "text" : "password"}
+                      value={newKey}
+                      onChange={(e) => setNewKey(e.target.value)}
+                      placeholder="API Key"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-12 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
+                    />
+                    <button
+                        onClick={() => setShowKey(!showKey)}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    >
+                        <i className={`fa-solid ${showKey ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                    </button>
+                </div>
              </div>
 
              <button onClick={addApiKey} className="w-full py-4 bg-primary hover:brightness-110 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">
@@ -204,6 +253,7 @@ const SettingsView: React.FC = () => {
           </div>
         </section>
 
+        {/* Sync and Supabase sections remain the same... */}
         <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
            <div className="flex items-center gap-4">
               <i className="fa-brands fa-github text-3xl text-white"></i>
@@ -247,10 +297,6 @@ const SettingsView: React.FC = () => {
 
               <button type="submit" className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                 AYARLARI KAYDET
-              </button>
-
-              <button type="button" onClick={onSyncNow} className="w-full py-3 border border-primary/30 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-all">
-                ŞİMDİ SENKRONİZE ET
               </button>
            </form>
         </section>

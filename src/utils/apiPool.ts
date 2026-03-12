@@ -17,9 +17,9 @@ export const getAllKeys = (): ApiKeyEntry[] => {
 
   // 1. Get system keys from environment (Render / .env)
   const envConfigs = [
-    // Optimized models: 2.0-flash is currently stable/exp
     { key: 'VITE_GEMINI_API_KEY', provider: 'gemini', label: 'Render Gemini', model: 'gemini-2.0-flash' },
     { key: 'VITE_OPENAI_API_KEY', provider: 'openai', label: 'Render OpenAI', model: 'gpt-4o' },
+    { key: 'VITE_ANTHROPIC_API_KEY', provider: 'anthropic', label: 'Render Anthropic', model: 'claude-3-5-sonnet-latest' },
     { key: 'VITE_DEEPSEEK_API_KEY', provider: 'deepseek', label: 'Render DeepSeek', model: 'deepseek-chat' },
     { key: 'VITE_GROK_API_KEY', provider: 'grok', label: 'Render Grok', model: 'grok-beta' }
   ];

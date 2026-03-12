@@ -3,9 +3,9 @@ import { AppView } from '../types';
 import { getStorageItem } from '../utils/storage';
 
 interface NavigationProps {
-  activeView: AppView;
-  onViewChange: (view: AppView) => void;
-  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  activeView: AppView | string;
+  onViewChange: (view: AppView | string) => void;
+  syncStatus: 'synced' | 'syncing' | 'error';
   onManualSync: () => void;
   onGitHubSync?: () => void;
   isMobileOpen?: boolean;
@@ -16,7 +16,6 @@ const Navigation: React.FC<NavigationProps> = ({
   activeView,
   onViewChange,
   syncStatus,
-  onManualSync,
   onGitHubSync,
   isMobileOpen,
   onCloseMobile
@@ -58,6 +57,9 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.GALLERY, label: 'Galeri', icon: 'fa-images' },
     { id: AppView.MUSIC, label: 'Müzik Kitaplığı', icon: 'fa-compact-disc' },
     { id: AppView.SUNO, label: 'Suno Müzik AI', icon: 'fa-microphone-lines' },
+    { id: AppView.WEATHER, label: 'Hava Durumu', icon: 'fa-cloud-sun' },
+    { id: AppView.ANDROID_NDK, label: 'Android NDK', icon: 'fa-android' },
+    { id: AppView.NEURAL_LOGIC, label: 'Nöral Mantık', icon: 'fa-microchip' },
     { id: AppView.FIGMA_STUDIO, label: 'Figma Stüdyo', icon: 'fa-brands fa-figma' },
     { id: AppView.CREATIVE, label: '3D Sahne', icon: 'fa-cube' },
     { id: AppView.PROMPT_MASTER, label: 'Prompt Mühendisliği', icon: 'fa-book-sparkles' },
@@ -81,43 +83,32 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: AppView.CURSOR_PROXY, label: 'Cursor AG Proxy', icon: 'fa-rocket' },
     { id: AppView.AG_SYNC, label: 'AG Senkronize', icon: 'fa-folder-tree' },
     { id: AppView.AG_LAUNCHER, label: 'AG Başlatıcı', icon: 'fa-power-off' },
+    { id: AppView.SITE_EDIT, label: 'Site Düzenleme', icon: 'fa-pen-to-square' },
+    { id: AppView.JULES_AWESOME, label: 'Jules Awesome', icon: 'fa-star' },
     { id: AppView.USER_MANUAL, label: 'Kullanma Kılavuzu', icon: 'fa-book' },
+    { id: AppView.SETTINGS, label: 'Ayarlar', icon: 'fa-gear' }
   ];
 
-
-  // Dynamic Modules from Database/LocalStorage
   const dynamicModules = (() => {
     try {
       return getStorageItem('active_dynamic_modules', []);
     } catch (e) { return []; }
   })();
 
-  // Helper to check if API key is provided via settings or env
   const isApiActive = (() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-    if (envKey && envKey.length > 5) return true;
-
     try {
-      const settings = getStorageItem('sync_settings', null);
-      if (settings) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return settings.customApiKeys?.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
-      }
-    } catch (e) {
-      console.error("Error checking API status", e);
-    }
-    return false;
+      const keys = getStorageItem('sync_settings', { customApiKeys: [] }).customApiKeys;
+      return keys.some((k: any) => !k.isQuotaExhausted && k.key.length > 5);
+    } catch (e) { return false; }
   })();
 
   const handleItemClick = (id: AppView | string) => {
-    onViewChange(id as any);
+    onViewChange(id);
     if (onCloseMobile) onCloseMobile();
   };
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden animate-in fade-in duration-300"
@@ -125,7 +116,6 @@ const Navigation: React.FC<NavigationProps> = ({
         />
       )}
 
-      {/* RESPONSIVE SIDEBAR */}
       <aside className={`fixed left-0 top-0 h-full w-64 flex flex-col glass-panel border-r border-slate-800 z-[60] transition-all duration-500 lg:translate-x-0 ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         }`}>
         <div className="p-4 lg:p-6">
@@ -181,7 +171,6 @@ const Navigation: React.FC<NavigationProps> = ({
           )}
         </nav>
 
-        {/* Music Player Widget */}
         <div className="p-4 border-t border-white/5 hidden lg:block">
           <div className="bg-brandDark/50 p-3 rounded-xl border border-white/10">
             <div className="flex items-center gap-3 mb-2">
@@ -195,11 +184,6 @@ const Navigation: React.FC<NavigationProps> = ({
                 <p className="text-[10px] font-bold truncate text-slate-200">Nöral Frekanslar v2</p>
               </div>
             </div>
-            <div className="flex justify-between items-center text-slate-400">
-              <button className="hover:text-primary transition-colors"><i className="fa-solid fa-backward-step text-xs"></i></button>
-              <button className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-pause text-[10px]"></i></button>
-              <button className="hover:text-primary transition-colors"><i className="fa-solid fa-forward-step text-xs"></i></button>
-            </div>
           </div>
         </div>
 
@@ -211,7 +195,7 @@ const Navigation: React.FC<NavigationProps> = ({
             <i className="fa-brands fa-github"></i> GITHUB'A YÜKLE
           </button>
 
-          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors" onClick={onManualSync}>
+          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5 cursor-pointer hover:border-primary/30 transition-colors">
             <div className={`w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700`}>
               <i className={`fa-solid fa-plug-circle-bolt text-primary ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}></i>
             </div>

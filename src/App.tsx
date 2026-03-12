@@ -55,6 +55,23 @@ import JulesStudioView from './views/JulesStudioView';
 import RuwisAiView from './views/RuwisAiView';
 import LoginView from './views/LoginView';
 
+// Missing view imports
+import OmniView from './views/OmniView';
+import SelineView from './views/SelineView';
+import Ag2ApiView from './views/Ag2ApiView';
+import CursorBridgeView from './views/CursorBridgeView';
+import KhoataToolView from './views/KhoataToolView';
+import CodexSwitcherView from './views/CodexSwitcherView';
+import AgCopilotView from './views/AgCopilotView';
+import AgUsageCheckerView from './views/AgUsageCheckerView';
+import PromptExpertView from './views/PromptExpertView';
+import CursorProxyView from './views/CursorProxyView';
+import AntigravitySyncView from './views/AntigravitySyncView';
+import AntigravityLauncherView from './views/AntigravityLauncherView';
+import UserManualView from './views/UserManualView';
+import SiteEditingView from './views/SiteEditingView';
+import JulesAwesomeListView from './views/JulesAwesomeListView';
+
 import QuickChatWidget from './components/QuickChatWidget';
 import VoiceAssistant from './components/VoiceAssistant';
 
@@ -76,7 +93,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<string>('Gemini-2.0-Flash');
+  const [activeModel, setActiveModel] = useState<string>('Dinamik');
 
   useEffect(() => {
     setStorageItem('chat_history', messages);
@@ -151,7 +168,6 @@ function App() {
 
     if (orchestration.intent === 'SEARCH_LEARN') {
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `🧠 Öğrenme Modu Aktif: "${orchestration.target}" konusu araştırılıyor ve portal hafızasına kaydediliyor...`, timestamp: Date.now() }]);
-        // Simüle edilmiş araştırma gecikmesi
         setTimeout(() => {
            setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `✅ "${orchestration.target}" ile ilgili temel bilgiler alındı ve Sinaptik Bağlantılar güncellendi. Artık bu konuda daha yetkinim.`, timestamp: Date.now() }]);
         }, 2000);
@@ -197,6 +213,26 @@ function App() {
           const result = await chat.sendMessage(text);
           responseText = result.response.text();
           recordUsage(keyEntry.id);
+        } else if (keyEntry.provider === 'anthropic') {
+           // Anthropic via proxy to avoid CORS
+           const response = await fetch('https://api.anthropic.com/v1/messages', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'x-api-key': keyEntry.key,
+               'anthropic-version': '2023-06-01',
+               'dangerously-allow-browser': 'true'
+             },
+             body: JSON.stringify({
+               model: keyEntry.modelName || 'claude-3-5-sonnet-latest',
+               max_tokens: 2048,
+               messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }]
+             })
+           });
+           const data = await response.json();
+           if (data.error) throw new Error(data.error.message || 'Anthropic API Hatası');
+           responseText = data.content[0].text;
+           recordUsage(keyEntry.id);
         } else {
           const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
             method: 'POST',
@@ -204,14 +240,17 @@ function App() {
             body: JSON.stringify({ model: keyEntry.modelName, messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }] })
           });
           const data = await response.json();
+          if (data.error) throw new Error(data.error.message || 'API Hatası');
           responseText = data.choices[0].message.content;
           recordUsage(keyEntry.id);
         }
         setMessages((prev: ChatMessage[]) => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: Date.now() }]);
         break;
       } catch (error: any) {
+        console.error(`Error with key ${keyEntry.label}:`, error);
         if (error.message?.includes('429')) { markKeyAsExhausted(keyEntry.id); continue; }
-        break;
+        // Fallback to next key if error
+        continue;
       }
     }
     setIsTyping(false);
@@ -287,6 +326,21 @@ function App() {
       case AppView.NEWS: return <NewsView />;
       case AppView.PYTHON_LIB: return <PythonLibraryView />;
       case AppView.SUNO: return <SunoMusicView />;
+      case AppView.OMNIVIEW: return <OmniView onViewChange={setActiveView} />;
+      case AppView.SELINE: return <SelineView />;
+      case AppView.AG2API: return <Ag2ApiView />;
+      case AppView.CURSOR_BRIDGE: return <CursorBridgeView />;
+      case AppView.KHOATA_TOOL: return <KhoataToolView />;
+      case AppView.CODEX_SWITCHER: return <CodexSwitcherView />;
+      case AppView.AG_COPILOT: return <AgCopilotView />;
+      case AppView.AG_USAGE_CHECKER: return <AgUsageCheckerView />;
+      case AppView.PROMPT_EXPERT: return <PromptExpertView />;
+      case AppView.CURSOR_PROXY: return <CursorProxyView />;
+      case AppView.AG_SYNC: return <AntigravitySyncView />;
+      case AppView.AG_LAUNCHER: return <AntigravityLauncherView />;
+      case AppView.USER_MANUAL: return <UserManualView />;
+      case AppView.SITE_EDIT: return <SiteEditingView />;
+      case AppView.JULES_AWESOME: return <JulesAwesomeListView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };

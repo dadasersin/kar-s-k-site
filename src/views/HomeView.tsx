@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AppView } from '../types';
+import { AppView, type ApiKeyEntry } from '../types';
 import { getStorageItem } from '../utils/storage';
+import { getAllKeys } from '../utils/apiPool';
 
 interface HomeViewProps {
   onViewChange: (view: AppView | string) => void;
@@ -12,6 +13,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   const [neuralLoad, setNeuralLoad] = useState(24);
   const [processTime, setProcessTime] = useState(4.2);
   const [remainingTime, setRemainingTime] = useState(1.8);
+  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
   const [logs, setLogs] = useState([
     { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-400' },
     { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-400' },
@@ -20,6 +22,8 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   ]);
 
   useEffect(() => {
+    setApiKeys(getAllKeys());
+
     const logInterval = setInterval(() => {
       const now = new Date();
       const timeStr = now.toLocaleTimeString('tr-TR', { hour12: false });
@@ -37,6 +41,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
         ...prev.slice(-7),
         { time: timeStr, text: randomText, color: 'text-primary/70' }
       ]);
+      setApiKeys(getAllKeys());
     }, 8000);
 
     const timer = setInterval(() => {
@@ -56,7 +61,6 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
       });
     }, 1000);
 
-    // Calculate dynamic modules
     const modules = getStorageItem('active_dynamic_modules', []);
     setDynamicModuleCount(modules.length);
 
@@ -139,6 +143,44 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                   <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
                   Yeni sinaptik veriler bekleniyor...
                 </div>
+              </div>
+            </div>
+
+            {/* API QUOTA MONITOR */}
+            <div className="lg:col-span-3 portal-card p-8">
+              <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+                <i className="fa-solid fa-key text-primary"></i> API Anahtar Havuzu (Canlı)
+              </h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {apiKeys.map(k => {
+                  const usage = k.usageCount || 0;
+                  const limit = k.quotaLimit || 500;
+                  const percent = Math.min(100, (usage / limit) * 100);
+
+                  return (
+                    <div key={k.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-[10px] text-primary`}></i>
+                          <p className="text-[10px] font-bold text-white uppercase truncate max-w-[100px]">{k.label}</p>
+                        </div>
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${k.isQuotaExhausted ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                          {k.isQuotaExhausted ? 'DOLU' : 'AKTİF'}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[9px] font-black text-gray-500">
+                          <span>{usage} / {limit}</span>
+                          <span>%{percent.toFixed(0)}</span>
+                        </div>
+                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div className={`h-full transition-all duration-1000 ${percent > 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </div>
+                      <p className="text-[8px] text-gray-600 font-mono truncate">Key: ****{k.key.slice(-4)}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
