@@ -1,5 +1,5 @@
 {
-  "name": "ersin-gules-portal",
+  "name": "ersin-gules-ai-portal",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,11 +7,13 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@types/video.js": "^7.3.58",
+    "express": "^5.2.1",
     "framer-motion": "^12.34.2",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
@@ -35,5 +37,8 @@
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.56.0",
     "vite": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

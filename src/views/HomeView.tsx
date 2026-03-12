@@ -13,10 +13,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   const [processTime, setProcessTime] = useState(4.2);
   const [remainingTime, setRemainingTime] = useState(1.8);
   const [logs, setLogs] = useState([
-    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-500' },
-    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-500' },
-    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-500' },
-    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold bg-emerald-400/5 p-1 rounded', badge: 'AKTİF' }
+    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-400' },
+    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-400' },
+    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-400' },
+    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold', badge: 'AKTİF' }
   ]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
           <h1 className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">
             NEXUS <span className="text-primary">PORTAL</span>
           </h1>
-          <p className="text-slate-500 text-xs font-black tracking-[0.4em] uppercase mt-4">Ersin Güleş • Dijital Mimari</p>
+          <p className="text-slate-500 text-xs font-black tracking-[0.4em] uppercase mt-4">Portal Sahibi • Ersin Güleş</p>
         </header>
 
         <div className="space-y-8">
@@ -111,7 +111,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-surface/30 backdrop-blur-md border border-white/5 rounded-3xl p-6">
+            <div className="portal-card p-6">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <i className="fa-solid fa-hard-drive text-primary"></i> Hafıza (Storage)
               </h5>
@@ -124,7 +124,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               </div>
             </div>
 
-            <div className="lg:col-span-2 bg-brandDark/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 font-mono relative overflow-hidden">
+            <div className="lg:col-span-2 portal-card p-6 font-mono relative overflow-hidden">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
                 <i className="fa-solid fa-wave-square text-primary animate-pulse"></i> Sinaptik Akış (Canlı İzleme)
               </h5>
@@ -142,7 +142,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               </div>
             </div>
 
-            <div className="lg:col-span-3 bg-gradient-to-br from-surface/50 to-brandDark/50 backdrop-blur-md border border-white/5 rounded-3xl p-8">
+            <div className="lg:col-span-3 portal-card p-8">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
                 <i className="fa-solid fa-brain text-primary"></i> Mantık Katmanı (Logic Processing)
               </h5>
@@ -193,7 +193,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
 };
 
 const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, title: string, desc: string, onClick?: () => void }) => (
-  <div className="group bg-surface hover:bg-white/5 border border-white/5 p-6 rounded-custom transition-all cursor-pointer" onClick={onClick}>
+  <div className="group portal-card p-6 cursor-pointer" onClick={onClick}>
     <div className="w-12 h-12 bg-primary/10 rounded-custom flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
       {icon}
     </div>
@@ -203,7 +203,7 @@ const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, ti
 );
 
 const MetricBox = ({ label, value, icon, color = "text-white" }: { label: string, value: string, icon: string, color?: string }) => (
-  <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-colors group">
+  <div className="portal-card p-4 flex flex-col justify-between hover:border-primary/20 transition-colors group">
     <div className="flex items-center justify-between mb-4">
       <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{label}</p>
       <i className={`fa-solid ${icon} text-[10px] text-primary/40 group-hover:text-primary transition-colors`}></i>
