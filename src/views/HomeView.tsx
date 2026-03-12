@@ -13,10 +13,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
   const [processTime, setProcessTime] = useState(4.2);
   const [remainingTime, setRemainingTime] = useState(1.8);
   const [logs, setLogs] = useState([
-    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-500' },
-    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-500' },
-    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-500' },
-    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold bg-emerald-400/5 p-1 rounded', badge: 'AKTİF' }
+    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-400' },
+    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-400' },
+    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-400' },
+    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold', badge: 'AKTİF' }
   ]);
 
   useEffect(() => {
@@ -28,19 +28,17 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
         'Nöral Ağ Katmanı Güncellendi',
         'Hafıza Bloğu Doğrulandı',
         'Sistem Sağlığı Kontrol Edildi',
-        'Yeni Sinaptik Veri İşlendi',
-        'Gecikme Süresi Minimize Edildi'
+        'Nöral Akış Dengelendi',
+        'Semantik İşleme Tamamlandı'
       ];
       const randomText = possibleLogs[Math.floor(Math.random() * possibleLogs.length)];
-      setLogs(prev => {
-        const newLogs = [...prev.slice(-3), { time: timeStr, text: randomText, color: 'text-gray-500' }];
-        return newLogs;
-      });
-    }, 5000);
-    return () => clearInterval(logInterval);
-  }, []);
 
-  useEffect(() => {
+      setLogs(prev => [
+        ...prev.slice(-7),
+        { time: timeStr, text: randomText, color: 'text-primary/70' }
+      ]);
+    }, 8000);
+
     const timer = setInterval(() => {
       setSessionSeconds(prev => prev + 1);
       setNeuralLoad(prev => {
@@ -62,7 +60,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
     const modules = getStorageItem('active_dynamic_modules', []);
     setDynamicModuleCount(modules.length);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(logInterval);
+      clearInterval(timer);
+    };
   }, []);
 
   const formatTime = (totalSeconds: number) => {
@@ -72,6 +73,9 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const localStorageSizeKB = (JSON.stringify(localStorage).length / 1024).toFixed(2);
+  const chatHistoryLength = getStorageItem('chat_history', []).length;
+
   return (
     <section className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
       <div className="max-w-6xl mx-auto space-y-12">
@@ -79,7 +83,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
           <h1 className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">
             NEXUS <span className="text-primary">PORTAL</span>
           </h1>
-          <p className="text-slate-500 text-xs font-black tracking-[0.4em] uppercase mt-4">Ersin Güleş • Dijital Mimari</p>
+          <p className="text-slate-500 text-xs font-black tracking-[0.4em] uppercase mt-4">Portal Sahibi • Ersin Güleş</p>
         </header>
 
         <div className="space-y-8">
@@ -93,7 +97,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             </div>
           </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <MetricBox label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} icon="fa-hourglass-start" />
             <MetricBox label="İŞLEM SÜRESİ" value={`${processTime} saniye`} icon="fa-bolt" />
             <MetricBox label="KALAN SÜRE" value={`${remainingTime}s`} icon="fa-clock" />
@@ -107,27 +111,27 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-surface/30 backdrop-blur-md border border-white/5 rounded-3xl p-6">
+            <div className="portal-card p-6">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <i className="fa-solid fa-hard-drive text-primary"></i> Hafıza (Storage)
               </h5>
               <div className="space-y-4">
-                <StorageItem label="Sohbet Kayıtları" value="2 Mesaj" icon="fa-message" />
+                <StorageItem label="Sohbet Kayıtları" value={`${chatHistoryLength} Mesaj`} icon="fa-message" />
                 <StorageItem label="Görsel Varlıklar" value="0 Adet" icon="fa-image" />
-                <StorageItem label="Local Storage" value="3.46 KB" icon="fa-folder-open" />
+                <StorageItem label="Local Storage" value={`${localStorageSizeKB} KB`} icon="fa-folder-open" />
                 <StorageItem label="GitHub Depo Boyutu" value="Yapılandırılmadı" icon="fa-github" />
                 <StorageItem label="Aktif Modüller" value={`${dynamicModuleCount} Modül`} icon="fa-cube" />
               </div>
             </div>
 
-            <div className="lg:col-span-2 bg-brandDark/40 backdrop-blur-md border border-white/5 rounded-3xl p-6 font-mono relative overflow-hidden">
+            <div className="lg:col-span-2 portal-card p-6 font-mono relative overflow-hidden">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
                 <i className="fa-solid fa-wave-square text-primary animate-pulse"></i> Sinaptik Akış (Canlı İzleme)
               </h5>
-                            <div className="space-y-2 text-[11px] relative z-10">
+              <div className="space-y-2 text-[11px] relative z-10">
                 {logs.map((log, i) => (
                   <div key={i} className={`flex gap-4 ${log.color}`}>
-                    <span className="shrink-0 text-primary">{log.time}</span>
+                    <span className="shrink-0 text-primary opacity-60">[{log.time}]</span>
                     <span>{log.text} {log.badge && <span className="px-1.5 py-0.5 bg-emerald-500 text-black text-[8px] font-black rounded tracking-tighter ml-2 uppercase">{log.badge}</span>}</span>
                   </div>
                 ))}
@@ -138,7 +142,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               </div>
             </div>
 
-            <div className="lg:col-span-3 bg-gradient-to-br from-surface/50 to-brandDark/50 backdrop-blur-md border border-white/5 rounded-3xl p-8">
+            <div className="lg:col-span-3 portal-card p-8">
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
                 <i className="fa-solid fa-brain text-primary"></i> Mantık Katmanı (Logic Processing)
               </h5>
@@ -189,7 +193,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
 };
 
 const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, title: string, desc: string, onClick?: () => void }) => (
-  <div className="group bg-surface hover:bg-white/5 border border-white/5 p-6 rounded-custom transition-all cursor-pointer" onClick={onClick}>
+  <div className="group portal-card p-6 cursor-pointer" onClick={onClick}>
     <div className="w-12 h-12 bg-primary/10 rounded-custom flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
       {icon}
     </div>
@@ -199,7 +203,7 @@ const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, ti
 );
 
 const MetricBox = ({ label, value, icon, color = "text-white" }: { label: string, value: string, icon: string, color?: string }) => (
-  <div className="bg-surface/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-colors group">
+  <div className="portal-card p-4 flex flex-col justify-between hover:border-primary/20 transition-colors group">
     <div className="flex items-center justify-between mb-4">
       <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{label}</p>
       <i className={`fa-solid ${icon} text-[10px] text-primary/40 group-hover:text-primary transition-colors`}></i>

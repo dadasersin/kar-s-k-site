@@ -3,11 +3,30 @@ import { motion } from 'framer-motion';
 import { TrendingUp, DollarSign, BarChart2, Briefcase, Info } from 'lucide-react';
 
 const BorsaView: React.FC = () => {
+    const [prices, setPrices] = React.useState({
+    usd: 43.84,
+    eur: 51.56,
+    gold: 7087,
+    bist: 13804
+  });
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setPrices(prev => ({
+        usd: parseFloat((prev.usd + (Math.random() - 0.5) * 0.05).toFixed(2)),
+        eur: parseFloat((prev.eur + (Math.random() - 0.5) * 0.05).toFixed(2)),
+        gold: Math.round(prev.gold + (Math.random() - 0.5) * 10),
+        bist: Math.round(prev.bist + (Math.random() - 0.5) * 20)
+      }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   const marketStats = [
-    { label: 'DOLAR', value: '₺43.84', change: '+0.12%', icon: <DollarSign className="w-5 h-5 text-green-400" /> },
-    { label: 'EURO', value: '₺51.56', change: '-0.05%', icon: <DollarSign className="w-5 h-5 text-blue-400" /> },
-    { label: 'GRAM ALTIN', value: '₺7,087', change: '+0.45%', icon: <TrendingUp className="w-5 h-5 text-yellow-400" /> },
-    { label: 'BIST 100', value: '13,804', change: '+1.20%', icon: <BarChart2 className="w-5 h-5 text-primary" /> },
+    { label: 'DOLAR', value: `₺${prices.usd}`, change: '+0.12%', icon: <DollarSign className="w-5 h-5 text-green-400" /> },
+    { label: 'EURO', value: `₺${prices.eur}`, change: '-0.05%', icon: <DollarSign className="w-5 h-5 text-blue-400" /> },
+    { label: 'GRAM ALTIN', value: `₺${prices.gold.toLocaleString()}`, change: '+0.45%', icon: <TrendingUp className="w-5 h-5 text-yellow-400" /> },
+    { label: 'BIST 100', value: prices.bist.toLocaleString(), change: '+1.20%', icon: <BarChart2 className="w-5 h-5 text-primary" /> },
   ];
 
   const topStocks = [

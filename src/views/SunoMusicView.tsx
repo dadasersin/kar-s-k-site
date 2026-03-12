@@ -3,22 +3,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const SunoMusicView: React.FC = () => {
   const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationLogs, setGenerationLogs] = useState<string[]>([]);
-  const [showResults, setShowResults] = useState(false);
-  const [style, setStyle] = useState('Pop');
-  const [instrumental, setInstrumental] = useState(false);
   const [customLyrics, setCustomLyrics] = useState('');
+  const [style, setStyle] = useState('');
+  const [instrumental, setInstrumental] = useState(false);
   const [mode, setMode] = useState<'standard' | 'custom'>('standard');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [generationLogs, setGenerationLogs] = useState<string[]>([]);
 
   const handleGenerate = () => {
-    if (!prompt.trim() && mode === 'standard') return;
+    if (mode === 'standard' && !prompt) return;
+    if (mode === 'custom' && !customLyrics) return;
 
     setIsGenerating(true);
-    setGenerationLogs(['Suno AI motoru başlatılıyor...', 'Yapay zeka bağlamı analiz ediliyor...', 'Müzik yapısı sentezleniyor (128kbps)...']);
+    setShowResults(false);
+    setGenerationLogs([
+      `${mode === 'custom' ? 'Özel sözler' : 'Prompt'} analiz ediliyor...`,
+      `${mode === 'custom' ? style : 'Nöral'} stili analiz ediliyor...`,
+      `Nöral Beste Katmanı oluşturuluyor...`
+    ]);
 
     setTimeout(() => {
-      setGenerationLogs(prev => [...prev, 'Melodik yapı oluşturuldu.', 'Vokal katmanları ekleniyor...', 'Final mastering yapılıyor...']);
+      setGenerationLogs(prev => [...prev,
+        mode === 'custom' ? 'Sözler melodiye uyarlanıyor...' : 'Tema derinliği işleniyor...',
+        'Vokal sentezi aktif edildi (TR-High fidelity)...',
+        'Final mastering ve gürültü engelleme yapılıyor...'
+      ]);
 
       setTimeout(() => {
         setIsGenerating(false);
@@ -124,8 +134,22 @@ const SunoMusicView: React.FC = () => {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
                     <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest px-4">Sonuçlar (2 Varyasyon)</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <TrackItem title="Neural Symphony v1" length="03:42" prompt={prompt} color="from-purple-500" />
-                        <TrackItem title="Digital Echoes v2" length="02:15" prompt={prompt} color="from-blue-500" />
+                        <TrackItem
+                          title="Neural Symphony v1"
+                          length="03:42"
+                          prompt={mode === 'standard' ? prompt : customLyrics}
+                          color="from-purple-500"
+                          style={mode === 'custom' ? style : 'Standard'}
+                          audioUrl="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                        />
+                        <TrackItem
+                          title="Digital Echoes v2"
+                          length="02:15"
+                          prompt={mode === 'standard' ? prompt : customLyrics}
+                          color="from-blue-500"
+                          style={mode === 'custom' ? style : 'Standard'}
+                          audioUrl="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+                        />
                     </div>
                 </motion.div>
               ) : (
@@ -145,24 +169,46 @@ const SunoMusicView: React.FC = () => {
   );
 };
 
-const TrackItem = ({ title, length, prompt, color }: { title: string, length: string, prompt: string, color: string }) => (
-    <div className="glass-panel p-6 rounded-[2.5rem] bg-brandDark/40 border border-white/5 hover:border-primary/20 transition-all group overflow-hidden relative">
-        <div className={`absolute -right-10 -top-10 w-32 h-32 bg-gradient-to-br ${color} to-transparent opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
+const TrackItem = ({ title, length, prompt, color, style, audioUrl }: { title: string, length: string, prompt: string, color: string, style?: string, audioUrl: string }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = React.useRef<HTMLAudioElement>(null);
 
-        <div className="flex items-center gap-6 relative z-10">
-            <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-105 transition-transform overflow-hidden relative">
-                <i className="fa-solid fa-play text-xl"></i>
-            </div>
-            <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-black text-white truncate uppercase">{title}</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">{length} • Suno v3.5</p>
-                <div className="flex gap-2 mt-4">
-                    <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors">İndir</button>
-                    <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors">Paylaş</button>
+    const togglePlay = () => {
+        if (audioRef.current) {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                audioRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    return (
+        <div className="glass-panel p-6 rounded-[2.5rem] bg-brandDark/40 border border-white/5 hover:border-primary/20 transition-all group overflow-hidden relative">
+            <div className={`absolute -right-10 -top-10 w-32 h-32 bg-gradient-to-br ${color} to-transparent opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
+
+            <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
+
+            <div className="flex items-center gap-6 relative z-10">
+                <button
+                    onClick={togglePlay}
+                    className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center text-primary group-hover:scale-105 transition-transform overflow-hidden relative"
+                >
+                    <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} text-xl`}></i>
+                </button>
+                <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-black text-white truncate uppercase">{title}</h4>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">{length} • {style || 'Suno v3.5'}</p>
+                    <p className="text-[9px] text-slate-600 truncate mt-2 italic">"{prompt.substring(0, 40)}..."</p>
+                    <div className="flex gap-2 mt-4">
+                        <a href={audioUrl} download className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors text-center">İndir</a>
+                        <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors">Paylaş</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default SunoMusicView;
