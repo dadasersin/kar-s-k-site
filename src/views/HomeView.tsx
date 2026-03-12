@@ -28,19 +28,17 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
         'Nöral Ağ Katmanı Güncellendi',
         'Hafıza Bloğu Doğrulandı',
         'Sistem Sağlığı Kontrol Edildi',
-        'Yeni Sinaptik Veri İşlendi',
-        'Gecikme Süresi Minimize Edildi'
+        'Nöral Akış Dengelendi',
+        'Semantik İşleme Tamamlandı'
       ];
       const randomText = possibleLogs[Math.floor(Math.random() * possibleLogs.length)];
-      setLogs(prev => {
-        const newLogs = [...prev.slice(-3), { time: timeStr, text: randomText, color: 'text-gray-500' }];
-        return newLogs;
-      });
-    }, 5000);
-    return () => clearInterval(logInterval);
-  }, []);
 
-  useEffect(() => {
+      setLogs(prev => [
+        ...prev.slice(-7),
+        { time: timeStr, text: randomText, color: 'text-primary/70' }
+      ]);
+    }, 8000);
+
     const timer = setInterval(() => {
       setSessionSeconds(prev => prev + 1);
       setNeuralLoad(prev => {
@@ -62,7 +60,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
     const modules = getStorageItem('active_dynamic_modules', []);
     setDynamicModuleCount(modules.length);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(logInterval);
+      clearInterval(timer);
+    };
   }, []);
 
   const formatTime = (totalSeconds: number) => {
@@ -71,6 +72,9 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
     const secs = totalSeconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const localStorageSizeKB = (JSON.stringify(localStorage).length / 1024).toFixed(2);
+  const chatHistoryLength = getStorageItem('chat_history', []).length;
 
   return (
     <section className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
@@ -93,7 +97,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             </div>
           </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <MetricBox label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} icon="fa-hourglass-start" />
             <MetricBox label="İŞLEM SÜRESİ" value={`${processTime} saniye`} icon="fa-bolt" />
             <MetricBox label="KALAN SÜRE" value={`${remainingTime}s`} icon="fa-clock" />
@@ -112,9 +116,9 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                 <i className="fa-solid fa-hard-drive text-primary"></i> Hafıza (Storage)
               </h5>
               <div className="space-y-4">
-                <StorageItem label="Sohbet Kayıtları" value="2 Mesaj" icon="fa-message" />
+                <StorageItem label="Sohbet Kayıtları" value={`${chatHistoryLength} Mesaj`} icon="fa-message" />
                 <StorageItem label="Görsel Varlıklar" value="0 Adet" icon="fa-image" />
-                <StorageItem label="Local Storage" value="3.46 KB" icon="fa-folder-open" />
+                <StorageItem label="Local Storage" value={`${localStorageSizeKB} KB`} icon="fa-folder-open" />
                 <StorageItem label="GitHub Depo Boyutu" value="Yapılandırılmadı" icon="fa-github" />
                 <StorageItem label="Aktif Modüller" value={`${dynamicModuleCount} Modül`} icon="fa-cube" />
               </div>
@@ -124,10 +128,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
               <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
                 <i className="fa-solid fa-wave-square text-primary animate-pulse"></i> Sinaptik Akış (Canlı İzleme)
               </h5>
-                            <div className="space-y-2 text-[11px] relative z-10">
+              <div className="space-y-2 text-[11px] relative z-10">
                 {logs.map((log, i) => (
                   <div key={i} className={`flex gap-4 ${log.color}`}>
-                    <span className="shrink-0 text-primary">{log.time}</span>
+                    <span className="shrink-0 text-primary opacity-60">[{log.time}]</span>
                     <span>{log.text} {log.badge && <span className="px-1.5 py-0.5 bg-emerald-500 text-black text-[8px] font-black rounded tracking-tighter ml-2 uppercase">{log.badge}</span>}</span>
                   </div>
                 ))}

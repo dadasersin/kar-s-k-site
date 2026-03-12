@@ -4,8 +4,10 @@ import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiP
 import { recordAction } from '../utils/history';
 
 const AudioView: React.FC = () => {
-  const [mode, setMode] = useState<'tts' | 'remix'>('remix');
+  const [mode, setMode] = useState<'tts' | 'remix' | 'beste'>('beste');
   const [text, setText] = useState('Modüler YZ platformuna hoş geldiniz.');
+  const [lyrics, setLyrics] = useState('');
+  const [genre, setGenre] = useState('Electronic Dance Music');
   const [remixPrompt, setRemixPrompt] = useState('Bu sesi daha enerjik, cyberpunk bir atmosfere dönüştür.');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('Kore');
@@ -91,8 +93,12 @@ const AudioView: React.FC = () => {
           const genAI = new GoogleGenerativeAI(keyEntry.key);
           const model = genAI.getGenerativeModel({ model: modelId });
 
-          // Simulation of audio processing since standard Gemini SDK doesn't return audio blobs directly easily
-          await model.generateContent(`Analyze and simulate audio ${mode} for: ${mode === 'tts' ? text : remixPrompt}`);
+                    // Simulation of audio processing
+          const simulationPrompt = mode === 'beste'
+            ? `Compose a song with genre ${genre} and lyrics: ${lyrics}`
+            : `Analyze and simulate audio ${mode} for: ${mode === 'tts' ? text : remixPrompt}`;
+
+          await model.generateContent(simulationPrompt);
 
           // Use a dummy audio for simulation
           setAudioResult(selectedAudio?.url || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
@@ -126,16 +132,27 @@ const AudioView: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
-                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
-                    {(['remix', 'tts'] as const).map(m => (
+                                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
+                    {(['beste', 'remix', 'tts'] as const).map(m => (
                         <button key={m} onClick={() => setMode(m)} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${mode === m ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}>
-                            {m === 'remix' ? 'REMIX' : 'METİNDEN SESE'}
+                            {m === 'remix' ? 'REMIX' : m === 'tts' ? 'METİNDEN SESE' : 'BESTE YAP'}
                         </button>
                     ))}
                 </div>
 
                 <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-brandDark/40 space-y-6">
-                    {mode === 'remix' ? (
+                                        {mode === 'beste' ? (
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block tracking-widest">Şarkı Sözleri</label>
+                                <textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} className="w-full h-32 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-emerald-500 outline-none resize-none font-serif italic" placeholder="Şarkı sözlerini buraya yazın..." />
+                            </div>
+                            <div>
+                                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block tracking-widest">Müzik Tarzı</label>
+                                <input value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-xs text-white outline-none focus:border-emerald-500" placeholder="Örn: Pop, Rock, Techno..." />
+                            </div>
+                        </div>
+                    ) : mode === 'remix' ? (
                         <>
                             <div className="grid grid-cols-2 gap-4">
                                 <button onClick={() => audioInputRef.current?.click()} className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/5 rounded-3xl hover:border-emerald-500/50 transition-all gap-3 bg-black/20">
@@ -144,7 +161,7 @@ const AudioView: React.FC = () => {
                                 </button>
                                 <button onClick={isRecording ? stopRecording : startRecording} className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all gap-3 ${isRecording ? 'border-red-500 bg-red-500/10' : 'border-white/5 bg-black/20'}`}>
                                     <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xl ${isRecording ? 'text-red-500' : 'text-slate-500'}`}></i>
-                                    <span className="text-[9px] font-black text-slate-500 uppercase\">{isRecording ? 'DURDUR' : 'KAYDET'}</span>
+                                    <span className="text-[9px] font-black text-slate-500 uppercase">{isRecording ? 'DURDUR' : 'KAYDET'}</span>
                                 </button>
                             </div>
                             <textarea value={remixPrompt} onChange={(e) => setRemixPrompt(e.target.value)} className="w-full h-32 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-emerald-500 outline-none resize-none" placeholder="Remix talimatı..." />

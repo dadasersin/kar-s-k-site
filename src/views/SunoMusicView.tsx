@@ -11,14 +11,23 @@ const SunoMusicView: React.FC = () => {
   const [customLyrics, setCustomLyrics] = useState('');
   const [mode, setMode] = useState<'standard' | 'custom'>('standard');
 
-  const handleGenerate = () => {
-    if (!prompt.trim() && mode === 'standard') return;
+    const handleGenerate = () => {
+    const activePrompt = mode === 'standard' ? prompt : customLyrics;
+    if (!activePrompt.trim()) return;
 
     setIsGenerating(true);
-    setGenerationLogs(['Suno AI motoru başlatılıyor...', 'Yapay zeka bağlamı analiz ediliyor...', 'Müzik yapısı sentezleniyor (128kbps)...']);
+    setGenerationLogs([
+      `Suno AI motoru başlatılıyor (Model v3.5)...`,
+      `"${mode === 'standard' ? prompt.substring(0, 30) : style}" stili analiz ediliyor...`,
+      `Nöral Beste Katmanı oluşturuluyor...`
+    ]);
 
     setTimeout(() => {
-      setGenerationLogs(prev => [...prev, 'Melodik yapı oluşturuldu.', 'Vokal katmanları ekleniyor...', 'Final mastering yapılıyor...']);
+      setGenerationLogs(prev => [...prev,
+        mode === 'custom' ? 'Sözler melodiye uyarlanıyor...' : 'Tema derinliği işleniyor...',
+        'Vokal sentezi aktif edildi (TR-High fidelity)...',
+        'Final mastering ve gürültü engelleme yapılıyor...'
+      ]);
 
       setTimeout(() => {
         setIsGenerating(false);
@@ -123,9 +132,9 @@ const SunoMusicView: React.FC = () => {
               ) : showResults ? (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
                     <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest px-4">Sonuçlar (2 Varyasyon)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <TrackItem title="Neural Symphony v1" length="03:42" prompt={prompt} color="from-purple-500" />
-                        <TrackItem title="Digital Echoes v2" length="02:15" prompt={prompt} color="from-blue-500" />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <TrackItem title="Neural Symphony v1" length="03:42" prompt={mode === 'standard' ? prompt : customLyrics} color="from-purple-500" style={mode === 'custom' ? style : 'Standard'} />
+                        <TrackItem title="Digital Echoes v2" length="02:15" prompt={mode === 'standard' ? prompt : customLyrics} color="from-blue-500" style={mode === 'custom' ? style : 'Standard'} />
                     </div>
                 </motion.div>
               ) : (
@@ -145,7 +154,7 @@ const SunoMusicView: React.FC = () => {
   );
 };
 
-const TrackItem = ({ title, length, prompt, color }: { title: string, length: string, prompt: string, color: string }) => (
+const TrackItem = ({ title, length, prompt, color, style }: { title: string, length: string, prompt: string, color: string, style?: string }) => (
     <div className="glass-panel p-6 rounded-[2.5rem] bg-brandDark/40 border border-white/5 hover:border-primary/20 transition-all group overflow-hidden relative">
         <div className={`absolute -right-10 -top-10 w-32 h-32 bg-gradient-to-br ${color} to-transparent opacity-10 blur-3xl group-hover:opacity-20 transition-opacity`} />
 
@@ -155,7 +164,8 @@ const TrackItem = ({ title, length, prompt, color }: { title: string, length: st
             </div>
             <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-black text-white truncate uppercase">{title}</h4>
-                <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">{length} • Suno v3.5</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase mt-1">{length} • {style || 'Suno v3.5'}</p>
+                <p className="text-[9px] text-slate-600 truncate mt-2 italic">"{prompt.substring(0, 40)}..."</p>
                 <div className="flex gap-2 mt-4">
                     <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors">İndir</button>
                     <button className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[8px] font-black uppercase text-white transition-colors">Paylaş</button>
