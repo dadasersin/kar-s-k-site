@@ -1,45 +1,27 @@
-import { safeJSONParse, getStorageItem, setStorageItem } from './storage';
+import { getStorageItem, setStorageItem } from './storage';
+import { pushToGitHub } from './githubSync';
 
-export interface PersistentState {
-  chatHistory: any[];
-  dynamicModules: any[];
-  settings: any;
-  customPrompts: any[];
-}
+// Centralized state persistence
+export const syncPortalState = async () => {
+    const chat = getStorageItem('chat_history', []);
+    const modules = getStorageItem('active_dynamic_modules', []);
+    const settings = getStorageItem('sync_settings', {});
 
-const DEFAULT_STATE: PersistentState = {
-  chatHistory: [],
-  dynamicModules: [],
-  settings: {},
-  customPrompts: []
-};
+    const state = {
+        chat,
+        modules,
+        settings,
+        timestamp: Date.now(),
+        version: '1.2.0'
+    };
 
-export const saveState = (key: string, value: any) => {
-  setStorageItem(key, value);
-};
+    if (settings.enabled && settings.token && settings.repo) {
+        await pushToGitHub({
+            token: settings.token,
+            repo: settings.repo,
+            path: 'portal-state.json'
+        });
+    }
 
-export const loadState = <T>(key: string, fallback: T): T => {
-  return getStorageItem(key, fallback);
-};
-
-// Advanced: Save all critical state for GitHub/Supabase sync
-export const getFullAppState = () => {
-  return {
-    chat_history: loadState('chat_history', []),
-    live_ai_components: loadState('live_ai_components', []),
-    sync_settings: loadState('sync_settings', {}),
-    prompt_library: loadState('prompt_library', []),
-    api_usage: loadState('api_usage', {}),
-    neural_brain_memory: loadState('neural_brain_memory', [])
-  };
-};
-
-export const restoreFullAppState = (state: any) => {
-  if (!state) return;
-  if (state.chat_history) saveState('chat_history', state.chat_history);
-  if (state.live_ai_components) saveState('live_ai_components', state.live_ai_components);
-  if (state.sync_settings) saveState('sync_settings', state.sync_settings);
-  if (state.prompt_library) saveState('prompt_library', state.prompt_library);
-  if (state.api_usage) saveState('api_usage', state.api_usage);
-  if (state.neural_brain_memory) saveState('neural_brain_memory', state.neural_brain_memory);
+    return state;
 };

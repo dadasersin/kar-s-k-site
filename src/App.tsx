@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { AppView, type ChatMessage } from './types';
 import Sidebar from './components/Sidebar';
-import BottomNav from './components/BottomNav';
-import ChatView from './views/ChatView';
 import HomeView from './views/HomeView';
 import ToolsView from './views/ToolsView';
 import Dashboard from './views/Dashboard';
+import ChatView from './views/ChatView';
 import VisualsView from './views/VisualsView';
+import RuwisAiView from './views/RuwisAiView';
 import AudioView from './views/AudioView';
 import LiveView from './views/LiveView';
 import ArtStudioView from './views/ArtStudioView';
@@ -15,6 +14,9 @@ import WorkflowView from './views/WorkflowView';
 import LiveAiDeveloperView from './views/LiveAiDeveloperView';
 import DockerConfigView from './views/DockerConfigView';
 import BorsaView from './views/BorsaView';
+import YouTubeView from './views/YouTubeView';
+import LiveTvView from './views/LiveTvView';
+import SystemExpertView from './views/SystemExpertView';
 import CryptoView from './views/CryptoView';
 import AutomationView from './views/AutomationView';
 import SocialMediaManagerView from './views/SocialMediaManagerView';
@@ -46,37 +48,43 @@ import NeuralLogicView from './views/NeuralLogicView';
 import GoogleAiStudioView from './views/GoogleAiStudioView';
 import SkyDriveView from './views/SkyDriveView';
 import NewsView from './views/NewsView';
+import PythonLibraryView from './views/PythonLibraryView';
 import SunoMusicView from './views/SunoMusicView';
-import PythonLibraryView from "./views/PythonLibraryView";
-import YouTubeView from './views/YouTubeView';
-import LiveTvView from './views/LiveTvView';
-import SystemExpertView from './views/SystemExpertView';
-import JulesStudioView from './views/JulesStudioView';
-import RuwisAiView from './views/RuwisAiView';
+import OmniView from './views/OmniView';
+import SelineView from './views/SelineView';
+import Ag2ApiView from './views/Ag2ApiView';
+import CursorBridgeView from './views/CursorBridgeView';
+import KhoataToolView from './views/KhoataToolView';
+import CodexSwitcherView from './views/CodexSwitcherView';
+import AgCopilotView from './views/AgCopilotView';
+import AgUsageCheckerView from './views/AgUsageCheckerView';
+import PromptExpertView from './views/PromptExpertView';
+import CursorProxyView from './views/CursorProxyView';
+import AntigravitySyncView from './views/AntigravitySyncView';
+import AntigravityLauncherView from './views/AntigravityLauncherView';
+import UserManualView from './views/UserManualView';
+import SiteEditingView from './views/SiteEditingView';
+import JulesAwesomeListView from './views/JulesAwesomeListView';
 import LoginView from './views/LoginView';
-
 import QuickChatWidget from './components/QuickChatWidget';
 import VoiceAssistant from './components/VoiceAssistant';
-
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from './utils/apiPool';
+import BottomNav from './components/BottomNav';
+import AiStatusIndicator from './components/AiStatusIndicator';
+import { AppView, type ChatMessage } from './types';
 import { getStorageItem, setStorageItem } from './utils/storage';
+import { recordAction } from './utils/history';
+import { pushToGitHub } from './utils/githubSync';
 import { detectIntent } from './utils/orchestrator';
 import { buildModuleAutomatically, integrateLinkAutomatically } from './utils/moduleBuilder';
-import { pushToGitHub } from './utils/githubSync';
-import { recordAction } from './utils/history';
+import { executeAiRequest } from './utils/apiPool';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('portal_auth_token') === 'true';
-  });
-
   const [activeView, setActiveView] = useState<AppView | string>(AppView.HOME);
+  const [isAuthenticated, setIsAuthenticated] = useState(sessionStorage.getItem('portal_auth_token') === 'true');
   const [messages, setMessages] = useState<ChatMessage[]>(getStorageItem('chat_history', []));
   const [isTyping, setIsTyping] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'error'>('synced');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeModel, setActiveModel] = useState<string>('Gemini-2.0-Flash');
 
   useEffect(() => {
     setStorageItem('chat_history', messages);
@@ -115,104 +123,58 @@ function App() {
     }
   };
 
-    const prepareGeminiHistory = (msgs: ChatMessage[]) => {
-    const history: { role: string; parts: { text: string }[] }[] = [];
-    const filtered = msgs.filter(m => !m.text.includes('Hata:'));
-
-    filtered.forEach((m) => {
-      const role = m.role === 'user' ? 'user' : 'model';
-      if (history.length > 0 && history[history.length - 1].role === role) {
-        history[history.length - 1].parts[0].text += "\n" + m.text;
-      } else {
-        history.push({ role, parts: [{ text: m.text }] });
-      }
-    });
-
-    if (history.length > 0 && history[0].role !== 'user') {
-      history.shift();
-    }
-
-    return history;
-  };
-
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, options?: { systemInstruction?: string }) => {
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
     recordAction('Chat', `Mesaj gönderildi: ${text.substring(0, 30)}...`);
 
     const orchestration = detectIntent(text);
-        if (orchestration.intent === 'WEATHER') {
+
+    // Handle specific intents
+    if (orchestration.intent === 'WEATHER') {
         setActiveView(AppView.WEATHER);
         setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `${orchestration.target} için hava durumu modülüne geçiş yapılıyor...`, timestamp: Date.now() }]);
         setIsTyping(false);
         return;
     }
 
-    if (orchestration.intent === 'SEARCH_LEARN') {
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `🧠 Öğrenme Modu Aktif: "${orchestration.target}" konusu araştırılıyor ve portal hafızasına kaydediliyor...`, timestamp: Date.now() }]);
-        // Simüle edilmiş araştırma gecikmesi
-        setTimeout(() => {
-           setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `✅ "${orchestration.target}" ile ilgili temel bilgiler alındı ve Sinaptik Bağlantılar güncellendi. Artık bu konuda daha yetkinim.`, timestamp: Date.now() }]);
-        }, 2000);
+    if (orchestration.intent === 'INTEGRATE_LINK' && orchestration.target) {
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `🔗 "${orchestration.target}" linki portalın yeni bir modülüne entegre ediliyor. Lütfen bekleyin...`, timestamp: Date.now() }]);
+        const res = await integrateLinkAutomatically(orchestration.target, text);
+        if (res.success && res.moduleId) {
+            setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `✅ Bağlantı başarıyla entegre edildi! "${res.label}" modülü aktif. Seni şimdi oraya yönlendiriyorum.`, timestamp: Date.now() }]);
+            setActiveView(res.moduleId);
+        } else {
+            setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `❌ Hata: Bağlantı entegre edilemedi: ${res.error}`, timestamp: Date.now() }]);
+        }
         setIsTyping(false);
         return;
     }
 
     if (orchestration.intent === 'BUILD' && orchestration.target) {
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `🛠️ "${orchestration.target}" için otonom geliştirme süreci başlatıldı. Kaynaklar taranıyor ve kod sentezleniyor...`, timestamp: Date.now() }]);
         const res = await buildModuleAutomatically(orchestration.target);
         if (res.success && res.moduleId) {
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `Modül inşa edildi: ${res.label}`, timestamp: Date.now() }]);
+            setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `✅ Modül başarıyla inşa edildi: ${res.label}. Yeni sayfa aktif ediliyor.`, timestamp: Date.now() }]);
             setActiveView(res.moduleId);
-            setIsTyping(false);
-            return;
-        }
-    }
-
-    if (orchestration.intent === 'INTEGRATE_LINK' && orchestration.target) {
-        const res = await integrateLinkAutomatically(orchestration.target, orchestration.payload.originalText);
-        if (res.success && res.moduleId) {
-            setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `Link entegre edildi: ${res.label}`, timestamp: Date.now() }]);
-            setActiveView(res.moduleId);
-            setIsTyping(false);
-            return;
-        }
-    }
-
-    const availableKeys = getAvailableKeys();
-    if (availableKeys.length === 0) {
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: "API anahtarı bulunamadı.", timestamp: Date.now() }]);
-      setIsTyping(false);
-      return;
-    }
-
-    for (const keyEntry of availableKeys) {
-      try {
-        setActiveModel(keyEntry.label);
-        let responseText = '';
-        if (keyEntry.provider === 'gemini') {
-          const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({ model: keyEntry.modelName || 'gemini-2.0-flash' });
-          const chat = model.startChat({ history: prepareGeminiHistory(messages) });
-          const result = await chat.sendMessage(text);
-          responseText = result.response.text();
-          recordUsage(keyEntry.id);
         } else {
-          const response = await fetch(`${keyEntry.baseUrl || 'https://api.openai.com/v1'}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyEntry.key}` },
-            body: JSON.stringify({ model: keyEntry.modelName, messages: [...messages.slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text })), { role: 'user', content: text }] })
-          });
-          const data = await response.json();
-          responseText = data.choices[0].message.content;
-          recordUsage(keyEntry.id);
+            setMessages(prev => [...prev, { id: (Date.now() + 2).toString(), role: 'model', text: `❌ Hata: Modül oluşturulurken bir sorun oluştu: ${res.error}`, timestamp: Date.now() }]);
         }
-        setMessages((prev: ChatMessage[]) => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: Date.now() }]);
-        break;
-      } catch (error: any) {
-        if (error.message?.includes('429')) { markKeyAsExhausted(keyEntry.id); continue; }
-        break;
-      }
+        setIsTyping(false);
+        return;
+    }
+
+    // Default Chat fallback
+    try {
+        const response = await executeAiRequest(text, {
+            systemInstruction: options?.systemInstruction,
+            history: messages.slice(-10).map(m => ({ role: m.role, text: m.text }))
+        });
+        setMessages((prev: ChatMessage[]) => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: response.text, timestamp: Date.now() }]);
+    } catch (error: any) {
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'model', text: `Üzgünüm, şu anda API servisleri ulaşılamaz durumda. Lütfen Ayarlar kısmından API anahtarlarınızı kontrol edin.`, timestamp: Date.now() }]);
+        console.error("AI Error:", error.message);
     }
     setIsTyping(false);
   };
@@ -240,7 +202,7 @@ function App() {
       case AppView.HOME: return <HomeView onViewChange={setActiveView} />;
       case AppView.TOOLS: return <ToolsView onViewChange={setActiveView} />;
       case AppView.DASHBOARD: return <Dashboard onViewChange={setActiveView} />;
-      case AppView.CHAT: return <ChatView messages={messages} setMessages={setMessages} onSendMessage={handleSendMessage} isTyping={isTyping} activeModelInfo={activeModel} />;
+      case AppView.CHAT: return <ChatView messages={messages} setMessages={setMessages} onSendMessage={handleSendMessage} isTyping={isTyping} activeModelInfo="Dinamik Pool" />;
       case AppView.VISUALS: return <VisualsView />;
       case AppView.RUWIS_AI: return <RuwisAiView />;
       case AppView.AUDIO: return <AudioView />;
@@ -287,6 +249,21 @@ function App() {
       case AppView.NEWS: return <NewsView />;
       case AppView.PYTHON_LIB: return <PythonLibraryView />;
       case AppView.SUNO: return <SunoMusicView />;
+      case AppView.OMNIVIEW: return <OmniView onViewChange={setActiveView} />;
+      case AppView.SELINE: return <SelineView />;
+      case AppView.AG2API: return <Ag2ApiView />;
+      case AppView.CURSOR_BRIDGE: return <CursorBridgeView />;
+      case AppView.KHOATA_TOOL: return <KhoataToolView />;
+      case AppView.CODEX_SWITCHER: return <CodexSwitcherView />;
+      case AppView.AG_COPILOT: return <AgCopilotView />;
+      case AppView.AG_USAGE_CHECKER: return <AgUsageCheckerView />;
+      case AppView.PROMPT_EXPERT: return <PromptExpertView />;
+      case AppView.CURSOR_PROXY: return <CursorProxyView />;
+      case AppView.AG_SYNC: return <AntigravitySyncView />;
+      case AppView.AG_LAUNCHER: return <AntigravityLauncherView />;
+      case AppView.USER_MANUAL: return <UserManualView />;
+      case AppView.SITE_EDIT: return <SiteEditingView />;
+      case AppView.JULES_AWESOME: return <JulesAwesomeListView />;
       default: return <HomeView onViewChange={setActiveView} />;
     }
   };
@@ -300,6 +277,7 @@ function App() {
       <Sidebar activeView={activeView} onViewChange={setActiveView} syncStatus={syncStatus} onManualSync={() => {}} onGitHubSync={handleGitHubSync} isMobileOpen={isSidebarOpen} onCloseMobile={() => setIsSidebarOpen(false)} />
       <main className="flex-1 overflow-hidden relative lg:ml-64">
         <div className="h-full overflow-y-auto">{renderView()}</div>
+        <AiStatusIndicator />
         <QuickChatWidget messages={messages.slice(-10).map(m => ({ role: m.role as 'user' | 'model', text: m.text }))} onSendMessage={handleSendMessage} isTyping={isTyping} />
         <VoiceAssistant onCommand={(command, action, payload) => {
           if (command === 'nav' && action === 'nav') {

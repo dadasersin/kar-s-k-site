@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiPool';
+import { executeAiRequest } from '../utils/apiPool';
 import { recordAction } from '../utils/history';
 
 const WorkflowView: React.FC = () => {
@@ -14,60 +13,26 @@ const WorkflowView: React.FC = () => {
     setIsProcessing(true);
     recordAction('İş Akışı', `Yeni akış tasarlanıyor: ${aiPrompt}`);
 
-    const schema = {
-      type: SchemaType.OBJECT,
-      properties: {
-        nodes: {
-          type: SchemaType.ARRAY,
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              id: { type: SchemaType.STRING },
-              name: { type: SchemaType.STRING },
-              type: { type: SchemaType.STRING },
-              position: { type: SchemaType.ARRAY, items: { type: SchemaType.NUMBER } }
-            }
-          }
-        },
-        links: {
-          type: SchemaType.ARRAY,
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              fromNode: { type: SchemaType.STRING },
-              toNode: { type: SchemaType.STRING }
-            }
-          }
-        }
+    const prompt = `
+      Create a workflow JSON for: ${aiPrompt}
+      Respond ONLY with a JSON object in this format:
+      {
+        "nodes": [{"id": "1", "name": "Start", "type": "trigger", "position": [100, 100]}],
+        "links": [{"fromNode": "1", "toNode": "2"}]
       }
-    };
+    `;
 
-    const availableKeys = getAvailableKeys('gemini');
-    let success = false;
-    for (const keyEntry of availableKeys) {
-      const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-      for (const modelId of modelsToTry) {
-        try {
-          const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({
-            model: modelId,
-            generationConfig: { responseMimeType: "application/json", responseSchema: schema as any }
-          });
-          const result = await model.generateContent(`Create a workflow JSON for: ${aiPrompt}`);
-          const data = JSON.parse(result.response.text());
-          setNodes(data.nodes);
-          setLinks(data.links);
-          recordUsage(keyEntry.id);
-          success = true;
-          break;
-        } catch (e: any) {
-          if (e.message?.includes('429')) break;
-        }
-      }
-      if (success) break;
-      markKeyAsExhausted(keyEntry.id);
+    try {
+      const response = await executeAiRequest(prompt, { provider: 'gemini' });
+      const jsonStr = response.text.match(/\{[\s\S]*\}/)?.[0] || response.text;
+      const data = JSON.parse(jsonStr);
+      setNodes(data.nodes || []);
+      setLinks(data.links || []);
+    } catch (e: any) {
+      alert("Akış tasarımı başarısız: " + e.message);
+    } finally {
+      setIsProcessing(false);
     }
-    setIsProcessing(false);
   };
 
   return (
@@ -85,7 +50,7 @@ const WorkflowView: React.FC = () => {
             placeholder="AI'ya iş akışı tasarlat (Örn: YouTube otomasyonu)..."
             className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 text-xs text-white outline-none focus:border-primary"
         />
-        <button onClick={handleAiGenerate} disabled={isProcessing} className="px-10 py-4 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl">
+        <button onClick={handleAiGenerate} disabled={isProcessing} className="px-10 py-4 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl transition-all hover:brightness-110">
             {isProcessing ? 'İŞLENİYOR...' : 'TASARLA'}
         </button>
       </div>
@@ -94,7 +59,7 @@ const WorkflowView: React.FC = () => {
         {nodes.length > 0 ? (
             <div className="relative min-w-[800px] min-h-[600px]">
                 {nodes.map(n => (
-                    <div key={n.id} className="absolute w-48 p-4 bg-white/5 border border-primary/30 rounded-2xl" style={{ left: n.position[0], top: n.position[1] }}>
+                    <div key={n.id} className="absolute w-48 p-4 bg-white/5 border border-primary/30 rounded-2xl backdrop-blur-md" style={{ left: n.position[0], top: n.position[1] }}>
                         <p className="text-[10px] font-black text-white uppercase truncate">{n.name}</p>
                         <p className="text-[8px] text-slate-500 uppercase mt-1">{n.type}</p>
                     </div>
@@ -104,7 +69,19 @@ const WorkflowView: React.FC = () => {
                         const from = nodes.find(n => n.id === l.fromNode);
                         const to = nodes.find(n => n.id === l.toNode);
                         if (!from || !to) return null;
-                        return <line key={i} x1={from.position[0]+100} y1={from.position[1]+30} x2={to.position[0]} y2={to.position[1]+30} stroke="var(--primary)" strokeWidth="2" />;
+                        return (
+                            <line
+                                key={i}
+                                x1={from.position[0] + 100}
+                                y1={from.position[1] + 30}
+                                x2={to.position[0]}
+                                y2={to.position[1] + 30}
+                                stroke="var(--primary)"
+                                strokeWidth="2"
+                                strokeDasharray="5,5"
+                                className="animate-[dash_2s_linear_infinite]"
+                            />
+                        );
                     })}
                 </svg>
             </div>
