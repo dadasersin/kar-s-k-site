@@ -1,5 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from './apiPool';
+import { executeAiRequest } from './apiPool';
 import { searchKnowledge } from './knowledgeBase';
 import { getStorageItem } from './storage';
 
@@ -26,65 +25,34 @@ const cleanCode = (code: string): string => {
 
 export const buildModuleAutomatically = async (prompt: string): Promise<BuildResult> => {
     const knowledge = searchKnowledge(prompt);
-    const availableKeys = getAvailableKeys('gemini');
 
-    if (availableKeys.length === 0) {
-        return { success: false, error: 'API Anahtarı bulunamadı. Lütfen Ayarlar sayfasından bir Gemini API anahtarı ekleyin.' };
-    }
+    const aiPrompt = `
+      Sen bir React ve Tailwind CSS uzmanısın. Ersin Güleş'in portalı için otonom bir geliştiricisin.
+      Kullanıcı şunu inşa etmeni istiyor: "${prompt}"
 
-    let generatedCode = '';
-    let success = false;
-    const bt = "```";
-    let usedKeyId = '';
+      ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
 
-    for (const keyEntry of availableKeys) {
-        // Try the user-specified model, or fall back to high-end versions
-        const modelsToTry = [
-            keyEntry.modelName || "gemini-3.0",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro"
-        ];
+      Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
+      Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
+      Bu kod bir iframe içinde render edilecek.
+      Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
+      DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
+    `;
 
-        for (const modelId of modelsToTry) {
-            try {
-                const genAI = new GoogleGenerativeAI(keyEntry.key);
-                const model = genAI.getGenerativeModel({ model: modelId });
+    try {
+        const response = await executeAiRequest(aiPrompt, { provider: 'gemini' });
+        const generatedCode = cleanCode(response.text);
 
-                const aiPrompt = `
-              Sen bir React ve Tailwind CSS uzmanısın. Ersin Güleş'in portalı için otonom bir geliştiricisin.
-              Kullanıcı şunu inşa etmeni istiyor: "${prompt}"
-
-              ${knowledge ? `\nSİSTEM BİLGİSİ (Referans alabilirsin):\n${knowledge}\n` : ''}
-
-              Lütfen sadece tek bir HTML dosyası (veya string) içinde çalışacak, Tailwind CSS sınıflarını kullanan, interaktif ve modern bir arayüz kodu yaz.
-              Kodun içinde <script> etiketleri ile gerekli JS logicleri olabilir.
-              Kodun başına ve sonuna markdown ( ${bt}html ) koyma, direkt kodu ver.
-              Bu kod bir iframe içinde veya div içinde render edilecek.
-              Görsel olarak "ersin-gules-portal" temasına (koyu, neon mavi/indigo) uygun olsun.
-              DURUM: Simülasyon değil, GERÇEK ÇALIŞAN bir modül olmalı.
-            `;
-
-                const result = await model.generateContent(aiPrompt);
-                generatedCode = cleanCode(result.response.text());
-                usedKeyId = keyEntry.id;
-                success = true;
-                break;
-            } catch (err: any) {
-                console.warn(`Model ${modelId} failed with key ${keyEntry.label}: `, err.message);
-                if (err.message?.includes('429')) break; // Try next key on quota
-            }
+        if (generatedCode) {
+            const id = Math.random().toString(36).substr(2, 9);
+            const label = prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt;
+            return registerDynamicModule(id, label, generatedCode, response.keyInfo.id);
         }
-        if (success) break;
-        markKeyAsExhausted(keyEntry.id);
+    } catch (err: any) {
+        return { success: false, error: err.message };
     }
 
-    if (success && generatedCode) {
-        const id = Math.random().toString(36).substr(2, 9);
-        const label = prompt.length > 20 ? prompt.substring(0, 20) + '...' : prompt;
-        return registerDynamicModule(id, label, generatedCode, usedKeyId);
-    }
-
-    return { success: false, error: 'Kod üretilemedi. Lütfen API anahtarlarınızı ve model limitlerini kontrol edin.' };
+    return { success: false, error: 'Kod üretilemedi.' };
 };
 
 export const integrateLinkAutomatically = async (url: string, originalText: string): Promise<BuildResult> => {
@@ -133,7 +101,10 @@ const registerDynamicModule = (id: string, label: string, code: string, keyId?: 
             timestamp: Date.now()
         });
         localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
-        if (keyId) recordUsage(keyId);
+        if (keyId) {
+            const current = Number(localStorage.getItem(\`usage_\${keyId.startsWith('env-') ? keyId : 'sync_settings'}\`) || 0);
+            // Usage is usually recorded inside executeAiRequest, but for building we might want double confirmation or specific tracking
+        }
         return { success: true, moduleId: id, label };
     } catch (e) {
         return { success: false, error: 'Kayıt sırasında hata oluştu.' };

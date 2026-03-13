@@ -1,105 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { getAvailableKeys, markKeyAsExhausted } from '../utils/apiPool';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { executeAiRequest } from '../utils/apiPool';
+import { getStorageItem, setStorageItem } from '../utils/storage';
+import { recordAction } from '../utils/history';
 
-interface GeneratedMedia {
-    id: string;
-    url: string;
-    type: 'image' | 'video';
-    prompt: string;
-    timestamp: number;
+interface SkyMedia {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  prompt: string;
+  timestamp: number;
 }
 
 const SkyDriveView: React.FC = () => {
     const [prompt, setPrompt] = useState('');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
-    const [gallery, setGallery] = useState<GeneratedMedia[]>(() => {
-        try {
-            return JSON.parse(localStorage.getItem('skydrive_gallery') || '[]');
-        } catch (e) { return []; }
-    });
-    const [siteTitle, setSiteTitle] = useState(localStorage.getItem('site_title') || 'Ersin Güleş');
+    const [gallery, setGallery] = useState<SkyMedia[]>([]);
+    const [siteTitle, setSiteTitle] = useState('NEXUS SKYDRIVE');
 
     useEffect(() => {
-        localStorage.setItem('skydrive_gallery', JSON.stringify(gallery));
-    }, [gallery]);
+        setGallery(getStorageItem('skydrive_gallery', []));
+        setSiteTitle(getStorageItem('skydrive_title', 'NEXUS SKYDRIVE'));
+    }, []);
 
     const handleUpdateTitle = (newTitle: string) => {
-        localStorage.setItem('site_title', newTitle);
         setSiteTitle(newTitle);
-        window.dispatchEvent(new Event('storage')); // Notify Sidebar
-        alert(`Site başlığı "${newTitle}" olarak güncellendi.`);
+        setStorageItem('skydrive_title', newTitle);
     };
 
     const generateMedia = async (type: 'image' | 'video') => {
         if (!prompt.trim()) return;
         setLoading(true);
-        setStatus(type === 'image' ? 'Uçan araba tasarımı çiziliyor...' : 'Aerodinamik simülasyon hazırlanıyor...');
+        setStatus(type === 'image' ? 'Tasarım Oluşturuluyor...' : 'Sahne Simüle Ediliyor...');
+        recordAction('SkyDrive AI', \`\${type === 'image' ? 'Görsel' : 'Video'} üretimi başlatıldı: \${prompt}\`);
 
-        const availableKeys = getAvailableKeys();
-        if (availableKeys.length === 0) {
-            alert("Lütfen Ayarlar sayfasından bir API anahtarı ekleyin.");
+        try {
+            // Use real AI to generate descriptions/technical specs, but simulate the visual output for now
+            // as we don't have a direct DALL-E/Sora hook yet, but this records the usage.
+            await executeAiRequest(\`Sen bir havacılık mühendisisin. Şu araç için teknik görsel betimleme yap: \${prompt}\`);
+
+            const newMedia: SkyMedia = {
+                id: Date.now().toString(),
+                type,
+                url: type === 'image'
+                    ? \`https://images.unsplash.com/photo-1559297434-2d8a134e042e?q=80&w=1000&auto=format&fit=crop\`
+                    : \`https://www.w3schools.com/html/mov_bbb.mp4\`,
+                prompt: prompt,
+                timestamp: Date.now()
+            };
+
+            const updated = [newMedia, ...gallery];
+            setGallery(updated);
+            setStorageItem('skydrive_gallery', updated);
+        } catch (e: any) {
+            alert("Üretim hatası: " + e.message);
+        } finally {
             setLoading(false);
-            return;
         }
-
-        let success = false;
-        for (const keyEntry of availableKeys) {
-            try {
-                let mediaUrl = '';
-
-                if (type === 'image') {
-                    // Simulation or direct API call
-                    if (keyEntry.provider === 'gemini') {
-                        // Enhanced prompt for flying cars
-                        const enhancedPrompt = `SkyDrive Nexus AI: Create a highly detailed, futuristic flying car in a cyberpunk city. Style: Photorealistic, cinematic lighting, 8k. Context: ${prompt}`;
-                        // For now, using picsum as a placeholder for visual demonstration if Gemini doesn't return inlineData
-                        mediaUrl = `https://picsum.photos/seed/${encodeURIComponent(prompt + Date.now())}/1024`;
-                    } else {
-                        mediaUrl = `https://picsum.photos/seed/${encodeURIComponent(prompt + Date.now())}/1024`;
-                    }
-                } else {
-                    // Video simulation
-                    mediaUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
-                }
-
-                const newMedia: GeneratedMedia = {
-                    id: Date.now().toString(),
-                    url: mediaUrl,
-                    type,
-                    prompt,
-                    timestamp: Date.now()
-                };
-
-                setGallery(prev => [newMedia, ...prev]);
-                success = true;
-                break;
-            } catch (error: any) {
-                console.error(`SkyDrive Hatası [${keyEntry.label}]:`, error);
-                if (error.message?.includes('429')) {
-                    markKeyAsExhausted(keyEntry.id);
-                    continue;
-                }
-            }
-        }
-
-        if (!success) alert("Medya üretimi başarısız oldu. API kotalarını kontrol edin.");
-        setLoading(false);
-        setPrompt('');
     };
 
     return (
-        <div className="p-4 lg:p-12 animate-in fade-in duration-700 min-h-screen pb-32">
-            <div className="max-w-6xl mx-auto space-y-12">
-                {/* Futuristic Header */}
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-10">
+        <div className="flex-1 p-4 lg:p-12 overflow-y-auto bg-[#0a0a1a] pb-40">
+            <div className="max-w-7xl mx-auto space-y-16 animate-in fade-in duration-1000">
+                <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 border-b border-white/5 pb-12">
                     <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary/40 to-blue-600/40 flex items-center justify-center text-white border border-white/20 shadow-[0_0_40px_rgba(13,89,242,0.3)] rotate-3">
-                            <i className="fa-solid fa-rocket-launch text-4xl animate-pulse"></i>
+                        <div className="w-20 h-20 bg-primary/20 rounded-3xl flex items-center justify-center border border-primary/40 shadow-[0_0_40px_rgba(13,89,242,0.3)]">
+                            <i className="fa-solid fa-jet-fighter text-4xl text-primary animate-pulse"></i>
                         </div>
                         <div>
-                            <h1 className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">
+                            <h1 className="text-5xl font-black text-white italic tracking-tighter uppercase leading-none">
                                 SkyDrive <span className="text-primary tracking-widest not-italic font-light">AI</span>
                             </h1>
                             <div className="flex items-center gap-3 mt-2">
@@ -125,7 +94,6 @@ const SkyDriveView: React.FC = () => {
                     </div>
                 </header>
 
-                {/* Console / Generator */}
                 <section className="grid lg:grid-cols-2 gap-8 items-start">
                     <div className="glass-panel p-8 lg:p-10 rounded-[3rem] border border-white/10 bg-black/40 backdrop-blur-3xl shadow-2xl space-y-8">
                         <div className="space-y-2">
@@ -187,17 +155,19 @@ const SkyDriveView: React.FC = () => {
                         {gallery.length > 0 && (
                             <div className="absolute bottom-8 left-8 right-8">
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">Sonuç Önizleme</p>
-                                <h4 className="text-white font-bold truncate text-lg italic">"{gallery[0].prompt}"</h4>
+                                <h4 className="text-white font-bold truncate text-lg italic">"\${gallery[0].prompt}"</h4>
                             </div>
                         )}
                     </div>
                 </section>
 
-                {/* Media Gallery Section */}
                 <section className="space-y-8">
                     <div className="flex items-center justify-between">
                         <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">SkyDrive <span className="text-blue-500">Galerisi</span></h3>
-                        <button onClick={() => setGallery([])} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20">TÜMÜNÜ TEMİZLE</button>
+                        <button onClick={() => {
+                            setGallery([]);
+                            setStorageItem('skydrive_gallery', []);
+                        }} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-red-500/20">TÜMÜNÜ TEMİZLE</button>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -217,11 +187,6 @@ const SkyDriveView: React.FC = () => {
                                         <button className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs hover:scale-110 transition-transform"><i className="fa-solid fa-eye"></i></button>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                        {gallery.length === 0 && Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="aspect-square rounded-3xl border border-dashed border-white/10 flex items-center justify-center opacity-10">
-                                <i className="fa-solid fa-plus text-2xl"></i>
                             </div>
                         ))}
                     </div>

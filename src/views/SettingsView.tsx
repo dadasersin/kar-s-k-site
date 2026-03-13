@@ -1,166 +1,160 @@
 import React, { useState, useEffect } from 'react';
+import { getStorageItem, setStorageItem } from '../utils/storage';
+import { recordAction } from '../utils/history';
+import { getAllKeys, markKeyAsExhausted } from '../utils/apiPool';
 import type { ApiKeyEntry, ApiProvider, SyncSettings } from '../types';
-import { getAllKeys } from '../utils/apiPool';
-import { getStorageItem } from '../utils/storage';
 
 const SettingsView: React.FC = () => {
-  const [settings, setSettings] = useState<SyncSettings>({
-    enabled: false,
-    token: '',
-    repo: '',
-    customApiKeys: []
-  } as SyncSettings);
-
+  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
   const [provider, setProvider] = useState<ApiProvider>('gemini');
   const [modelName, setModelName] = useState('gemini-2.0-flash');
   const [isCustomModel, setIsCustomModel] = useState(false);
-  const [newKey, setNewKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
   const [keyLabel, setKeyLabel] = useState('');
+  const [newKey, setNewKey] = useState('');
   const [customUrl, setCustomUrl] = useState('');
-  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
+  const [showKey, setShowKey] = useState(false);
+
+  const [settings, setSettings] = useState<SyncSettings>(getStorageItem('sync_settings', {
+    enabled: false,
+    token: '',
+    repo: '',
+    path: 'portal-state.json',
+    customApiKeys: []
+  }));
 
   const [supabaseSettings, setSupabaseSettings] = useState({
-    url: localStorage.getItem('VITE_SUPABASE_URL') || '',
-    anonKey: localStorage.getItem('VITE_SUPABASE_ANON_KEY') || ''
+    url: getStorageItem('VITE_SUPABASE_URL', ''),
+    anonKey: getStorageItem('VITE_SUPABASE_ANON_KEY', '')
   });
 
   useEffect(() => {
-    const saved = getStorageItem('sync_settings', { enabled: false, token: '', repo: '', customApiKeys: [] });
-    setSettings(saved);
     setApiKeys(getAllKeys());
-  }, []);
-
-  const handleProviderChange = (p: ApiProvider) => {
-    setProvider(p);
-    setIsCustomModel(false);
-    if (p === 'gemini') setModelName('gemini-2.0-flash');
-    else if (p === 'deepseek') setModelName('deepseek-chat');
-    else if (p === 'grok') setModelName('grok-beta');
-    else if (p === 'openai') setModelName('gpt-4o-mini');
-    else if (p === 'anthropic') setModelName('claude-3-5-sonnet-latest');
-  };
+  }, [settings]);
 
   const handleGeminiModelChange = (val: string) => {
     if (val === 'custom') {
-        setIsCustomModel(true);
-        setModelName('');
+      setIsCustomModel(true);
+      setModelName('');
     } else {
-        setIsCustomModel(false);
-        setModelName(val);
+      setIsCustomModel(false);
+      setModelName(val);
     }
-  };
-
-  const saveSyncSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('sync_settings', JSON.stringify(settings));
-    alert('GitHub senkronizasyon ayarları kaydedildi.');
-  };
-
-  const saveSupabase = () => {
-    localStorage.setItem('VITE_SUPABASE_URL', supabaseSettings.url);
-    localStorage.setItem('VITE_SUPABASE_ANON_KEY', supabaseSettings.anonKey);
-    alert('Supabase bağlantı bilgileri kaydedildi.');
   };
 
   const addApiKey = () => {
     if (!newKey.trim()) return;
+
     const entry: ApiKeyEntry = {
-      id: Date.now().toString(),
+      id: Math.random().toString(36).substr(2, 9),
       key: newKey.trim(),
-      label: keyLabel.trim() || `${provider.toUpperCase()} - ${modelName}`,
-      provider: provider,
-      modelName: modelName,
-      baseUrl: customUrl,
+      label: keyLabel.trim() || `${provider.toUpperCase()} Key`,
+      provider,
+      modelName,
+      baseUrl: customUrl || undefined,
       isQuotaExhausted: false,
       usageCount: 0,
       quotaLimit: provider === 'gemini' ? 1500 : 500
     };
-    const updated = { ...settings, customApiKeys: [...settings.customApiKeys, entry] };
+
+    const updated = { ...settings, customApiKeys: [...(settings.customApiKeys || []), entry] };
     setSettings(updated);
-    localStorage.setItem('sync_settings', JSON.stringify(updated));
+    setStorageItem('sync_settings', updated);
     setNewKey('');
     setKeyLabel('');
-    setApiKeys(getAllKeys());
+    recordAction('Ayarlar', `Yeni API anahtarı eklendi: \${entry.label}`);
   };
 
   const removeKey = (id: string) => {
     if (id.startsWith('env-')) {
-        alert("Sistem (Environment) anahtarları silinemez.");
+        alert("Sistem anahtarları silinemez.");
         return;
     }
     const updated = { ...settings, customApiKeys: settings.customApiKeys.filter(k => k.id !== id) };
     setSettings(updated);
-    localStorage.setItem('sync_settings', JSON.stringify(updated));
-    setApiKeys(getAllKeys());
+    setStorageItem('sync_settings', updated);
+    recordAction('Ayarlar', "API anahtarı kaldırıldı.");
   };
 
   const resetQuotas = () => {
-    if(!confirm('Tüm kotalar sıfırlansın mı?')) return;
-    const updatedKeys = settings.customApiKeys.map(k => ({ ...k, usageCount: 0, isQuotaExhausted: false }));
-    const updated = { ...settings, customApiKeys: updatedKeys };
-    setSettings(updated);
-    localStorage.setItem('sync_settings', JSON.stringify(updated));
-    setApiKeys(getAllKeys());
+     apiKeys.forEach(k => {
+        if (k.id.startsWith('env-')) {
+            localStorage.removeItem(\`exhausted_env_\${k.provider}\`);
+            localStorage.setItem(\`usage_env_\${k.provider}\`, '0');
+        }
+     });
+     const updated = {
+        ...settings,
+        customApiKeys: settings.customApiKeys.map(k => ({ ...k, isQuotaExhausted: false, usageCount: 0 }))
+     };
+     setSettings(updated);
+     setStorageItem('sync_settings', updated);
+     window.dispatchEvent(new Event('storage'));
+     alert("Tüm kotalar sıfırlandı.");
   };
 
-  const onSyncNow = async () => {
-    alert("GitHub senkronizasyonu başlatıldı...");
+  const saveSyncSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStorageItem('sync_settings', settings);
+    recordAction('Ayarlar', "GitHub senkronizasyon ayarları güncellendi.");
+    alert("Ayarlar kaydedildi.");
+  };
+
+  const saveSupabase = () => {
+    setStorageItem('VITE_SUPABASE_URL', supabaseSettings.url);
+    setStorageItem('VITE_SUPABASE_ANON_KEY', supabaseSettings.anonKey);
+    recordAction('Ayarlar', "Supabase bağlantı bilgileri güncellendi.");
+    alert("Supabase ayarları kaydedildi.");
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-10 overflow-y-auto bg-slate-950 pb-32">
-      <div className="max-w-4xl mx-auto space-y-12">
-        <header>
-          <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-tight">Ayarlar ve API Yönetimi</h2>
-          <p className="text-xs text-gray-500 font-black uppercase tracking-widest mt-2">Portal çekirdek yapılandırması</p>
+    <div className="flex-1 p-4 lg:p-12 overflow-y-auto bg-brandDark/20 pb-40">
+      <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-700">
+        <header className="border-b border-white/5 pb-8">
+          <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Sistem <span className="text-primary">Ayarları</span></h2>
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-2 ml-1">Yapılandırma ve Entegrasyon Merkezi</p>
         </header>
 
-        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
-          <div className="flex items-center justify-between">
-             <div className="flex items-center gap-4">
+        <section className="portal-card p-8 bg-brandDark/40">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
                 <i className="fa-solid fa-key text-3xl text-primary"></i>
-                <h3 className="text-lg font-bold text-white">API Havuzu</h3>
-             </div>
-             <button onClick={resetQuotas} className="text-[9px] font-black text-primary uppercase border border-primary/30 px-3 py-1.5 rounded-xl hover:bg-primary/10 transition-all">Kotaları Yenile</button>
+                <h3 className="text-lg font-bold text-white uppercase tracking-widest">API Anahtar Havuzu</h3>
+            </div>
+            <button onClick={resetQuotas} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-white/5">KOTALARI YENİLE</button>
           </div>
 
-          <div className="space-y-4">
-            {apiKeys.length === 0 ? (
-              <p className="text-slate-600 italic text-sm">Henüz bir anahtar eklenmemiş.</p>
-            ) : (
-              apiKeys.map(k => (
-                <div key={k.id} className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${k.isQuotaExhausted ? 'bg-red-500/5 border-red-500/20' : 'bg-slate-900 border-slate-800'}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.isQuotaExhausted ? 'bg-slate-800' : 'bg-primary/20 text-primary'}`}>
-                      <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-sm`}></i>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-100">{k.label}</p>
-                      <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black">
-                        {k.provider} • {k.modelName} • {k.usageCount || 0}/{k.quotaLimit || 500}
-                      </p>
-                      <p className="text-[8px] text-slate-700 font-mono mt-1">Key: ****{k.key.slice(-4)}</p>
-                    </div>
+          <div className="space-y-4 mb-10">
+            {apiKeys.map(k => (
+              <div key={k.id} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl group hover:border-primary/30 transition-all">
+                <div className="flex items-center gap-4 overflow-hidden">
+                  <div className={\`w-10 h-10 rounded-xl \${k.isQuotaExhausted ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'} flex items-center justify-center shrink-0\`}>
+                    <i className={\`fa-solid \${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-sm\`}></i>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {k.isQuotaExhausted && <span className="text-[8px] font-black text-red-500 uppercase px-2 py-1 bg-red-500/10 rounded-full border border-red-500/20">KOTA DOLU</span>}
-                    <button onClick={() => removeKey(k.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-500 transition-colors">
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-black text-white uppercase truncate">{k.label}</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase truncate">{k.provider} • {k.modelName} • ****{k.key.slice(-4)}</p>
                   </div>
                 </div>
-              ))
-            )}
+                <div className="flex items-center gap-4 shrink-0">
+                    <div className="hidden sm:block text-right">
+                        <p className="text-[9px] font-black text-slate-600 uppercase">Usage</p>
+                        <p className="text-[10px] font-black text-slate-400">{k.usageCount || 0} / {k.quotaLimit || 500}</p>
+                    </div>
+                    {!k.id.startsWith('env-') && (
+                        <button onClick={() => removeKey(k.id)} className="w-8 h-8 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all opacity-0 group-hover:opacity-100"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                    )}
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="pt-6 border-t border-slate-800 space-y-4">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-6 bg-white/5 border border-white/10 rounded-3xl space-y-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase px-1">Servis Sağlayıcı</label>
                   <select
                     value={provider}
-                    onChange={(e) => handleProviderChange(e.target.value as ApiProvider)}
+                    onChange={(e) => setProvider(e.target.value as ApiProvider)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                   >
                     <option value="gemini">Google Gemini</option>
@@ -179,8 +173,6 @@ const SettingsView: React.FC = () => {
                         onChange={(e) => handleGeminiModelChange(e.target.value)}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none focus:border-primary transition-all"
                     >
-                        <option value="gemini-3.1-experimental">Gemini 3.1 Experimental</option>
-                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
                         <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
                         <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                         <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
@@ -242,7 +234,7 @@ const SettingsView: React.FC = () => {
                         onClick={() => setShowKey(!showKey)}
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
                     >
-                        <i className={`fa-solid ${showKey ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
+                        <i className={`fa-solid \${showKey ? 'fa-eye-slash' : 'fa-eye'} text-xs\`}></i>
                     </button>
                 </div>
              </div>
@@ -253,15 +245,14 @@ const SettingsView: React.FC = () => {
           </div>
         </section>
 
-        {/* Sync and Supabase sections remain the same... */}
-        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
+        <section className="portal-card p-8 bg-brandDark/40 space-y-6">
            <div className="flex items-center gap-4">
               <i className="fa-brands fa-github text-3xl text-white"></i>
-              <h3 className="text-lg font-bold text-white">GitHub Senkronizasyonu</h3>
+              <h3 className="text-lg font-bold text-white uppercase tracking-widest">GitHub Senkronizasyonu</h3>
            </div>
-           <p className="text-xs text-slate-400">Tüm anahtar ve sohbet geçmişinizi kendi GitHub deponuzda yedekleyin.</p>
+           <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Tüm anahtar ve sohbet geçmişinizi kendi GitHub deponuzda yedekleyin.</p>
 
-           <form onSubmit={saveSyncSettings} className="space-y-4 pt-4 border-t border-slate-800">
+           <form onSubmit={saveSyncSettings} className="space-y-4 pt-4 border-t border-white/5">
               <div className="flex items-center gap-3 mb-4">
                 <input
                   type="checkbox"
@@ -301,14 +292,14 @@ const SettingsView: React.FC = () => {
            </form>
         </section>
 
-        <section className="glass-panel p-8 rounded-[2.5rem] border border-slate-800 shadow-xl space-y-6">
+        <section className="portal-card p-8 bg-brandDark/40 space-y-6">
            <div className="flex items-center gap-4">
               <i className="fa-solid fa-database text-3xl text-primary"></i>
-              <h3 className="text-lg font-bold text-white">Merkezi Veritabanı (Supabase)</h3>
+              <h3 className="text-lg font-bold text-white uppercase tracking-widest">Merkezi Veritabanı (Supabase)</h3>
            </div>
-           <p className="text-xs text-slate-400">Modülleri ve ayarları kalıcı olarak bulutta saklamak için bir Supabase projesi bağlayın.</p>
+           <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Modülleri ve ayarları kalıcı olarak bulutta saklamak için bir Supabase projesi bağlayın.</p>
 
-           <div className="space-y-4 pt-4 border-t border-slate-800">
+           <div className="space-y-4 pt-4 border-t border-white/5">
               <div className="space-y-2">
                  <label className="text-[10px] font-bold text-slate-500 uppercase">Supabase URL</label>
                  <input

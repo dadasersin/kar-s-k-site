@@ -1,72 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { AppView, type ApiKeyEntry } from '../types';
 import { getStorageItem } from '../utils/storage';
 import { getAllKeys } from '../utils/apiPool';
+import { AppView } from '../types';
 
 interface HomeViewProps {
   onViewChange: (view: AppView | string) => void;
 }
 
 const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
-  const [sessionSeconds, setSessionSeconds] = useState(315); // 00:05:15
-  const [dynamicModuleCount, setDynamicModuleCount] = useState(0);
+  const [sessionSeconds, setSessionSeconds] = useState(315); // Start at 00:05:15
   const [neuralLoad, setNeuralLoad] = useState(24);
   const [processTime, setProcessTime] = useState(4.2);
   const [remainingTime, setRemainingTime] = useState(1.8);
-  const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]);
+  const [brainCapacity, setBrainCapacity] = useState(82);
   const [logs, setLogs] = useState([
-    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-gray-400' },
-    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-gray-400' },
-    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-gray-400' },
-    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-emerald-400 font-bold', badge: 'AKTİF' }
+    { time: '10:42:01', text: 'Sinaptik Bağlantı Kuruldu', color: 'text-primary' },
+    { time: '10:42:05', text: 'Gemini-3-Flash API Yanıtı Alındı', color: 'text-emerald-400' },
+    { time: '10:43:12', text: 'Hafıza Blokları Optimize Edildi', color: 'text-indigo-400' },
+    { time: '10:45:00', text: 'GitHub Senkronizasyonu Tamamlandı', color: 'text-primary', badge: 'AKTİF' }
   ]);
 
-  useEffect(() => {
+  const [apiKeys, setApiKeys] = useState(getAllKeys());
+  const [dynamicModuleCount, setDynamicModuleCount] = useState(0);
+
+  const refreshState = () => {
     setApiKeys(getAllKeys());
+    setDynamicModuleCount(getStorageItem('active_dynamic_modules', []).length);
+  };
 
-    const logInterval = setInterval(() => {
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('tr-TR', { hour12: false });
-      const possibleLogs = [
-        'API Yanıtı Optimize Edildi',
-        'Nöral Ağ Katmanı Güncellendi',
-        'Hafıza Bloğu Doğrulandı',
-        'Sistem Sağlığı Kontrol Edildi',
-        'Nöral Akış Dengelendi',
-        'Semantik İşleme Tamamlandı'
-      ];
-      const randomText = possibleLogs[Math.floor(Math.random() * possibleLogs.length)];
-
-      setLogs(prev => [
-        ...prev.slice(-7),
-        { time: timeStr, text: randomText, color: 'text-primary/70' }
-      ]);
-      setApiKeys(getAllKeys());
-    }, 8000);
-
+  useEffect(() => {
+    refreshState();
     const timer = setInterval(() => {
       setSessionSeconds(prev => prev + 1);
-      setNeuralLoad(prev => {
-        const change = (Math.random() - 0.5) * 2;
-        return Math.max(15, Math.min(45, Math.round(prev + change)));
-      });
-      setProcessTime(prev => {
-        const change = (Math.random() - 0.5) * 0.2;
-        return Math.max(3.0, Math.min(6.0, parseFloat((prev + change).toFixed(1))));
-      });
+      setNeuralLoad(prev => Math.max(20, Math.min(30, prev + (Math.random() - 0.5))));
+      setProcessTime(prev => Math.max(3.5, Math.min(5.0, prev + (Math.random() - 0.5) * 0.1)));
       setRemainingTime(prev => {
         let next = prev - 0.1;
-        if (next <= 0) next = 2.0;
-        return parseFloat(next.toFixed(1));
+        return next <= 0 ? 2.0 : parseFloat(next.toFixed(1));
       });
+      setBrainCapacity(prev => Math.max(80, Math.min(85, prev + (Math.random() - 0.5))));
     }, 1000);
 
-    const modules = getStorageItem('active_dynamic_modules', []);
-    setDynamicModuleCount(modules.length);
+    const logTimer = setInterval(() => {
+       const info = localStorage.getItem('last_ai_usage_info');
+       if (info) {
+          const parsed = JSON.parse(info);
+          if (Date.now() - parsed.timestamp < 5000) {
+              refreshState();
+          }
+       }
+    }, 5000);
 
     return () => {
-      clearInterval(logInterval);
-      clearInterval(timer);
+        clearInterval(timer);
+        clearInterval(logTimer);
     };
   }, []);
 
@@ -77,80 +64,95 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const keys = getAllKeys();
+  const totalUsed = keys.reduce((acc, k) => acc + (k.usageCount || 0), 0);
+  const totalLimit = keys.reduce((acc, k) => acc + (k.quotaLimit || 500), 0);
+  const quotaRemaining = Math.max(0, totalLimit - totalUsed);
+
   const localStorageSizeKB = (JSON.stringify(localStorage).length / 1024).toFixed(2);
   const chatHistoryLength = getStorageItem('chat_history', []).length;
 
   return (
-    <section className="p-4 lg:p-12 animate-in fade-in duration-700 pb-32">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <div className="flex-1 p-4 lg:p-12 overflow-y-auto bg-brandDark/20 pb-40" id="home">
+      <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-1000">
+
+        {/* Header */}
         <header className="border-b border-white/5 pb-12">
-          <h1 className="text-5xl lg:text-7xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">
+          <h1 className="text-6xl lg:text-8xl font-black text-white italic tracking-tighter uppercase leading-none text-glow">
             NEXUS <span className="text-primary">PORTAL</span>
           </h1>
-          <p className="text-slate-500 text-xs font-black tracking-[0.4em] uppercase mt-4">Portal Sahibi • Ersin Güleş</p>
+          <p className="text-slate-500 text-[10px] font-black tracking-[0.6em] uppercase mt-6 ml-2">Portal Sahibi • Ersin Güleş</p>
         </header>
 
-        <div className="space-y-8">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-              <i className="fa-solid fa-microchip text-lg"></i>
+        {/* Dashboard Title */}
+        <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+                <i className="fa-solid fa-microchip text-primary"></i>
             </div>
             <div>
-              <h4 className="text-xl font-bold text-white uppercase tracking-tighter">Sistem Sağlığı ve Analiz</h4>
-              <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Gelişmiş sinir sistemi metrikleri ve mantık motoru durumu</p>
+                <h2 className="text-xl font-black text-white uppercase italic tracking-wider">SİSTEM SAĞLIĞI VE ANALİZ</h2>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Gelişmiş sinir sistemi metrikleri ve mantık motoru durumu</p>
+            </div>
+        </div>
+
+        {/* Main Metrics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <MetricCard label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} icon="fa-hourglass-start" />
+          <MetricCard label="İŞLEM SÜRESİ" value={`${processTime.toFixed(1)} saniye`} icon="fa-bolt" />
+          <MetricCard label="KALAN SÜRE" value={`${remainingTime.toFixed(1)}s`} icon="fa-clock" />
+          <MetricCard label="SİNİR SİSTEMİ" value={`%${Math.round(neuralLoad)}`} color="text-primary" icon="fa-network-wired" />
+          <MetricCard label="MANTIK MOTORU" value="Aktif" color="text-emerald-400" icon="fa-brain" />
+          <MetricCard label="BEYİN KAPASİTESİ" value={`%${Math.round(brainCapacity)}`} icon="fa-microchip" />
+          <MetricCard label="API KOTASI (KALAN)" value={`${(quotaRemaining/1000).toFixed(1)}k`} color="text-primary" icon="fa-key" />
+          <MetricCard label="API KOTASI (KULLANILAN)" value={totalUsed.toString()} icon="fa-chart-line" />
+          <MetricCard label="ÇALIŞMA SÜRESİ" value="14g 5s" icon="fa-calendar-check" />
+          <MetricCard label="MEDYA MOTORU" value="Hazır" color="text-indigo-400" icon="fa-clapperboard" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Storage Section */}
+          <div className="portal-card p-8 bg-brandDark/40">
+            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                <i className="fa-solid fa-database text-primary"></i> Hafıza (Storage)
+            </h3>
+            <div className="space-y-6">
+                <StorageRow label="Sohbet Kayıtları" value={`${chatHistoryLength} Mesaj`} />
+                <StorageRow label="Görsel Varlıklar" value="0 Adet" />
+                <StorageRow label="Local Storage" value={`${localStorageSizeKB} KB`} />
+                <StorageRow label="GitHub Depo Boyutu" value="Yapılandırılmadı" />
+                <StorageRow label="Aktif Modüller" value={`${dynamicModuleCount} Modül`} />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <MetricBox label="OTURUM SÜRESİ" value={formatTime(sessionSeconds)} icon="fa-hourglass-start" />
-            <MetricBox label="İŞLEM SÜRESİ" value={`${processTime} saniye`} icon="fa-bolt" />
-            <MetricBox label="KALAN SÜRE" value={`${remainingTime}s`} icon="fa-clock" />
-            <MetricBox label="SİNİR SİSTEMİ" value={`%${neuralLoad}`} color="text-primary" icon="fa-network-wired" />
-            <MetricBox label="MANTIK MOTORU" value="Aktif" color="text-green-500" icon="fa-gears" />
-            <MetricBox label="BEYİN KAPASİTESİ" value="%82" icon="fa-brain" />
-            <MetricBox label="API KOTASI (KALAN)" value="1.2k" icon="fa-database" />
-            <MetricBox label="API KOTASI (KULLANILAN)" value="300" icon="fa-chart-line" />
-            <MetricBox label="ÇALIŞMA SÜRESİ" value="14g 5s" icon="fa-calendar-check" />
-            <MetricBox label="MEDYA MOTORU" value="Hazır" color="text-blue-400" icon="fa-play-circle" />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="portal-card p-6">
-              <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                <i className="fa-solid fa-hard-drive text-primary"></i> Hafıza (Storage)
-              </h5>
-              <div className="space-y-4">
-                <StorageItem label="Sohbet Kayıtları" value={`${chatHistoryLength} Mesaj`} icon="fa-message" />
-                <StorageItem label="Görsel Varlıklar" value="0 Adet" icon="fa-image" />
-                <StorageItem label="Local Storage" value={`${localStorageSizeKB} KB`} icon="fa-folder-open" />
-                <StorageItem label="GitHub Depo Boyutu" value="Yapılandırılmadı" icon="fa-github" />
-                <StorageItem label="Aktif Modüller" value={`${dynamicModuleCount} Modül`} icon="fa-cube" />
-              </div>
+          {/* Synaptic Flow Logs */}
+          <div className="lg:col-span-2 portal-card p-8 bg-brandDark/60 font-mono relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i className="fa-solid fa-dna text-7xl"></i>
             </div>
-
-            <div className="lg:col-span-2 portal-card p-6 font-mono relative overflow-hidden">
-              <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2 relative z-10">
+            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
                 <i className="fa-solid fa-wave-square text-primary animate-pulse"></i> Sinaptik Akış (Canlı İzleme)
-              </h5>
-              <div className="space-y-2 text-[11px] relative z-10">
+            </h3>
+            <div className="space-y-3 text-[11px]">
                 {logs.map((log, i) => (
-                  <div key={i} className={`flex gap-4 ${log.color}`}>
-                    <span className="shrink-0 text-primary opacity-60">[{log.time}]</span>
-                    <span>{log.text} {log.badge && <span className="px-1.5 py-0.5 bg-emerald-500 text-black text-[8px] font-black rounded tracking-tighter ml-2 uppercase">{log.badge}</span>}</span>
-                  </div>
+                    <div key={i} className="flex gap-6 items-center">
+                        <span className="text-slate-600 shrink-0">[{log.time}]</span>
+                        <span className={`${log.color} font-bold`}>{log.text}</span>
+                        {log.badge && <span className="bg-primary text-white text-[8px] px-2 py-0.5 rounded font-black tracking-tighter uppercase">{log.badge}</span>}
+                    </div>
                 ))}
-                <div className="flex items-center gap-2 text-primary pt-2 italic animate-pulse">
-                  <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                  Yeni sinaptik veriler bekleniyor...
+                <div className="flex gap-6 items-center animate-pulse pt-2 text-primary">
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                    <span className="italic">Yeni sinaptik veriler bekleniyor...</span>
                 </div>
-              </div>
             </div>
+          </div>
 
-            {/* API QUOTA MONITOR */}
-            <div className="lg:col-span-3 portal-card p-8">
-              <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-                <i className="fa-solid fa-key text-primary"></i> API Anahtar Havuzu (Canlı)
-              </h5>
+          {/* API Keys Pool */}
+          <div className="lg:col-span-3 portal-card p-8">
+              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-3">
+                  <i className="fa-solid fa-key text-primary"></i> API Anahtar Havuzu (Canlı)
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {apiKeys.map(k => {
                   const usage = k.usageCount || 0;
@@ -158,13 +160,13 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                   const percent = Math.min(100, (usage / limit) * 100);
 
                   return (
-                    <div key={k.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                    <div key={k.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3 hover:border-primary/40 transition-all">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-[10px] text-primary`}></i>
+                          <i className={`fa-solid \${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-[10px] text-primary`}></i>
                           <p className="text-[10px] font-bold text-white uppercase truncate max-w-[100px]">{k.label}</p>
                         </div>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${k.isQuotaExhausted ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded \${k.isQuotaExhausted ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
                           {k.isQuotaExhausted ? 'DOLU' : 'AKTİF'}
                         </span>
                       </div>
@@ -174,7 +176,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                           <span>%{percent.toFixed(0)}</span>
                         </div>
                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                          <div className={`h-full transition-all duration-1000 ${percent > 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${percent}%` }}></div>
+                          <div className={`h-full transition-all duration-1000 \${percent > 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: \`\${percent}%\` }}></div>
                         </div>
                       </div>
                       <p className="text-[8px] text-gray-600 font-mono truncate">Key: ****{k.key.slice(-4)}</p>
@@ -182,33 +184,32 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                   );
                 })}
               </div>
-            </div>
+          </div>
 
-            <div className="lg:col-span-3 portal-card p-8">
-              <h5 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8 flex items-center gap-2">
+          {/* Logic Processing Layer */}
+          <div className="lg:col-span-3 portal-card p-10 bg-gradient-to-br from-brandDark to-black border-primary/10">
+            <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] mb-10 flex items-center gap-3">
                 <i className="fa-solid fa-brain text-primary"></i> Mantık Katmanı (Logic Processing)
-              </h5>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">KARAR MEKANİZMASI</p>
-                  <p className="text-sm text-gray-300 leading-relaxed">Multimodal veri analizi ve önceliklendirme algoritması aktif.</p>
-                </div>
-                <div className="space-y-2 border-l border-white/5 pl-8">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">YAPAY SİNİR AĞI</p>
-                  <p className="text-sm text-gray-300 leading-relaxed">Dinamik API rotasyonu ve hata tolerans yönetimi optimize edildi.</p>
-                </div>
-                <div className="space-y-2 border-l border-white/5 pl-8">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">SEMANTİK İŞLEME</p>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm text-gray-300">Bağlamsal hafıza geri çağırma hızı: <span className="text-primary font-bold">142ms</span></p>
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase">(Optimize)</p>
-                  </div>
-                </div>
-              </div>
+            </h3>
+            <div className="grid md:grid-cols-3 gap-12">
+                <LogicItem
+                    title="KARAR MEKANİZMASI"
+                    desc="Multimodal veri analizi ve önceliklendirme algoritması aktif."
+                />
+                <LogicItem
+                    title="YAPAY SİNİR AĞI"
+                    desc="Dinamik API rotasyonu ve hata tolerans yönetimi optimize edildi."
+                />
+                <LogicItem
+                    title="SEMANTİK İŞLEME"
+                    desc={<>Bağlamsal hafıza geri çağırma hızı: <span className="text-primary font-bold">142ms</span> <span className="text-[10px] text-emerald-400 font-bold uppercase ml-2">(Optimize)</span></>}
+                />
             </div>
           </div>
+
         </div>
 
+        {/* Feature Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard
             icon={<i className="fa-solid fa-music text-xl"></i>}
@@ -229,41 +230,45 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
             onClick={() => onViewChange(AppView.TOOLS)}
           />
         </div>
+
       </div>
-    </section>
+    </div>
   );
 };
 
 const FeatureCard = ({ icon, title, desc, onClick }: { icon: React.ReactNode, title: string, desc: string, onClick?: () => void }) => (
-  <div className="group portal-card p-6 cursor-pointer" onClick={onClick}>
+  <div className="group portal-card p-6 cursor-pointer hover:border-primary/40 transition-all" onClick={onClick}>
     <div className="w-12 h-12 bg-primary/10 rounded-custom flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
       {icon}
     </div>
-    <h4 className="font-bold mb-2 text-white">{title}</h4>
+    <h4 className="font-bold mb-2 text-white uppercase tracking-wider">{title}</h4>
     <p className="text-sm text-gray-400">{desc}</p>
   </div>
 );
 
-const MetricBox = ({ label, value, icon, color = "text-white" }: { label: string, value: string, icon: string, color?: string }) => (
-  <div className="portal-card p-4 flex flex-col justify-between hover:border-primary/20 transition-colors group">
-    <div className="flex items-center justify-between mb-4">
-      <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">{label}</p>
-      <i className={`fa-solid ${icon} text-[10px] text-primary/40 group-hover:text-primary transition-colors`}></i>
+const MetricCard = ({ label, value, icon, color = "text-white" }: { label: string, value: string, icon: string, color?: string }) => (
+    <div className="portal-card p-6 bg-brandDark/40 hover:border-primary/30 transition-all group">
+        <div className="flex justify-between items-start mb-4">
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
+            <i className={`fa-solid \${icon} text-[11px] text-primary/30 group-hover:text-primary transition-colors`}></i>
+        </div>
+        <p className={`text-xl font-black italic tracking-tighter \${color}`}>{value}</p>
     </div>
-    <p className={`text-xl font-black ${color}`}>{value}</p>
-  </div>
 );
 
-const StorageItem = ({ label, value, icon }: { label: string, value: string, icon: string }) => (
-  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center text-gray-400">
-        <i className={`fa-solid ${icon} text-xs`}></i>
-      </div>
-      <p className="text-xs font-bold text-gray-300">{label}</p>
+const StorageRow = ({ label, value }: { label: string, value: string }) => (
+    <div className="flex justify-between items-center border-b border-white/5 pb-4">
+        <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{label}</span>
+        <span className="text-xs font-black text-white">{value}</span>
     </div>
-    <p className="text-xs font-black text-white">{value}</p>
-  </div>
+);
+
+const LogicItem = ({ title, desc }: { title: string, desc: React.ReactNode }) => (
+    <div className="space-y-3">
+        <h4 className="text-xs font-black text-primary uppercase tracking-widest">{title}</h4>
+        <div className="h-px bg-white/10 w-12"></div>
+        <div className="text-[11px] text-slate-400 leading-relaxed font-bold">{desc}</div>
+    </div>
 );
 
 export default HomeView;

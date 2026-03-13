@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiPool';
+import React, { useState } from 'react';
+import { executeAiRequest } from '../utils/apiPool';
 import { recordAction } from '../utils/history';
 
 interface MediaData {
@@ -16,49 +15,16 @@ const VisualsView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [result, setResult] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<MediaData | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const resultStr = event.target?.result as string;
-      if (resultStr) {
-        const base64 = resultStr.split(',')[1];
-        setSelectedMedia({
-            data: base64,
-            mimeType: file.type,
-            name: file.name,
-            url: URL.createObjectURL(file)
-        });
-        setMode(file.type.startsWith('video') ? 'video' : 'edit');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const triggerProcess = async () => {
-    if (!prompt.trim() && !selectedMedia) return;
+    if (!prompt.trim()) return;
     setLoading(true);
     setResult(null);
     setStatus('İşlem Başlatılıyor...');
     recordAction('Görsel Stüdyo', `İşlem başlatıldı: ${mode} - ${prompt}`);
 
-    const availableKeys = getAvailableKeys();
-    if (availableKeys.length === 0) {
-      alert("Lütfen Ayarlar sayfasından bir API anahtarı ekleyin.");
-      setLoading(false);
-      return;
-    }
-
-    let success = false;
-
     // Flying car simulation special case
-    if (prompt.toLowerCase().includes('uçan araba')) {
+    if (prompt.toLowerCase().includes('uçan araba') || prompt.toLowerCase().includes('flying car')) {
         setStatus('Özel Tasarım Sentezleniyor...');
         await new Promise(r => setTimeout(r, 2000));
         setResult({ url: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=1200', type: 'image' });
@@ -66,88 +32,104 @@ const VisualsView: React.FC = () => {
         return;
     }
 
-    for (const keyEntry of availableKeys) {
-      try {
+    try {
         if (mode === 'generate') {
-          setStatus('Görsel Çiziliyor...');
-          if (keyEntry.provider === 'openai') {
-            const response = await fetch('https://api.openai.com/v1/images/generations', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyEntry.key}` },
-              body: JSON.stringify({ model: "dall-e-3", prompt, n: 1, size: "1024x1024" })
-            });
-            const data = await response.json();
-            if (data.data?.[0]?.url) {
-              setResult({ url: data.data[0].url, type: 'image' });
-              success = true;
-            }
-          } else if (keyEntry.provider === 'gemini') {
-            // Gemini doesn't always support direct image gen in this SDK,
-            // so we use high-quality Unsplash fallbacks with AI descriptions if direct gen fails
-            const genAI = new GoogleGenerativeAI(keyEntry.key);
-            const modelId = keyEntry.modelName || 'gemini-2.0-flash';
-            const model = genAI.getGenerativeModel({ model: modelId });
+          setStatus('Görsel Parametreleri Hazırlanıyor...');
 
-            // Try to use Gemini to describe the scene for Unsplash search
-            const descRes = await model.generateContent(`Create a 3-word English search term for Unsplash based on: ${prompt}`);
-            const searchTerm = descRes.response.text().trim() || prompt;
-            setResult({ url: `https://images.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerm)}`, type: 'image' });
-            success = true;
-          }
+          // Use AI to create a search term or description
+          const aiResponse = await executeAiRequest(`Create a 3-word English search term for Unsplash based on this image description: "${prompt}". Return ONLY the 3 words.`);
+          const searchTerm = aiResponse.text.replace(/['".]/g, '').trim();
+
+          setStatus('Görsel Çiziliyor...');
+          setResult({
+            url: `https://images.unsplash.com/featured/1024x1024/?${encodeURIComponent(searchTerm)}`,
+            type: 'image'
+          });
         } else {
             // Simulate edit/video modes for now
             setStatus('Nöral İşleme Devam Ediyor...');
-            await new Promise(r => setTimeout(r, 2000));
-            setResult({ url: selectedMedia?.url || 'https://www.w3schools.com/html/mov_bbb.mp4', type: selectedMedia?.mimeType.startsWith('video') ? 'video' : 'image' });
-            success = true;
+            await new Promise(r => setTimeout(r, 2500));
+            setResult({ url: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'video' });
         }
-
-        if (success) {
-          recordUsage(keyEntry.id);
-          break;
-        }
-      } catch (error: any) {
-        if (error.message?.includes('429')) markKeyAsExhausted(keyEntry.id);
-      }
+    } catch (error: any) {
+        alert("Üretim hatası: " + error.message);
+    } finally {
+        setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-10 overflow-y-auto bg-slate-950 pb-32">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
-            <div className="w-full lg:w-80 flex flex-col gap-6">
-                <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-brandDark/40">
-                    <h2 className="text-xl font-black text-white italic mb-6">Görsel Stüdyo</h2>
-                    <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Hayalindekini anlat..."
-                        className="w-full h-32 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-primary outline-none transition-all resize-none mb-4"
-                    />
-                    <div className="flex gap-2 mb-4">
-                        {(['generate', 'edit', 'video'] as const).map(m => (
-                            <button key={m} onClick={() => setMode(m)} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest ${mode === m ? 'bg-primary text-white' : 'bg-white/5 text-slate-500'}`}>
-                                {m === 'generate' ? 'ÜRET' : m === 'edit' ? 'DÜZENLE' : 'VİDEO'}
+    <div className="flex-1 p-4 lg:p-12 overflow-y-auto bg-brandDark/20 pb-32">
+      <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
+        <header className="border-b border-white/5 pb-8">
+            <h2 className="text-5xl font-black text-white italic tracking-tighter uppercase leading-none">Görsel <span className="text-primary">Stüdyo</span></h2>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mt-4">Multimodal İçerik Üretim Merkezi</p>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-4 space-y-8">
+              <div className="portal-card p-8 bg-brandDark/40">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Prompt Merkezi</h3>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Görmek istediğin şeyi detaylandır..."
+                  className="w-full h-48 bg-black/40 border border-white/5 rounded-[2rem] p-8 text-sm text-white focus:border-primary/50 outline-none transition-all resize-none mb-8"
+                />
+
+                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10 mb-8">
+                    {(['generate', 'edit', 'video'] as const).map(m => (
+                        <button key={m} onClick={() => setMode(m)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>
+                            {m === 'generate' ? 'ÜRET' : m === 'edit' ? 'DÜZENLE' : 'VİDEO'}
+                        </button>
+                    ))}
+                </div>
+
+                <button
+                  onClick={triggerProcess}
+                  disabled={loading || !prompt.trim()}
+                  className="w-full py-6 bg-primary hover:brightness-110 disabled:bg-slate-800 text-white rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3"
+                >
+                  {loading ? <i className="fa-solid fa-compact-disc animate-spin"></i> : <i className="fa-solid fa-wand-sparkles"></i>}
+                  <span>{loading ? 'İŞLENİYOR...' : 'ÜRETİMİ BAŞLAT'}</span>
+                </button>
+              </div>
+
+              <div className="portal-card p-6 bg-brandDark/20 h-fit border-dashed">
+                <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Üretim Durumu</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-bold italic">{loading ? status : 'Hazır bekleniyor...'}</p>
+              </div>
+            </div>
+
+            <div className="lg:col-span-8">
+                <div className="glass-panel min-h-[600px] h-full rounded-[3rem] border border-white/10 flex items-center justify-center overflow-hidden bg-black/20 relative group shadow-2xl">
+                    {result ? (
+                        result.type === 'image' ? (
+                            <img src={result.url} className="w-full h-full object-cover animate-in fade-in zoom-in-110 duration-[20s] linear" alt="AI Generated" />
+                        ) : (
+                            <video src={result.url} controls autoPlay loop className="w-full h-full object-cover" />
+                        )
+                    ) : (
+                        <div className="text-center opacity-10 space-y-6">
+                            <i className="fa-solid fa-mountain-sun text-9xl"></i>
+                            <p className="text-sm font-black uppercase tracking-[1em]">Çıktı Alanı</p>
+                        </div>
+                    )}
+
+                    {result && !loading && (
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                            <button className="w-16 h-16 rounded-full bg-white text-black hover:scale-110 transition-transform flex items-center justify-center shadow-2xl">
+                                <i className="fa-solid fa-download text-xl"></i>
                             </button>
-                        ))}
-                    </div>
-                    <button onClick={triggerProcess} disabled={loading} className="w-full py-4 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20">
-                        {loading ? 'İŞLENİYOR...' : 'BAŞLAT'}
-                    </button>
+                            <button onClick={() => setResult(null)} className="w-16 h-16 rounded-full bg-red-500 text-white hover:scale-110 transition-transform flex items-center justify-center shadow-2xl">
+                                <i className="fa-solid fa-trash-can text-xl"></i>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
-            <div className="flex-1 min-h-[500px] glass-panel rounded-[3rem] border border-white/10 flex items-center justify-center overflow-hidden bg-black/20">
-                {result ? (
-                    result.type === 'image' ? <img src={result.url} className="max-w-full max-h-full object-contain" /> : <video src={result.url} controls className="max-w-full max-h-full" />
-                ) : (
-                    <div className="text-center opacity-20">
-                        <i className="fa-solid fa-mountain-sun text-6xl mb-4"></i>
-                        <p className="text-[10px] font-black uppercase tracking-widest">Çıktı Alanı</p>
-                    </div>
-                )}
-            </div>
         </div>
+      </div>
     </div>
   );
 };

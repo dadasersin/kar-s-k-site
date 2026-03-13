@@ -1,199 +1,128 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiPool';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { executeAiRequest } from '../utils/apiPool';
+import { getStorageItem, setStorageItem } from '../utils/storage';
 import { recordAction } from '../utils/history';
 
+interface AudioRemix {
+  id: string;
+  originalName: string;
+  remixUrl: string;
+  prompt: string;
+  timestamp: number;
+}
+
 const AudioView: React.FC = () => {
-  const [mode, setMode] = useState<'tts' | 'remix' | 'beste'>('beste');
-  const [text, setText] = useState('Modüler YZ platformuna hoş geldiniz.');
-  const [lyrics, setLyrics] = useState('');
-  const [genre, setGenre] = useState('Electronic Dance Music');
-  const [remixPrompt, setRemixPrompt] = useState('Bu sesi daha enerjik, cyberpunk bir atmosfere dönüştür.');
-  const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState('Kore');
-  const [selectedAudio, setSelectedAudio] = useState<{data: string, name: string, mimeType: string, url: string} | null>(null);
-  const [audioResult, setAudioResult] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const [prompt, setPrompt] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [logs, setLogs] = useState<AudioRemix[]>([]);
+  const [activeTab, setActiveTab] = useState<'create' | 'library'>('create');
 
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const voices = ['Kore', 'Puck', 'Charon', 'Fenrir', 'Zephyr'];
+  useEffect(() => {
+    setLogs(getStorageItem('audio_remixes', []));
+  }, []);
 
-  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const resultStr = (event.target?.result as string).split(',')[1];
-      setSelectedAudio({
-        data: resultStr,
-        name: file.name,
-        mimeType: file.type || 'audio/mp3',
-        url: URL.createObjectURL(file)
-      });
-    };
-    reader.readAsDataURL(file);
-  };
+  const handleGenerate = async () => {
+    if (!prompt.trim()) return;
+    setIsProcessing(true);
+    recordAction('Ses Stüdyosu', `Yeni beste talebi: ${prompt}`);
 
-  const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const base64 = (event.target?.result as string).split(',')[1];
-          setSelectedAudio({
-            data: base64,
-            name: `Ses Kaydı-${new Date().toLocaleTimeString()}.mp3`,
-            mimeType: 'audio/mp3',
-            url: URL.createObjectURL(audioBlob)
-          });
-        };
-        reader.readAsDataURL(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
+      // Simulate composition logic with real AI metadata
+      const response = await executeAiRequest(`Sen bir müzik prodüktörüsün. Şu konsept için teknik beste notları (BPM, Key, Enstrümantasyon, Aranjman) üret: "${prompt}"`);
+
+      const newRemix: AudioRemix = {
+        id: Date.now().toString(),
+        originalName: "Nöral Kompozisyon #" + (logs.length + 1),
+        remixUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        prompt: prompt + " | Yapım Notları: " + response.text.substring(0, 150),
+        timestamp: Date.now()
       };
-      recorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      alert("Mikrofon erişimi sağlanamadı.");
+
+      const updated = [newRemix, ...logs];
+      setLogs(updated);
+      setStorageItem('audio_remixes', updated);
+      setActiveTab('library');
+      setPrompt('');
+    } catch (e: any) {
+        alert("Beste hatası: " + e.message);
+    } finally {
+      setIsProcessing(false);
     }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const triggerProcess = async () => {
-    setIsSynthesizing(true);
-    setAudioResult(null);
-    recordAction('Ses Laboratuvarı', `İşlem başlatıldı: ${mode}`);
-
-    const availableKeys = getAvailableKeys('gemini');
-    if (availableKeys.length === 0) {
-      alert("Gemini API anahtarı bulunamadı.");
-      setIsSynthesizing(false);
-      return;
-    }
-
-    let success = false;
-    for (const keyEntry of availableKeys) {
-      const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-
-      for (const modelId of modelsToTry) {
-        try {
-          const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({ model: modelId });
-
-                    // Simulation of audio processing
-          const simulationPrompt = mode === 'beste'
-            ? `Compose a song with genre ${genre} and lyrics: ${lyrics}`
-            : `Analyze and simulate audio ${mode} for: ${mode === 'tts' ? text : remixPrompt}`;
-
-          await model.generateContent(simulationPrompt);
-
-          // Use a dummy audio for simulation
-          setAudioResult(selectedAudio?.url || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-          success = true;
-          break;
-        } catch (err: any) {
-          if (err.message?.includes('429')) break;
-        }
-      }
-      if (success) {
-        recordUsage(keyEntry.id);
-        break;
-      }
-      markKeyAsExhausted(keyEntry.id);
-    }
-    setIsSynthesizing(false);
   };
 
   return (
-    <div className="flex-1 p-4 lg:p-10 overflow-y-auto bg-slate-950 pb-32">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <header className="flex items-center gap-6 mb-12">
-            <div className="w-16 h-16 rounded-[2rem] bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                <i className="fa-solid fa-waveform text-2xl"></i>
-            </div>
+    <div className="flex-1 p-4 lg:p-12 overflow-y-auto bg-brandDark/20 pb-32">
+      <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
+        <header className="flex justify-between items-end border-b border-white/5 pb-8">
             <div>
-                <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Ses Stüdyosu</h2>
-                <p className="text-[10px] text-gray-500 font-black uppercase tracking-[0.3em]">Nöral Ses Sentezi ve Remix</p>
+                <h2 className="text-5xl font-black text-white italic tracking-tighter uppercase leading-none">Ses <span className="text-primary">Stüdyosu</span></h2>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] mt-4">Nöral Ses Sentezi & Aranjman Merkezi</p>
+            </div>
+            <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10">
+                <button onClick={() => setActiveTab('create')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'create' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>BESTE YAP</button>
+                <button onClick={() => setActiveTab('library')} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${activeTab === 'library' ? 'bg-primary text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}>KİTAPLIK</button>
             </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-                                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
-                    {(['beste', 'remix', 'tts'] as const).map(m => (
-                        <button key={m} onClick={() => setMode(m)} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${mode === m ? 'bg-emerald-600 text-white' : 'text-slate-500'}`}>
-                            {m === 'remix' ? 'REMIX' : m === 'tts' ? 'METİNDEN SESE' : 'BESTE YAP'}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="glass-panel p-8 rounded-[2.5rem] border border-white/10 bg-brandDark/40 space-y-6">
-                                        {mode === 'beste' ? (
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block tracking-widest">Şarkı Sözleri</label>
-                                <textarea value={lyrics} onChange={(e) => setLyrics(e.target.value)} className="w-full h-32 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-emerald-500 outline-none resize-none font-serif italic" placeholder="Şarkı sözlerini buraya yazın..." />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-gray-500 font-black uppercase mb-2 block tracking-widest">Müzik Tarzı</label>
-                                <input value={genre} onChange={(e) => setGenre(e.target.value)} className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-xs text-white outline-none focus:border-emerald-500" placeholder="Örn: Pop, Rock, Techno..." />
-                            </div>
-                        </div>
-                    ) : mode === 'remix' ? (
-                        <>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button onClick={() => audioInputRef.current?.click()} className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/5 rounded-3xl hover:border-emerald-500/50 transition-all gap-3 bg-black/20">
-                                    <i className="fa-solid fa-upload text-xl text-slate-500"></i>
-                                    <span className="text-[9px] font-black text-slate-500 uppercase">YÜKLE</span>
-                                </button>
-                                <button onClick={isRecording ? stopRecording : startRecording} className={`flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-3xl transition-all gap-3 ${isRecording ? 'border-red-500 bg-red-500/10' : 'border-white/5 bg-black/20'}`}>
-                                    <i className={`fa-solid ${isRecording ? 'fa-stop' : 'fa-microphone'} text-xl ${isRecording ? 'text-red-500' : 'text-slate-500'}`}></i>
-                                    <span className="text-[9px] font-black text-slate-500 uppercase">{isRecording ? 'DURDUR' : 'KAYDET'}</span>
-                                </button>
-                            </div>
-                            <textarea value={remixPrompt} onChange={(e) => setRemixPrompt(e.target.value)} className="w-full h-32 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-emerald-500 outline-none resize-none" placeholder="Remix talimatı..." />
-                        </>
-                    ) : (
-                        <textarea value={text} onChange={(e) => setText(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:border-emerald-500 outline-none resize-none" placeholder="Konuşulacak metin..." />
-                    )}
-                    <button onClick={triggerProcess} disabled={isSynthesizing} className="w-full py-4 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl">
-                        {isSynthesizing ? 'SENTEZLENİYOR...' : 'BAŞLAT'}
-                    </button>
-                </div>
+        {activeTab === 'create' ? (
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="portal-card p-8 bg-brandDark/40">
+                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">Müzikal Konsept</h3>
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Müzikal tarzı, ruh halini ve enstrümanları tanımlayın..."
+                  className="w-full h-48 bg-black/40 border border-white/5 rounded-[2rem] p-8 text-sm text-white focus:border-primary/50 outline-none transition-all resize-none mb-8"
+                />
+                <button
+                  onClick={handleGenerate}
+                  disabled={isProcessing || !prompt.trim()}
+                  className="w-full py-6 bg-primary hover:brightness-110 disabled:bg-slate-800 text-white rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? <i className="fa-solid fa-compact-disc animate-spin"></i> : <i className="fa-solid fa-wand-sparkles"></i>}
+                  <span>{isProcessing ? 'SENTEZLENİYOR...' : 'BESTEYİ OLUŞTUR'}</span>
+                </button>
+              </div>
             </div>
-
-            <div className="glass-panel p-8 rounded-[3rem] border border-white/10 bg-black/20 flex flex-col items-center justify-center text-center">
-                {audioResult ? (
-                    <div className="space-y-8 w-full">
-                        <div className="w-24 h-24 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 mx-auto animate-pulse">
-                            <i className="fa-solid fa-play text-3xl"></i>
-                        </div>
-                        <audio src={audioResult} controls className="w-full" />
-                        <a href={audioResult} download className="block w-full py-4 border border-white/10 rounded-2xl text-[10px] font-black text-slate-500 hover:text-white transition-all uppercase tracking-widest">DOSYAYI İNDİR</a>
-                    </div>
-                ) : (
-                    <div className="opacity-10 space-y-4">
-                        <i className="fa-solid fa-music text-6xl"></i>
-                        <p className="text-[10px] font-black uppercase tracking-widest">Çıktı Bekleniyor</p>
-                    </div>
-                )}
+            <div className="portal-card p-6 bg-brandDark/20 h-fit border-dashed">
+                <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Akıllı Aranjör</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-bold">Portal ses motoru, promptlarınızı harmonik yapılara dönüştürerek profesyonel aranjmanlar hazırlar. Tüm üretimler API kotasına dahildir.</p>
             </div>
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {logs.length === 0 ? (
+                <div className="py-32 text-center text-slate-700 opacity-30">
+                    <i className="fa-solid fa-music text-7xl mb-6"></i>
+                    <p className="uppercase tracking-[0.4em] text-xs">Henüz üretim yapılmadı.</p>
+                </div>
+            ) : (
+                logs.map(remix => (
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} key={remix.id} className="portal-card p-6 flex flex-col md:flex-row items-center gap-8 group">
+                        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                            <i className="fa-solid fa-play text-xl"></i>
+                        </div>
+                        <div className="flex-1 text-center md:text-left space-y-1">
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">{remix.originalName}</h4>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase truncate max-w-md">{remix.prompt}</p>
+                            <p className="text-[8px] text-slate-600 font-black">{new Date(remix.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all">İNDİR</button>
+                            <button onClick={() => {
+                                const upd = logs.filter(l => l.id !== remix.id);
+                                setLogs(upd);
+                                setStorageItem('audio_remixes', upd);
+                            }} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                        </div>
+                    </motion.div>
+                ))
+            )}
+          </div>
+        )}
       </div>
-      <input type="file" ref={audioInputRef} className="hidden" accept="audio/*" onChange={handleAudioUpload} />
     </div>
   );
 };

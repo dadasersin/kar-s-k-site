@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-import { getAvailableKeys, recordUsage, markKeyAsExhausted } from '../utils/apiPool';
+import { executeAiRequest } from '../utils/apiPool';
 import { recordAction } from '../utils/history';
 
 interface AnalysisResult {
@@ -21,71 +20,32 @@ const DockerConfigView: React.FC = () => {
     setLoading(true);
     setResult(null);
     setErrorMessage('');
-    recordAction('Docker AI', `Build hatası analiz ediliyor: ${contextInput || 'Genel'}`);
+    recordAction('Docker AI', \`Build hatası analiz ediliyor: \${contextInput || 'Genel'}\`);
 
-    const availableKeys = getAvailableKeys('gemini');
-    if (availableKeys.length === 0) {
-      setErrorMessage("Gemini API anahtarı bulunamadı.");
-      setLoading(false);
-      return;
-    }
-
-    const schema = {
-      description: "Docker build error analysis",
-      type: SchemaType.OBJECT,
-      properties: {
-        explanation: { type: SchemaType.STRING },
-        solution: { type: SchemaType.STRING },
-        files: {
-          type: SchemaType.ARRAY,
-          items: {
-            type: SchemaType.OBJECT,
-            properties: {
-              name: { type: SchemaType.STRING },
-              language: { type: SchemaType.STRING },
-              content: { type: SchemaType.STRING }
-            },
-            required: ["name", "language", "content"]
-          }
-        }
-      },
-      required: ["explanation", "solution", "files"]
-    };
-
-    let success = false;
-    for (const keyEntry of availableKeys) {
-      const modelsToTry = [keyEntry.modelName || "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
-
-      for (const modelId of modelsToTry) {
-        try {
-          const genAI = new GoogleGenerativeAI(keyEntry.key);
-          const model = genAI.getGenerativeModel({
-            model: modelId,
-            generationConfig: { responseMimeType: "application/json", responseSchema: schema as any }
-          });
-
-          const prompt = `
-            Aşağıdaki Docker build hatasını analiz et ve çözüm üret:
-            HATA: ${errorInput}
-            BAĞLAM: ${contextInput}
-          `;
-
-          const response = await model.generateContent(prompt);
-          const data = JSON.parse(response.response.text());
-          setResult(data);
-          recordUsage(keyEntry.id);
-          success = true;
-          break;
-        } catch (err: any) {
-          if (err.message?.includes('429')) break;
-        }
+    const prompt = \`
+      Aşağıdaki Docker build hatasını analiz et ve çözüm üret.
+      JSON formatında şu yapıda yanıt ver:
+      {
+        "explanation": "Hatanın nedeninin açıklaması",
+        "solution": "Nasıl çözüleceği",
+        "files": [{"name": "dosya_adı", "language": "dil", "content": "içerik"}]
       }
-      if (success) break;
-      markKeyAsExhausted(keyEntry.id);
-    }
 
-    if (!success) setErrorMessage("Analiz başarısız oldu. Lütfen API limitlerini kontrol edin.");
-    setLoading(false);
+      HATA: \${errorInput}
+      BAĞLAM: \${contextInput}
+    \`;
+
+    try {
+      const response = await executeAiRequest(prompt, { provider: 'gemini' });
+      // Extract JSON from response
+      const jsonStr = response.text.match(/\{[\s\S]*\}/)?.[0] || response.text;
+      const data = JSON.parse(jsonStr);
+      setResult(data);
+    } catch (err: any) {
+      setErrorMessage("Analiz başarısız oldu: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -117,9 +77,10 @@ const DockerConfigView: React.FC = () => {
                     placeholder="Bağlam (Örn: Render deployment)"
                     className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-4 text-slate-300 text-xs outline-none mb-6"
                 />
-                <button onClick={handleAnalyze} disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">
+                <button onClick={handleAnalyze} disabled={loading} className="w-full py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02]">
                   {loading ? 'ANALİZ EDİLİYOR...' : 'TEŞHİS ET VE DÜZELT'}
                 </button>
+                {errorMessage && <p className="mt-4 text-[10px] text-red-500 font-black text-center uppercase tracking-widest">{errorMessage}</p>}
             </div>
           </div>
 
@@ -134,11 +95,20 @@ const DockerConfigView: React.FC = () => {
                 </div>
                 {result.files.map((f, i) => (
                     <div key={i} className="bg-black/40 border border-white/5 rounded-3xl overflow-hidden">
-                        <div className="px-6 py-3 bg-white/5 border-b border-white/5 text-[10px] font-mono text-primary">{f.name}</div>
+                        <div className="px-6 py-3 bg-white/5 border-b border-white/5 text-[10px] font-mono text-primary flex justify-between items-center">
+                            <span>{f.name}</span>
+                            <span className="opacity-30">{f.language}</span>
+                        </div>
                         <pre className="p-6 text-[11px] font-mono text-slate-400 overflow-x-auto"><code>{f.content}</code></pre>
                     </div>
                 ))}
               </div>
+            )}
+            {!result && !loading && (
+                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-slate-700 opacity-20 italic">
+                    <i className="fa-solid fa-terminal text-6xl mb-4"></i>
+                    <p className="uppercase tracking-[0.3em] text-[10px] font-black">Analiz sonucu burada görüntülenecek</p>
+                 </div>
             )}
           </div>
         </div>
