@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppView } from '../types';
 import { getStorageItem } from '../utils/storage';
-
+import { isSupabaseConfigured } from '../utils/supabase';
 interface NavigationProps {
   activeView: AppView;
   onViewChange: (view: AppView) => void;
@@ -217,6 +217,21 @@ const Navigation: React.FC<NavigationProps> = ({
                 <div className={`w-1.5 h-1.5 rounded-full ${isApiActive ? 'bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
                 <p className={`text-[8px] font-black uppercase tracking-widest ${isApiActive ? 'text-green-500' : 'text-red-500'}`}>
                   {isApiActive ? 'Aktif' : 'Pasif'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-brandDark/50 p-2 lg:p-3 rounded-xl border border-white/5">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700">
+              <i className="fa-solid fa-database text-primary text-[10px]"></i>
+            </div>
+            <div className="hidden lg:block overflow-hidden">
+              <p className="text-[10px] font-bold text-slate-300 truncate uppercase tracking-tighter">Supabase</p>
+              <div className="flex items-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${isSupabaseConfigured() ? 'bg-emerald-500 animate-pulse' : 'bg-slate-600'}`}></div>
+                <p className={`text-[8px] font-black uppercase tracking-widest ${isSupabaseConfigured() ? 'text-emerald-500' : 'text-slate-500'}`}>
+                  {isSupabaseConfigured() ? 'Bağlı' : 'Çevrimdışı'}
                 </p>
               </div>
             </div>
