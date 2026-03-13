@@ -102,7 +102,7 @@ const registerDynamicModule = (id: string, label: string, code: string, keyId?: 
         });
         localStorage.setItem('active_dynamic_modules', JSON.stringify(activeModules));
         if (keyId) {
-            const current = Number(localStorage.getItem(\`usage_\${keyId.startsWith('env-') ? keyId : 'sync_settings'}\`) || 0);
+            const current = Number(localStorage.getItem(`usage_${keyId.startsWith('env-') ? keyId : 'sync_settings'}`) || 0);
             // Usage is usually recorded inside executeAiRequest, but for building we might want double confirmation or specific tracking
         }
         return { success: true, moduleId: id, label };

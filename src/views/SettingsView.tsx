@@ -61,7 +61,7 @@ const SettingsView: React.FC = () => {
     setStorageItem('sync_settings', updated);
     setNewKey('');
     setKeyLabel('');
-    recordAction('Ayarlar', `Yeni API anahtarı eklendi: \${entry.label}`);
+    recordAction('Ayarlar', `Yeni API anahtarı eklendi: ${entry.label}`);
   };
 
   const removeKey = (id: string) => {
@@ -78,8 +78,8 @@ const SettingsView: React.FC = () => {
   const resetQuotas = () => {
      apiKeys.forEach(k => {
         if (k.id.startsWith('env-')) {
-            localStorage.removeItem(\`exhausted_env_\${k.provider}\`);
-            localStorage.setItem(\`usage_env_\${k.provider}\`, '0');
+            localStorage.removeItem(`exhausted_env_${k.provider}`);
+            localStorage.setItem(`usage_env_${k.provider}`, '0');
         }
      });
      const updated = {
@@ -127,8 +127,8 @@ const SettingsView: React.FC = () => {
             {apiKeys.map(k => (
               <div key={k.id} className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl group hover:border-primary/30 transition-all">
                 <div className="flex items-center gap-4 overflow-hidden">
-                  <div className={\`w-10 h-10 rounded-xl \${k.isQuotaExhausted ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'} flex items-center justify-center shrink-0\`}>
-                    <i className={\`fa-solid \${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-sm\`}></i>
+                  <div className={`w-10 h-10 rounded-xl ${k.isQuotaExhausted ? 'bg-red-500/20 text-red-400' : 'bg-primary/20 text-primary'} flex items-center justify-center shrink-0`}>
+                    <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-sm`}></i>
                   </div>
                   <div className="overflow-hidden">
                     <p className="text-xs font-black text-white uppercase truncate">{k.label}</p>
@@ -234,7 +234,7 @@ const SettingsView: React.FC = () => {
                         onClick={() => setShowKey(!showKey)}
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
                     >
-                        <i className={`fa-solid \${showKey ? 'fa-eye-slash' : 'fa-eye'} text-xs\`}></i>
+                        <i className={`fa-solid ${showKey ? 'fa-eye-slash' : 'fa-eye'} text-xs`}></i>
                     </button>
                 </div>
              </div>
