@@ -1,4 +1,4 @@
-import { getFullAppState } from './persistence';
+import { getStorageItem } from './storage';
 
 interface GitHubConfig {
   token: string;
@@ -12,7 +12,18 @@ export const pushToGitHub = async (config: GitHubConfig): Promise<{ success: boo
   }
 
   try {
-    const state = getFullAppState();
+    const chat = getStorageItem('chat_history', []);
+    const modules = getStorageItem('active_dynamic_modules', []);
+    const settings = getStorageItem('sync_settings', {});
+
+    const state = {
+        chat,
+        modules,
+        settings,
+        timestamp: Date.now(),
+        version: '1.2.0'
+    };
+
     const content = JSON.stringify(state, null, 2);
 
     // 1. Get current file (for SHA)
