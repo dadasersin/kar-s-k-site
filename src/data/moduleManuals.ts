@@ -36,12 +36,12 @@ export const MODULE_MANUALS: ManualEntry[] = [
     id: 'live_developer',
     title: 'LİVE AI DEVELOPER',
     category: 'Geliştirici Araçları',
-    description: 'Portal için otonom olarak yeni özellikler ve modüller inşa eden gelişmiş motor.',
+    description: 'Portal için otonom olarak new özellikler ve modüller inşa eden gelişmiş motor.',
     steps: [
       'Komut merkezine eklemek istediğiniz özelliği Türkçe olarak yazın.',
       '"Geliştirmeyi Başlat" butonuna tıklayarak AI\'nın tüm entegre repolardan veri çekmesini bekleyin.',
       'Üretilen görsel önizlemeyi ve kodu inceleyin.',
-      '"SİTEYE EKLE VE YAYINLA" butonuna basarak yeni modülü kalıcı olarak sol menüye ekleyin.'
+      '"SİTEYE EKLE VE YAYINLA" butonuna basarak new modülü kalıcı olarak sol menüye ekleyin.'
     ],
     tips: ['Yeni modül eklediğinizde sistem otomatik olarak GitHub yedeği oluşturur.']
   },

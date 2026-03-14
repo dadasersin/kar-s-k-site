@@ -189,7 +189,7 @@ function App() {
       const modelMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: `Harika! "${orchestration.target}" için yeni bir çözüm hazırlıyorum. Seni Live AI Developer bölümüne yönlendiriyorum.`,
+        text: `Harika! "${orchestration.target}" için new bir çözüm hazırlıyorum. Seni Live AI Developer bölümüne yönlendiriyorum.`,
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }, modelMsg]);
