@@ -29,13 +29,13 @@ export const getAllKeys = (): ApiKeyEntry[] => {
     const val = env?.[conf.key];
     if (val && val.length > 5) {
       allKeys.push({
-        id: \`env-\${conf.provider}\`,
+        id: `env-${conf.provider}`,
         key: val,
         label: conf.label,
         provider: conf.provider as any,
         modelName: conf.model,
-        isQuotaExhausted: localStorage.getItem(\`exhausted_env_\${conf.provider}\`) === 'true',
-        usageCount: Number(localStorage.getItem(\`usage_env_\${conf.provider}\`) || 0),
+        isQuotaExhausted: localStorage.getItem(`exhausted_env_${conf.provider}`) === 'true',
+        usageCount: Number(localStorage.getItem(`usage_env_${conf.provider}`) || 0),
         quotaLimit: conf.provider === 'gemini' ? 1500 : 500
       });
     }
@@ -63,8 +63,8 @@ export const getAllKeys = (): ApiKeyEntry[] => {
 export const recordUsage = (id: string) => {
   if (id.startsWith('env-')) {
     const provider = id.replace('env-', '');
-    const current = Number(localStorage.getItem(\`usage_env_\${provider}\`) || 0);
-    localStorage.setItem(\`usage_env_\${provider}\`, (current + 1).toString());
+    const current = Number(localStorage.getItem(`usage_env_${provider}`) || 0);
+    localStorage.setItem(`usage_env_${provider}`, (current + 1).toString());
     window.dispatchEvent(new Event('storage'));
     return;
   }
@@ -87,7 +87,7 @@ export const recordUsage = (id: string) => {
 export const markKeyAsExhausted = (id: string) => {
   if (id.startsWith('env-')) {
     const provider = id.replace('env-', '');
-    localStorage.setItem(\`exhausted_env_\${provider}\`, 'true');
+    localStorage.setItem(`exhausted_env_${provider}`, 'true');
     window.dispatchEvent(new Event('storage'));
     return;
   }
@@ -115,7 +115,7 @@ export interface AiRequestOptions {
 
 const getSystemPrompt = () => {
     const registry = getRegistryKnowledge();
-    return \`
+    return `
 Sen Ersin Güleş'in özel yapay zeka portalı için çalışan profesyonel ve yardımsever bir asistansın.
 Adın Jules. Kullanıcılara her zaman Türkçe cevap ver.
 Portalın sahibi Ersin Güleş'tir ve ona sadıksın.
@@ -123,13 +123,13 @@ Teknik hatalardan bahsetme, her zaman çözüm odaklı ol.
 Eğer bir görsel oluşturman istenirse, bunun için 'Görsel Stüdyo' modülünü kullanmalarını öner.
 
 PORTAL YETENEKLERİ (İhtiyaç duyarsan yönlendir):
-\${registry}
+${registry}
 
 KURALLAR:
 1. Kısa ve öz cevaplar ver.
 2. Kullanıcının sorusuna doğrudan odaklan.
 3. Portal içinde olmayan bir özellik istenirse 'gelecek güncellemelerde eklenebilir' de.
-\`;
+`;
 };
 
 const sanitizeHistory = (history: any[]) => {
@@ -214,9 +214,9 @@ export const executeAiRequest = async (prompt: string, options?: AiRequestOption
                 responseText = data.content[0].text;
              } else {
                 const baseUrl = keyEntry.baseUrl || 'https://api.openai.com/v1';
-                const response = await fetch(\`\${baseUrl}/chat/completions\`, {
+                const response = await fetch(`${baseUrl}/chat/completions`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${keyEntry.key}\` },
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyEntry.key}` },
                   body: JSON.stringify({
                     model: keyEntry.modelName || 'gpt-4o-mini',
                     messages: [
@@ -231,7 +231,7 @@ export const executeAiRequest = async (prompt: string, options?: AiRequestOption
                 responseText = data.choices[0].message.content;
              }
          } catch (fetchErr: any) {
-             console.warn(\`Provider \${keyEntry.provider} failed:\`, fetchErr.message);
+             console.warn(`Provider ${keyEntry.provider} failed:`, fetchErr.message);
              continue;
          }
       }

@@ -32,19 +32,19 @@ const SkyDriveView: React.FC = () => {
         if (!prompt.trim()) return;
         setLoading(true);
         setStatus(type === 'image' ? 'Tasarım Oluşturuluyor...' : 'Sahne Simüle Ediliyor...');
-        recordAction('SkyDrive AI', \`\${type === 'image' ? 'Görsel' : 'Video'} üretimi başlatıldı: \${prompt}\`);
+        recordAction('SkyDrive AI', `${type === 'image' ? 'Görsel' : 'Video'} üretimi başlatıldı: ${prompt}`);
 
         try {
             // Use real AI to generate descriptions/technical specs, but simulate the visual output for now
             // as we don't have a direct DALL-E/Sora hook yet, but this records the usage.
-            await executeAiRequest(\`Sen bir havacılık mühendisisin. Şu araç için teknik görsel betimleme yap: \${prompt}\`);
+            await executeAiRequest(`Sen bir havacılık mühendisisin. Şu araç için teknik görsel betimleme yap: ${prompt}`);
 
             const newMedia: SkyMedia = {
                 id: Date.now().toString(),
                 type,
                 url: type === 'image'
-                    ? \`https://images.unsplash.com/photo-1559297434-2d8a134e042e?q=80&w=1000&auto=format&fit=crop\`
-                    : \`https://www.w3schools.com/html/mov_bbb.mp4\`,
+                    ? `https://images.unsplash.com/photo-1559297434-2d8a134e042e?q=80&w=1000&auto=format&fit=crop`
+                    : `https://www.w3schools.com/html/mov_bbb.mp4`,
                 prompt: prompt,
                 timestamp: Date.now()
             };
@@ -155,7 +155,7 @@ const SkyDriveView: React.FC = () => {
                         {gallery.length > 0 && (
                             <div className="absolute bottom-8 left-8 right-8">
                                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">Sonuç Önizleme</p>
-                                <h4 className="text-white font-bold truncate text-lg italic">"\${gallery[0].prompt}"</h4>
+                                <h4 className="text-white font-bold truncate text-lg italic">"${gallery[0].prompt}"</h4>
                             </div>
                         )}
                     </div>
