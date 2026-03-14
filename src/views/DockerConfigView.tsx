@@ -20,9 +20,9 @@ const DockerConfigView: React.FC = () => {
     setLoading(true);
     setResult(null);
     setErrorMessage('');
-    recordAction('Docker AI', \`Build hatası analiz ediliyor: \${contextInput || 'Genel'}\`);
+    recordAction('Docker AI', `Build hatası analiz ediliyor: ${contextInput || 'Genel'}`);
 
-    const prompt = \`
+    const prompt = `
       Aşağıdaki Docker build hatasını analiz et ve çözüm üret.
       JSON formatında şu yapıda yanıt ver:
       {
@@ -31,9 +31,9 @@ const DockerConfigView: React.FC = () => {
         "files": [{"name": "dosya_adı", "language": "dil", "content": "içerik"}]
       }
 
-      HATA: \${errorInput}
-      BAĞLAM: \${contextInput}
-    \`;
+      HATA: ${errorInput}
+      BAĞLAM: ${contextInput}
+    `;
 
     try {
       const response = await executeAiRequest(prompt, { provider: 'gemini' });

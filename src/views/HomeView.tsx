@@ -163,10 +163,10 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                     <div key={k.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3 hover:border-primary/40 transition-all">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <i className={`fa-solid \${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-[10px] text-primary`}></i>
+                          <i className={`fa-solid ${k.provider === 'gemini' ? 'fa-gem' : 'fa-brain'} text-[10px] text-primary`}></i>
                           <p className="text-[10px] font-bold text-white uppercase truncate max-w-[100px]">{k.label}</p>
                         </div>
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded \${k.isQuotaExhausted ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${k.isQuotaExhausted ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
                           {k.isQuotaExhausted ? 'DOLU' : 'AKTİF'}
                         </span>
                       </div>
@@ -176,7 +176,7 @@ const HomeView: React.FC<HomeViewProps> = ({ onViewChange }) => {
                           <span>%{percent.toFixed(0)}</span>
                         </div>
                         <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                          <div className={`h-full transition-all duration-1000 \${percent > 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: \`\${percent}%\` }}></div>
+                          <div className={`h-full transition-all duration-1000 ${percent > 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${percent}%` }}></div>
                         </div>
                       </div>
                       <p className="text-[8px] text-gray-600 font-mono truncate">Key: ****{k.key.slice(-4)}</p>
@@ -250,9 +250,9 @@ const MetricCard = ({ label, value, icon, color = "text-white" }: { label: strin
     <div className="portal-card p-6 bg-brandDark/40 hover:border-primary/30 transition-all group">
         <div className="flex justify-between items-start mb-4">
             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{label}</p>
-            <i className={`fa-solid \${icon} text-[11px] text-primary/30 group-hover:text-primary transition-colors`}></i>
+            <i className={`fa-solid ${icon} text-[11px] text-primary/30 group-hover:text-primary transition-colors`}></i>
         </div>
-        <p className={`text-xl font-black italic tracking-tighter \${color}`}>{value}</p>
+        <p className={`text-xl font-black italic tracking-tighter ${color}`}>{value}</p>
     </div>
 );
 
