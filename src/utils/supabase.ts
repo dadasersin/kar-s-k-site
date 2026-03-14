@@ -4,11 +4,12 @@ import { getStorageItem } from './storage';
 const getSupabaseConfig = () => {
   const saved = getStorageItem('supabase_config', { url: '', anonKey: '' });
 
-  // Provided token from user: sbp_v0_a8427122d22c4380ffcb1e0f9b21083bdf1b4767
-  const defaultAnonKey = 'sbp_v0_a8427122d22c4380ffcb1e0f9b21083bdf1b4767';
+  // Latest provided credentials
+  const defaultUrl = 'https://uqregdoryxbuojefpdgs.supabase.co';
+  const defaultAnonKey = 'sb_publishable_lpqWufc9faM-xjRMWW8L7Q_dV-h-pe8';
 
   return {
-    url: (import.meta as any).env?.VITE_SUPABASE_URL || saved.url || 'https://b6a2f6ba220b4cb79120f130847064d7.supabase.co', // Inferred URL or fallback
+    url: (import.meta as any).env?.VITE_SUPABASE_URL || saved.url || defaultUrl,
     anonKey: (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || saved.anonKey || defaultAnonKey
   };
 };
